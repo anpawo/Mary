@@ -77,7 +77,7 @@ parseNotThisChar c = Parser fc where
     fc [] = Left "Empty string"
     fc (x:xs)
         | c /= x = Right (x, xs)
-        | otherwise = Left (c:" not found")
+        | otherwise = Left (c:" found")
 
 parseNotTheseChars :: String -> Parser Char
 parseNotTheseChars [] = Parser $ \_ -> Left "Empty string"
