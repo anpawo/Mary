@@ -2,7 +2,7 @@
 -- EPITECH PROJECT, 2024
 -- SExprParser.hs
 -- File description:
--- mypandoc
+-- glados
 -}
 
 module SExprParser
