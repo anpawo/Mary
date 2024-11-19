@@ -7,7 +7,7 @@
 
 module SExprParser
     ( parseSExpr,
-    parseSExprList
+    SExpr(SExprAtomInt, SExprAtomString, SExprList)
     ) where
 
 import Parser
@@ -46,4 +46,14 @@ parseSExprList = parseChar '(' >> parseMany (parseAnyChar " \t\n") >>
 parseSExpr :: Parser SExpr
 parseSExpr = parseSExprList <|> parseSExprAtomInt <|> parseSExprAtomString
 
+getSymbol :: SExpr -> Maybe String
+getSymbol (SExprAtomString s) = Just s
+getSymbol _ = Nothing
 
+getInteger :: SExpr -> Maybe Int
+getInteger (SExprAtomInt s) = Just s
+getInteger _ = Nothing
+
+getList :: SExpr -> Maybe [SExpr]
+getList (SExprList s) = Just s
+getList _ = Nothing
