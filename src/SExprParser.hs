@@ -6,7 +6,7 @@
 -}
 
 module SExprParser
-    ( parseSExpr,
+    ( parseSExpr, printTree,
     SExpr(SExprAtomInt, SExprAtomString, SExprList)
     ) where
 
@@ -57,3 +57,10 @@ getInteger _ = Nothing
 getList :: SExpr -> Maybe [SExpr]
 getList (SExprList s) = Just s
 getList _ = Nothing
+
+printTree :: SExpr -> Maybe String
+printTree (SExprAtomInt n) = Just $ "a Number " ++ show n
+printTree (SExprAtomString s) = Just $ "a Symbol '" ++ s ++ "'"
+printTree (SExprList sx) = do
+    elements <- mapM printTree sx
+    Just $ "a List with " ++ unwords elements
