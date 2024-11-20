@@ -80,9 +80,22 @@ testParsePrefix = TestCase $ do
 
 testParseSExprAtomInt  :: Test
 testParseSExprAtomInt  = TestCase $ do
-    assertEqual "parseSExprAtomInt on '123'" (Right ((SExprAtomInt 123), "")) (runParser parseSExprAtomInt  "123")
-    assertEqual "parseSExprAtomInt  on '        123'" (Right ((SExprAtomInt 123), "")) (runParser parseSExprAtomInt  "        123")
+    assertEqual "parseSExprAtomInt on '123'" (Right (SExprAtomInt 123, "")) (runParser parseSExprAtomInt  "123")
+    assertEqual "parseSExprAtomInt  on '        123'" (Right (SExprAtomInt 123, "")) (runParser parseSExprAtomInt  "        123")
     assertEqual "parseSExprAtomInt  on 'abc'" (Left "Fail") (runParser parseSExprAtomInt  "abc")
+    assertEqual "parseSExprAtomInt  on '12abc'" (Left "Fail") (runParser parseSExprAtomInt  "12abc")
+
+testParseSExprAtomString  :: Test
+testParseSExprAtomString  = TestCase $ do
+    assertEqual "parseSExprAtomString on '123'" (Right (SExprAtomString "123", "")) (runParser parseSExprAtomString  "123")
+    assertEqual "parseSExprAtomString  on 'abc'" (Right (SExprAtomString "abc", "")) (runParser parseSExprAtomString  "abc")
+
+testParseSExprList  :: Test
+testParseSExprList  = TestCase $ do
+    assertEqual "parseSExprList  on '(define x 5)'" (Right (SExprList [SExprAtomString "define", SExprAtomString "x", SExprAtomInt 5], "")) (runParser parseSExprList "(define x 5)")
+    assertEqual "parseSExprList  on '(x 5 6 (* 2 abc))'" (Right (SExprList [SExprAtomString "x", SExprAtomInt 5, SExprAtomInt 6, SExprList [SExprAtomString "*", SExprAtomInt 2, SExprAtomString "abc"]], "")) (runParser parseSExprList "(x 5 6 (* 2 abc))")
+    assertEqual "parseSExprList  on 'define x 5)'" (Left "( not found") (runParser parseSExprList  "define x 5)")
+    assertEqual "parseSExprList  on '(define x 5'" (Left "Empty string") (runParser parseSExprList  "(define x 5") --Empty string apparait parce que la string est vide quand on cherche la parenthèse fermante
 
 tests :: Test
 tests = TestList [
@@ -99,7 +112,9 @@ tests = TestList [
     TestLabel "testParseWord" testParseWord,
     TestLabel "testParseString" testParseString,
     TestLabel "testParsePrefix" testParsePrefix,
-    TestLabel "testParseSExprAtomInt" testParseSExprAtomInt
+    TestLabel "testParseSExprAtomInt" testParseSExprAtomInt,
+    TestLabel "testParseSExprAtomString" testParseSExprAtomString,
+    TestLabel "testParseSexprList" testParseSExprList
   ]
 
 main :: IO ()
