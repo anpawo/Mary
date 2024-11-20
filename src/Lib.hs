@@ -11,9 +11,9 @@ module Lib
 
 import System.Exit (exitWith, ExitCode(ExitFailure))
 import Control.Applicative ( Alternative((<|>), empty) )
-import SExprParser
-import System.Environment
-import System.IO
+import SExprParser()
+import System.Environment()
+import System.IO()
 
 glados :: IO ()
 glados = putStrLn "Glados"
