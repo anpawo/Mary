@@ -9,11 +9,19 @@ module SExprParser
     ( parseSExpr,
     printTree,
     parseSExprAtomInt,
+    parseSExprAtomString,
+    parseSExprList,
     SExpr(SExprAtomInt, SExprAtomString, SExprList)
     ) where
 
 import Parser
-import Control.Applicative
+    ( Parser(..),
+      parseChar,
+      parseNotTheseChars,
+      parseAnyChar,
+      parseMany,
+      parseUInt )
+import Control.Applicative ( Alternative((<|>)) )
 
 data SExpr = SExprAtomInt Int | SExprAtomString String | SExprList [SExpr] deriving (Show)
 

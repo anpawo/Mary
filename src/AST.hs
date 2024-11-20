@@ -10,7 +10,7 @@ module AST
     ) where
 
 import SExprParser
-import Control.Applicative
+import Control.Applicative()
 
 data Define = Define {name::String, value::Int} deriving (Show)
 
@@ -21,5 +21,5 @@ sexprToAST (SExprAtomInt num) = Just (AstInt num)
 sexprToAST (SExprAtomString "#t") = Just (AstBool True)
 sexprToAST (SExprAtomString "#f") = Just (AstBool False)
 sexprToAST (SExprAtomString str) = Just (AstStr str)
-sexprToAST (SExprList [SExprAtomString "define", SExprAtomString name, SExprAtomInt value]) = Just (AstDefine (Define name value))
+sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, SExprAtomInt _value]) = Just (AstDefine (Define _name _value))
 sexprToAST _ = Nothing
