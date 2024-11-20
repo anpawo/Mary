@@ -6,7 +6,9 @@
 -}
 
 module SExprParser
-    ( parseSExpr, printTree,
+    ( parseSExpr,
+    printTree,
+    parseSExprAtomInt,
     SExpr(SExprAtomInt, SExprAtomString, SExprList)
     ) where
 
@@ -14,6 +16,12 @@ import Parser
 import Control.Applicative
 
 data SExpr = SExprAtomInt Int | SExprAtomString String | SExprList [SExpr] deriving (Show)
+
+instance Eq SExpr where
+    (SExprAtomInt x) == (SExprAtomInt y) = x == y
+    (SExprAtomString str1) == (SExprAtomString str2) = str1 == str2
+    (SExprList list1) == (SExprList list2) = list1 == list2
+    _ == _ = False
 
 parseSExprAtomInt :: Parser SExpr
 parseSExprAtomInt = Parser fc where

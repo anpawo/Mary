@@ -7,6 +7,7 @@
 
 import Test.HUnit
 import Parser
+import SExprParser
 
 testParseChar :: Test
 testParseChar = TestCase $ do
@@ -77,6 +78,12 @@ testParsePrefix = TestCase $ do
     assertEqual "parsePrefix on 'pre' with 'prefixHello'" (Right ("pre", "fixHello")) (runParser (parsePrefix "pre") "prefixHello")
     assertEqual "parsePrefix on 'not' with 'prefixHello'" (Left "Fail") (runParser (parsePrefix "not") "prefixHello")
 
+testParseSExprAtomInt  :: Test
+testParseSExprAtomInt  = TestCase $ do
+    assertEqual "parseSExprAtomInt on '123'" (Right ((SExprAtomInt 123), "")) (runParser parseSExprAtomInt  "123")
+    assertEqual "parseSExprAtomInt  on '        123'" (Right ((SExprAtomInt 123), "")) (runParser parseSExprAtomInt  "        123")
+    assertEqual "parseSExprAtomInt  on 'abc'" (Left "Fail") (runParser parseSExprAtomInt  "abc")
+
 tests :: Test
 tests = TestList [
     TestLabel "testParseChar" testParseChar,
@@ -91,7 +98,8 @@ tests = TestList [
     TestLabel "testParseInt" testParseInt,
     TestLabel "testParseWord" testParseWord,
     TestLabel "testParseString" testParseString,
-    TestLabel "testParsePrefix" testParsePrefix
+    TestLabel "testParsePrefix" testParsePrefix,
+    TestLabel "testParseSExprAtomInt" testParseSExprAtomInt
   ]
 
 main :: IO ()
