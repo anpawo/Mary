@@ -26,7 +26,7 @@ module Parser
 import Control.Applicative ( Alternative((<|>), empty) )
 import Data.List (isPrefixOf)
 
-data Parser a = Parser {
+newtype Parser a = Parser {
     runParser :: String -> Either String (a, String)
 }
 
@@ -84,17 +84,17 @@ parseNotTheseChars [] = Parser $ \_ -> Left "Empty string"
 parseNotTheseChars str = Parser fc where
     fc [] = Left "Empty string"
     fc (x:xs)
-        | True `notElem` find = Right (x, xs)
+        | all not find = Right (x, xs)
         | otherwise = Left (str ++ " found")
         where
-            find = map (\c -> c == x) str
+            find = map (== x) str
 
 parseAnyChar :: String -> Parser Char
 parseAnyChar [] = Parser $ \_ -> Left "Empty string"
 parseAnyChar str = Parser fc where
     fc [] = Left "Empty string"
     fc (x:xs)
-        | True `elem` find = Right (x, xs)
+        | or find = Right (x, xs)
         | otherwise = Left (str ++ " not found")
         where
             find = map (== x) str
@@ -157,5 +157,5 @@ parseString = Parser fc where
 parsePrefix :: String -> Parser String
 parsePrefix prefix = Parser fc where
     fc str
-        | isPrefixOf prefix str = Right (prefix, drop (length prefix) str)
+        | prefix `isPrefixOf` str = Right (prefix, drop (length prefix) str)
         | otherwise = Left "Fail"
