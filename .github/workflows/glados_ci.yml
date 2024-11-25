@@ -26,7 +26,7 @@ jobs:
           stack setup --stack-root=$STACK_ROOT --allow-different-user
           stack build --only-dependencies --stack-root=$STACK_ROOT --allow-different-user
       - name: Build binary
-        run : stack build --stack-root=$STACK_ROOT --allow-different-user
+        run : stack build . --stack-root=$STACK_ROOT --allow-different-user
         timeout-minutes: 2
       - name: Check if binary was built
         run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
