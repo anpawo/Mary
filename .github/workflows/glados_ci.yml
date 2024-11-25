@@ -14,30 +14,10 @@ env:
   EXECUTABLES: /bin/glados-exe
 
 jobs:
-  check_program_compilation :
+  check_glados :
     runs-on: self-hosted
     container:
       image: haskell:latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        run: |
-          export STACK_ROOT=/tmp/.stack
-          stack setup --stack-root=$STACK_ROOT --allow-different-user
-          stack build --stack-root=$STACK_ROOT --allow-different-user
-      - name: Build binary
-        run : |
-          export STACK_ROOT=/tmp/.stack
-          stack build . --stack-root=$STACK_ROOT --allow-different-user
-        timeout-minutes: 2
-      - name: Check if binary was built
-        run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
-
-  run_uni_tests :
-    runs-on: self-hosted
-    container:
-      image: haskell:latest
-    needs: [check_program_compilation]
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
@@ -45,6 +25,15 @@ jobs:
           export STACK_ROOT=/tmp/.stack
           stack setup --stack-root=$STACK_ROOT --allow-different-user
           stack build --only-dependencies --stack-root=$STACK_ROOT --allow-different-user
+      - name: Build binary
+        run : |
+          export STACK_ROOT=/tmp/.stack
+          stack build --stack-root=$STACK_ROOT --allow-different-user
+        timeout-minutes: 2
+      - name: Check if binary was built
+        run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
       - name: Run unit tests
-        run: stack test --stack-root=$STACK_ROOT --allow-different-user
+        run : |
+          export STACK_ROOT=/tmp/.stack
+          stack test --stack-root=$STACK_ROOT --allow-different-user
         timeout-minutes: 2
