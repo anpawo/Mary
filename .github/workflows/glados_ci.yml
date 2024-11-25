@@ -26,7 +26,11 @@ jobs:
           stack setup --stack-root=$STACK_ROOT --allow-different-user
           stack build --only-dependencies --stack-root=$STACK_ROOT --allow-different-user
       - name: Build binary
-        run : make
+        run : |
+          stack build --stack-root=$STACK_ROOT --allow-different-user
+          BIN_PATH=$(stack path --local-install-root --stack-root=$STACK_ROOT --allow-different-user)
+          BIN_EXE="/bin/glados-exe"
+          cp "$BIN_PATH$BIN_EXE" "./glados-binary"
         timeout-minutes: 2
       - name: Check if binary was built
         run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
