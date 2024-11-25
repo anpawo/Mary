@@ -15,14 +15,11 @@ env:
 
 jobs:
   check_program_compilation :
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: haskell:latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Haskell
-        uses: haskell/actions/setup@v1
-        with:
-          ghc-version: '9.4.5'
-          enable-stack: true
       - name: Install dependencies
         run: stack setup && stack build --only-dependencies
       - name: Build binary
@@ -32,15 +29,12 @@ jobs:
         run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
 
   run_uni_tests :
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: haskell:latest
     needs: [check_program_compilation]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Haskell
-        uses: haskell/actions/setup@v1
-        with:
-          ghc-version: '9.4.5'
-          enable-stack: true
       - name: Install dependencies
         run: stack setup && stack build --only-dependencies
       - name: Run unit tests
