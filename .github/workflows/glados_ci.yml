@@ -1,5 +1,5 @@
 name: GLADOS CI/CD
-run-name: ${{ github.actor }}'s first GitHub Actions
+# run-name: ${{ github.actor }}'s first GitHub Actions
 
 on:
   push:
@@ -24,9 +24,11 @@ jobs:
         run: |
           export STACK_ROOT=/tmp/.stack
           stack setup --stack-root=$STACK_ROOT --allow-different-user
-          stack build --only-dependencies --stack-root=$STACK_ROOT --allow-different-user
+          stack build --stack-root=$STACK_ROOT --allow-different-user
       - name: Build binary
-        run : stack build . --stack-root=$STACK_ROOT --allow-different-user
+        run : |
+          export STACK_ROOT=/tmp/.stack
+          stack build . --stack-root=$STACK_ROOT --allow-different-user
         timeout-minutes: 2
       - name: Check if binary was built
         run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
