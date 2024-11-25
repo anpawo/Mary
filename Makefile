@@ -24,4 +24,7 @@ fclean : clean
 
 re : fclean all
 
+tests_run:
+	stack test
+
 .PHONY: re clean fclean all tests_run coverage
