@@ -21,8 +21,23 @@ glados = do
     result <- processArgs args
     case result of
         Left err -> putStrLn err
-        Right content ->
-            case runParser parseSExpr content of
+        Right content -> parseToAST content
+
+gladosRepl :: IO ()
+gladosRepl = do
+    putStrLn "Welcome to GLaDOS REPL. Type ':quit' to exit."
+    loop
+  where
+    loop = do
+        putStr "> "
+        input <- getLine
+        if input == ":quit" then return ()
+        else do
+            parseToAST input
+            loop
+
+parseToAST :: String -> IO()
+parseToAST content = case runParser parseSExpr content of
                 Left err -> putStrLn $ "Parsing error: " ++ err
                 Right (sexpr, _) -> case sexprToAST sexpr >>= evalAST of
                     Left err -> putStrLn $ "Error: " ++ err
@@ -32,7 +47,9 @@ processArgs :: [String] -> IO (Either String String)
 processArgs args = case args of
     ["-f", filePath] -> readFileEither filePath
     ["--file", filePath] -> readFileEither filePath
-    [] -> readStdin
+    [] -> do
+        gladosRepl
+        return $ Left "REPL mode exited."
     [expression] -> return $ Right expression
     _ -> do
         printUsage
@@ -44,8 +61,15 @@ readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
     handleReadError :: IOException -> IO (Either String String)
     handleReadError _ = return $ Left "Error reading file"
 
-readStdin :: IO (Either String String)
-readStdin = Right <$> getContents
-
 printUsage :: IO()
-printUsage = putStrLn "Usage: \n\tIf you want to evaluate a given expression:\n\t\t./glados your_expression\n\tIf you want to evaluate a given file:\n\t\t./glados [-f or --file] <file_name>\n\tIf you want to enter a REPL:\n\t\t./glados"
+printUsage = putStrLn $ unlines
+    [ "Usage: glados [OPTIONS] [EXPRESSION]"
+    , ""
+    , "Options:"
+    , "  -f, --file <file>   Evaluate expressions from the given file."
+    , "  --help              Show this help text."
+    , ""
+    , "Examples:"
+    , "  ./glados \"(+ 1 2)\"     Evaluate the expression."
+    , "  ./glados -f expr.txt   Evaluate expressions from 'expr.txt'."
+    , "  ./glados              Start REPL mode."]
