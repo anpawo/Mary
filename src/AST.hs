@@ -10,6 +10,7 @@ module AST
     ( sexprToAST,
         evalAST,
         AST(..),
+        Define,
     ) where
 
 import SExprParser
