@@ -27,7 +27,7 @@ data AST = AstFunction Function |
     AstBool Bool |
     AstCondition Condition deriving (Show)
 
-instance Eq Ast where
+instance Eq AST where
     (AstInt x) == (AstInt y) = x == y
     (AstStr str1) == (AstStr str2) = str1 == str2
     (AstBool bool1) == (AstBool bool2) = bool1 == bool2
@@ -83,7 +83,7 @@ checkDivid _name args =
         Right _ -> Left ("Bad number or type of arguments for " ++ _name)
         Left err -> Left ("Error parsing arguments: " ++ err)
 
-checkBool :: String -> [Either String Ast] -> Either String [Ast]
+checkBool :: String -> [Either String AST] -> Either String [AST]
 checkBool _name args =
     case sequence args of
         Right [x, y] -> Right [x, y]
