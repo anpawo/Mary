@@ -9,30 +9,31 @@ module Lib
     ( glados
     ) where
 
-import System.Exit (exitWith, ExitCode(ExitFailure))
 import System.Environment (getArgs)
 import Control.Exception (catch, IOException)
-import SExprParser()
-import Text.Printf (printf)
-
--- todo changer la verification des arguments, le cas où il n'y a pas d'arguments ne peux pas lire directement stdin mais doit appeler la fonction SExprtoAST et lui "dire" de lire stdin
+import SExprParser(parseSExpr)
+import AST(sexprToAST, evalAST)
+import Parser(runParser)
 
 glados :: IO ()
 glados = do
     args <- getArgs
     result <- processArgs args
     case result of
-        Left err -> do
-            putStrLn err
-            exitWith (ExitFailure 1)
-        Right content -> putStrLn content -- use content as we want
+        Left err -> putStrLn err
+        Right content ->
+            case runParser parseSExpr content of
+                Left err -> putStrLn $ "Parsing error: " ++ err
+                Right (sexpr, _) -> case sexprToAST sexpr >>= evalAST of
+                    Left err -> putStrLn $ "Error: " ++ err
+                    Right value -> print value
 
 processArgs :: [String] -> IO (Either String String)
 processArgs args = case args of
     ["-f", filePath] -> readFileEither filePath
     ["--file", filePath] -> readFileEither filePath
-    -- [x] -> --todo appeler SexprtoAST ou la fonction qu'il faut avec x en paramètre
     [] -> readStdin
+    [expression] -> return $ Right expression
     _ -> do
         printUsage
         return $ Left "Invalid arguments."
