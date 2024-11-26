@@ -25,7 +25,15 @@ data AST = AstFunction Function |
     AstInt Int |
     AstStr String |
     AstBool Bool |
-    AstCondition Condition deriving (Show)
+    AstCondition Condition
+
+instance Show AST where
+    show (AstFunction f) = show f
+    show (AstDefine d) = show d
+    show (AstInt n) = show n
+    show (AstStr s) = show s
+    show (AstBool b) = show b
+    show (AstCondition c) = show c
 
 sexprToASTList :: [SExpr] -> [Either String AST]
 sexprToASTList (x : xs) = sexprToAST x : sexprToASTList xs
