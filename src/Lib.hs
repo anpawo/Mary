@@ -40,6 +40,7 @@ gladosRepl list_define = do
                 gladosRepl list_define
             Right (new_list_define, value) -> do
                 print value
+                -- print new_list_define
                 gladosRepl new_list_define
 
 parseToAST :: [Define] -> String -> Either String ([Define], AST)

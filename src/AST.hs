@@ -16,7 +16,7 @@ module AST
 import SExprParser
 import Control.Applicative()
 
-data Define = Define { name :: String, value :: Either String AST } deriving (Show)
+data Define = Define { name :: String, value :: AST } deriving (Show)
 
 data Function = Function { func_name :: String, args :: [Either String AST] } deriving (Show)
 
@@ -72,7 +72,7 @@ sexprToAST (SExprAtomString "#f") = Right (AstBool False)
 sexprToAST (SExprAtomString str) = Right (AstStr str)
 sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, _value]) =
     case sexprToAST _value of
-        Right astValue -> Right (AstDefine (Define _name (Right astValue)))
+        Right astValue -> Right (AstDefine (Define _name astValue))
         Left err -> Left ("Error in define value: " ++ err)
 sexprToAST (SExprList [SExprAtomString "if", _condition, _true, _false]) = sexprToASTCondition _condition _true _false
 sexprToAST (SExprList (SExprAtomString _name : args)) =
@@ -111,16 +111,17 @@ evalAST list_define (AstInt num) = Right (list_define, AstInt num)
 evalAST list_define (AstBool True) = Right (list_define, AstBool True)
 evalAST list_define (AstBool False) = Right (list_define, AstBool False)
 evalAST list_define (AstStr str) = Right (list_define, AstStr str)
+    -- case valueEither of
+    --     Right value -> evalAST list_define value >>= \(list_define, evaluatedValue) ->
+    --         Right (list_define, AstDefine (Define _name (Right evaluatedValue)))
+    --     Left err -> Left ("Error evaluating define value: " ++ err)
+
 evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST list_define cond of
     Right (list_define, AstBool True) -> evalAST list_define _t
     Right (list_define, AstBool False) -> evalAST list_define _f
     Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
     Left err -> Left err
-evalAST list_define (AstDefine (Define {name = _name, value = valueEither})) =
-    case valueEither of
-        Right value -> evalAST list_define value >>= \(list_define, evaluatedValue) ->
-            Right (list_define, AstDefine (Define _name (Right evaluatedValue)))
-        Left err -> Left ("Error evaluating define value: " ++ err)
+evalAST list_define (AstDefine def) = Right (list_define ++ [def], AstDefine def)
 evalAST list_define (AstFunction (Function {func_name = "+", args = args})) =
     checkFunction "+" args >>= \[AstInt x, AstInt y] ->
         Right (list_define, AstInt (x + y))
