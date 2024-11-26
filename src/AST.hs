@@ -118,6 +118,9 @@ evalAST (AstFunction (Function {func_name = "*", args = args})) =
 evalAST (AstFunction (Function {func_name = "-", args = args})) =
     checkFunction "-" args >>= \[AstInt x, AstInt y] ->
         Right (AstInt (x - y))
+evalAST (AstFunction (Function {func_name = "<", args = args})) =
+    checkFunction "<" args >>= \[AstInt x, AstInt y] ->
+        Right (AstBool (x < y))
 evalAST (AstFunction (Function {func_name = "div", args = args})) =
     checkDivid "div" args >>= \[AstInt x, AstInt y] ->
         Right (AstInt (x `div` y))
