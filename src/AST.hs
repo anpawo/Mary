@@ -4,6 +4,7 @@
 -- File description:
 -- glados
 -}
+{-# LANGUAGE InstanceSigs #-}
 
 module AST
     ( sexprToAST,
@@ -28,6 +29,7 @@ data AST = AstFunction Function |
     AstCondition Condition
 
 instance Show AST where
+    show :: AST -> String
     show (AstFunction f) = show f
     show (AstDefine d) = show d
     show (AstInt n) = show n
@@ -36,6 +38,7 @@ instance Show AST where
     show (AstCondition c) = show c
 
 instance Eq AST where
+    (==) :: AST -> AST -> Bool
     (AstInt x) == (AstInt y) = x == y
     (AstStr str1) == (AstStr str2) = str1 == str2
     (AstBool bool1) == (AstBool bool2) = bool1 == bool2
