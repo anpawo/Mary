@@ -16,11 +16,34 @@ data Define = Define { name :: String, value :: Either String Ast } deriving (Sh
 
 data Function = Function { func_name :: String, args :: [Either String Ast] } deriving (Show)
 
-data Ast = AstFunction Function | AstDefine Define | AstInt Int | AstStr String | AstBool Bool deriving (Show)
+data Condition = Condition { condition :: Ast, _true :: Ast, _false :: Ast } deriving (Show)
+
+data Ast = AstFunction Function |
+    AstDefine Define |
+    AstInt Int |
+    AstStr String |
+    AstBool Bool |
+    AstCondition Condition deriving (Show)
 
 sexprToASTList :: [SExpr] -> [Either String Ast]
 sexprToASTList (x : xs) = sexprToAST x : sexprToASTList xs
 sexprToASTList [] = []
+
+isValidCondition :: Ast -> Bool
+isValidCondition (AstBool _) = True
+isValidCondition (AstFunction _) = True
+isValidCondition _ = False
+
+sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String Ast
+sexprToASTCondition _condition _true _false =
+    case (sexprToAST _condition, sexprToAST _true, sexprToAST _false) of
+        (Right condition, Right _true, Right _false) ->
+            if isValidCondition condition
+                then Right (AstCondition (Condition condition _true _false))
+                else Left "Error in if condition: Condition must be a boolean or a function"
+        (Left err, _, _) -> Left ("Error in if condition: " ++ err)
+        (_, Left err, _) -> Left ("Error in if true branch: " ++ err)
+        (_, _, Left err) -> Left ("Error in if false branch: " ++ err)
 
 sexprToAST :: SExpr -> Either String Ast
 sexprToAST (SExprAtomInt num) = Right (AstInt num)
@@ -31,6 +54,7 @@ sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, _value])
     case sexprToAST _value of
         Right astValue -> Right (AstDefine (Define _name (Right astValue)))
         Left err -> Left ("Error in define value: " ++ err)
+sexprToAST (SExprList [SExprAtomString "if", _condition, _true, _false]) = sexprToASTCondition _condition _true _false
 sexprToAST (SExprList (SExprAtomString _name : args)) =
     let parsedArgs = sexprToASTList args
      in Right (AstFunction (Function _name parsedArgs))
