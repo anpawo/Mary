@@ -6,7 +6,8 @@
 -}
 
 module AST
-    ( sexprToAST
+    ( sexprToAST,
+      evalAST
     ) where
 
 import SExprParser
@@ -17,6 +18,12 @@ data Define = Define { name :: String, value :: Either String Ast } deriving (Sh
 data Function = Function { func_name :: String, args :: [Either String Ast] } deriving (Show)
 
 data Ast = AstFunction Function | AstDefine Define | AstInt Int | AstStr String | AstBool Bool deriving (Show)
+
+instance Eq Ast where
+    (AstInt x) == (AstInt y) = x == y
+    (AstStr str1) == (AstStr str2) = str1 == str2
+    (AstBool bool1) == (AstBool bool2) = bool1 == bool2
+    _ == _ = False
 
 sexprToASTList :: [SExpr] -> [Either String Ast]
 sexprToASTList (x : xs) = sexprToAST x : sexprToASTList xs
@@ -46,8 +53,19 @@ checkFunction _name args =
 checkDivid :: String -> [Either String Ast] -> Either String [Ast]
 checkDivid _name args =
     case sequence args of
-        Right [AstInt x, AstInt 0] -> Left "Division by 0 is forbidden"
+        Right [AstInt _, AstInt 0] -> Left "Division by 0 is forbidden"
         Right [AstInt x, AstInt y] -> Right [AstInt x, AstInt y]
+        Right _ -> Left ("Bad number or type of arguments for " ++ _name)
+        Left err -> Left ("Error parsing arguments: " ++ err)
+
+checkBool :: String -> [Either String Ast] -> Either String [Ast]
+checkBool _name args =
+    case sequence args of
+        Right [x, y] -> Right [x, y]
+        Right [AstDefine _, _] -> Left "A define type cannot be compared"
+        Right [AstFunction _, _] -> Left "A function type cannot be compared"
+        Right [_, AstDefine _] -> Left "A define type cannot be compared"
+        Right [_, AstFunction _] -> Left "A function type cannot be compared"
         Right _ -> Left ("Bad number or type of arguments for " ++ _name)
         Left err -> Left ("Error parsing arguments: " ++ err)
 
@@ -76,4 +94,7 @@ evalAST (AstFunction (Function {func_name = "div", args = args})) =
 evalAST (AstFunction (Function {func_name = "mod", args = args})) =
     checkDivid "mod" args >>= \[AstInt x, AstInt y] ->
         Right (AstInt (x `mod` y))
+evalAST (AstFunction (Function {func_name = "eq?", args = args})) =
+    checkBool "eq?" args >>= \[x, y] ->
+        Right (AstBool (x == y))
 evalAST _ = Left "Error evaluating the Ast"
