@@ -25,7 +25,7 @@ glados = do
         Left err -> do
             putStrLn err
             exitWith (ExitFailure 1)
-        Right content -> -- use content as we want
+        Right content -> putStrLn content -- use content as we want
 
 processArgs :: [String] -> IO (Either String String)
 processArgs args = case args of
@@ -33,7 +33,9 @@ processArgs args = case args of
     ["--file", filePath] -> readFileEither filePath
     -- [x] -> --todo appeler SexprtoAST ou la fonction qu'il faut avec x en paramètre
     [] -> readStdin
-    _ -> return $ Left "Invalid arguments. Usage: -f <file> or --file <file>"
+    _ -> do
+        printUsage
+        return $ Left "Invalid arguments."
 
 readFileEither :: FilePath -> IO (Either String String)
 readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
@@ -44,5 +46,5 @@ readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
 readStdin :: IO (Either String String)
 readStdin = Right <$> getContents
 
-myfunction :: String -> IO ()
-myfunction = printf "Calling myfunction: %s\n"
+printUsage :: IO()
+printUsage = putStrLn "Usage: \n\tIf you want to evaluate a given expression:\n\t\t./glados your_expression\n\tIf you want to evaluate a given file:\n\t\t./glados [-f or --file] <file_name>\n\tIf you want to enter a REPL:\n\t\t./glados"
