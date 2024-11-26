@@ -6,7 +6,8 @@
 -}
 
 module AST
-    ( sexprToAST
+    ( sexprToAST,
+    evalAST
     ) where
 
 import SExprParser
@@ -80,6 +81,11 @@ evalAST (AstInt num) = Right (AstInt num)
 evalAST (AstBool True) = Right (AstBool True)
 evalAST (AstBool False) = Right (AstBool False)
 evalAST (AstStr str) = Right (AstStr str)
+evalAST (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST cond of
+    Right (AstBool True) -> evalAST _t
+    Right (AstBool False) -> evalAST _f
+    Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
+    Left err -> Left err
 evalAST (AstDefine (Define {name = _name, value = valueEither})) =
     case valueEither of
         Right value -> evalAST value >>= \evaluatedValue ->
