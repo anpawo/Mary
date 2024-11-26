@@ -6,8 +6,7 @@
 -}
 
 module AST
-    ( sexprToAST,
-      evalAST
+    ( sexprToAST
     ) where
 
 import SExprParser
