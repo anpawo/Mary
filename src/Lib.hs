@@ -39,9 +39,9 @@ gladosRepl = do
 parseToAST :: String -> IO()
 parseToAST content = case runParser parseSExpr content of
                 Left err -> putStrLn $ "Parsing error: " ++ err
-                Right (sexpr, _) -> case sexprToAST sexpr >>= evalAST of
+                Right (sexpr, _) -> case sexprToAST sexpr >>= evalAST [] of
                     Left err -> putStrLn $ "Error: " ++ err
-                    Right value -> print value
+                    Right (list_define, value) -> print value
 
 processArgs :: [String] -> IO (Either String String)
 processArgs args = case args of

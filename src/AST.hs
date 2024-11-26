@@ -105,40 +105,40 @@ checkBool _name args =
         Right _ -> Left ("Bad number or type of arguments for " ++ _name)
         Left err -> Left ("Error parsing arguments: " ++ err)
 
-evalAST :: AST -> Either String AST
-evalAST (AstInt num) = Right (AstInt num)
-evalAST (AstBool True) = Right (AstBool True)
-evalAST (AstBool False) = Right (AstBool False)
-evalAST (AstStr str) = Right (AstStr str)
-evalAST (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST cond of
-    Right (AstBool True) -> evalAST _t
-    Right (AstBool False) -> evalAST _f
+evalAST :: [Define] -> AST -> Either String ([Define], AST)
+evalAST list_define (AstInt num) = Right (list_define, AstInt num)
+evalAST list_define (AstBool True) = Right (list_define, AstBool True)
+evalAST list_define (AstBool False) = Right (list_define, AstBool False)
+evalAST list_define (AstStr str) = Right (list_define, AstStr str)
+evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST list_define cond of
+    Right (list_define, AstBool True) -> evalAST list_define _t
+    Right (list_define, AstBool False) -> evalAST list_define _f
     Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
     Left err -> Left err
-evalAST (AstDefine (Define {name = _name, value = valueEither})) =
+evalAST list_define (AstDefine (Define {name = _name, value = valueEither})) =
     case valueEither of
-        Right value -> evalAST value >>= \evaluatedValue ->
-            Right (AstDefine (Define _name (Right evaluatedValue)))
+        Right value -> evalAST list_define value >>= \(list_define, evaluatedValue) ->
+            Right (list_define, AstDefine (Define _name (Right evaluatedValue)))
         Left err -> Left ("Error evaluating define value: " ++ err)
-evalAST (AstFunction (Function {func_name = "+", args = args})) =
+evalAST list_define (AstFunction (Function {func_name = "+", args = args})) =
     checkFunction "+" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x + y))
-evalAST (AstFunction (Function {func_name = "*", args = args})) =
+        Right (list_define, AstInt (x + y))
+evalAST list_define (AstFunction (Function {func_name = "*", args = args})) =
     checkFunction "*" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x * y))
-evalAST (AstFunction (Function {func_name = "-", args = args})) =
+        Right (list_define, AstInt (x * y))
+evalAST list_define (AstFunction (Function {func_name = "-", args = args})) =
     checkFunction "-" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x - y))
-evalAST (AstFunction (Function {func_name = "<", args = args})) =
+        Right (list_define, AstInt (x - y))
+evalAST list_define (AstFunction (Function {func_name = "<", args = args})) =
     checkFunction "<" args >>= \[AstInt x, AstInt y] ->
-        Right (AstBool (x < y))
-evalAST (AstFunction (Function {func_name = "div", args = args})) =
+        Right (list_define, AstBool (x < y))
+evalAST list_define (AstFunction (Function {func_name = "div", args = args})) =
     checkDivid "div" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x `div` y))
-evalAST (AstFunction (Function {func_name = "mod", args = args})) =
+        Right (list_define, AstInt (x `div` y))
+evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) =
     checkDivid "mod" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x `mod` y))
-evalAST (AstFunction (Function {func_name = "eq?", args = args})) =
+        Right (list_define, AstInt (x `mod` y))
+evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) =
     checkBool "eq?" args >>= \[x, y] ->
-        Right (AstBool (x == y))
-evalAST _ = Left "Error evaluating the AST"
+        Right (list_define, AstBool (x == y))
+evalAST _ _ = Left "Error evaluating the AST"
