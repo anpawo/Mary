@@ -31,7 +31,7 @@ gladosRepl = do
     loop = do
         putStr "> "
         input <- getLine
-        if input == ":quit" then return ()
+        if input == "quit" then return ()
         else do
             parseToAST input
             loop
