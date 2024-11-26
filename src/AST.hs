@@ -43,6 +43,14 @@ checkFunction _name args =
         Right _ -> Left ("Bad number or type of arguments for " ++ _name)
         Left err -> Left ("Error parsing arguments: " ++ err)
 
+checkDivid :: String -> [Either String Ast] -> Either String [Ast]
+checkDivid _name args =
+    case sequence args of
+        Right [AstInt x, AstInt 0] -> Left "Division by 0 is forbidden"
+        Right [AstInt x, AstInt y] -> Right [AstInt x, AstInt y]
+        Right _ -> Left ("Bad number or type of arguments for " ++ _name)
+        Left err -> Left ("Error parsing arguments: " ++ err)
+
 evalAST :: Ast -> Either String Ast
 evalAST (AstInt num) = Right (AstInt num)
 evalAST (AstBool True) = Right (AstBool True)
@@ -62,4 +70,10 @@ evalAST (AstFunction (Function {func_name = "*", args = args})) =
 evalAST (AstFunction (Function {func_name = "-", args = args})) =
     checkFunction "-" args >>= \[AstInt x, AstInt y] ->
         Right (AstInt (x - y))
+evalAST (AstFunction (Function {func_name = "div", args = args})) =
+    checkDivid "div" args >>= \[AstInt x, AstInt y] ->
+        Right (AstInt (x / y))
+evalAST (AstFunction (Function {func_name = "mod", args = args})) =
+    checkDivid "mod" args >>= \[AstInt x, AstInt y] ->
+        Right (AstInt (x % y))
 evalAST _ = Left "Error evaluating the Ast"
