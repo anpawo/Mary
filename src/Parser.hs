@@ -4,6 +4,8 @@
 -- File description:
 -- glados
 -}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 
 module Parser
     ( Parser(..),
@@ -26,7 +28,7 @@ module Parser
 import Control.Applicative ( Alternative((<|>), empty) )
 import Data.List (isPrefixOf)
 
-newtype Parser a = Parser {
+data Parser a = Parser {
     runParser :: String -> Either String (a, String)
 }
 
