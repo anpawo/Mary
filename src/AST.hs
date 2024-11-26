@@ -72,8 +72,8 @@ evalAST (AstFunction (Function {func_name = "-", args = args})) =
         Right (AstInt (x - y))
 evalAST (AstFunction (Function {func_name = "div", args = args})) =
     checkDivid "div" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x / y))
+        Right (AstInt (x `div` y))
 evalAST (AstFunction (Function {func_name = "mod", args = args})) =
     checkDivid "mod" args >>= \[AstInt x, AstInt y] ->
-        Right (AstInt (x % y))
+        Right (AstInt (x `mod` y))
 evalAST _ = Left "Error evaluating the Ast"
