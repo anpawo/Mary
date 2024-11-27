@@ -9,8 +9,11 @@
 module AST
     ( sexprToAST,
         evalAST,
+        findDefine,
         AST(..),
-        Define,
+        Define(..),
+        Function(..),
+        Condition(..)
     ) where
 
 import SExprParser
@@ -112,40 +115,57 @@ findDefine list_define nameToFind =
         (Define _ defineValue : _) -> Right defineValue
         [] -> Left ("Define with name '" ++ nameToFind ++ "' not found")
 
-evalAST :: [Define] -> AST -> Either String ([Define], AST)
-evalAST list_define (AstInt num) = Right (list_define, AstInt num)
-evalAST list_define (AstBool True) = Right (list_define, AstBool True)
-evalAST list_define (AstBool False) = Right (list_define, AstBool False)
-evalAST list_define (AstStr str) = Right (list_define, AstStr str)
-evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST list_define cond of
-    Right (list_define, AstBool True) -> evalAST list_define _t
-    Right (list_define, AstBool False) -> evalAST list_define _f
-    Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
-    Left err -> Left err
-evalAST list_define (AstDefine def) = Right (list_define ++ [def], AstDefine def)
-evalAST list_define (AstFunction (Function {func_name = "+", args = args})) =
-    checkFunction "+" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstInt (x + y))
-evalAST list_define (AstFunction (Function {func_name = "*", args = args})) =
-    checkFunction "*" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstInt (x * y))
-evalAST list_define (AstFunction (Function {func_name = "-", args = args})) =
-    checkFunction "-" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstInt (x - y))
-evalAST list_define (AstFunction (Function {func_name = "<", args = args})) =
-    checkFunction "<" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstBool (x < y))
-evalAST list_define (AstFunction (Function {func_name = "div", args = args})) =
-    checkDivid "div" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstInt (x `div` y))
-evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) =
-    checkDivid "mod" args >>= \[AstInt x, AstInt y] ->
-        Right (list_define, AstInt (x `mod` y))
-evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) =
-    checkBool "eq?" args >>= \[x, y] ->
-        Right (list_define, AstBool (x == y))
-evalAST list_define (AstFunction (Function {func_name = name, args = args})) =
-    case findDefine list_define name of
-        Right value -> evalAST list_define value
-        Left err -> Left err
-evalAST _ _ = Left "Error evaluating the AST"
+evalAST :: [Define] -> Either String AST -> Either String ([Define], AST)
+evalAST list_define (Left err) = Left err
+evalAST list_define (Right ast) = case ast of
+    AstInt num -> Right (list_define, AstInt num)
+    AstBool True -> Right (list_define, AstBool True)
+    AstBool False -> Right (list_define, AstBool False)
+    AstStr str -> Right (list_define, AstStr str)
+    AstCondition (Condition {condition = cond, _true = _t, _false = _f}) ->
+        case evalAST list_define (Right cond) of
+            Right (list_define, AstBool True) -> evalAST list_define (Right _t)
+            Right (list_define, AstBool False) -> evalAST list_define (Right _f)
+            Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
+            Left err -> Left err
+    AstDefine def -> Right (list_define ++ [def], AstDefine def)
+    AstFunction (Function {func_name = "+", args = args}) ->
+        case checkFunction "+" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x + y))
+            _ -> Left "Unexpected error in addition"
+    AstFunction (Function {func_name = "*", args = args}) ->
+        case checkFunction "*" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x * y))
+            _ -> Left "Unexpected error in multiplication"
+    AstFunction (Function {func_name = "-", args = args}) ->
+        case checkFunction "-" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x - y))
+            _ -> Left "Unexpected error in subtraction"
+    AstFunction (Function {func_name = "<", args = args}) ->
+        case checkFunction "<" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstBool (x < y))
+            _ -> Left "Unexpected error in comparison"
+    AstFunction (Function {func_name = "div", args = args}) ->
+        case checkDivid "div" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x `div` y))
+            _ -> Left "Unexpected error in division"
+    AstFunction (Function {func_name = "mod", args = args}) ->
+        case checkDivid "mod" args of
+            Left err -> Left err
+            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x `mod` y))
+            _ -> Left "Unexpected error in modulo"
+    AstFunction (Function {func_name = "eq?", args = args}) ->
+        case checkBool "eq?" args of
+            Left err -> Left err
+            Right [x, y] -> Right (list_define, AstBool (x == y))
+            _ -> Left "Unexpected error in equality check"
+    AstFunction (Function {func_name = name, args = args}) ->
+        case findDefine list_define name of
+            Left err -> Left err
+            Right value -> evalAST list_define (Right value)
+    _ -> Left "Error evaluating the AST"
