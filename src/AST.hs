@@ -53,9 +53,9 @@ isValidCondition _ = False
 sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String AST
 sexprToASTCondition _condition _true _false =
     case (sexprToAST _condition, sexprToAST _true, sexprToAST _false) of
-        (Right condition, Right _true, Right _false) ->
-            if isValidCondition condition
-                then Right (AstCondition (Condition condition _true _false))
+        (Right _condition, Right _true, Right _false) ->
+            if isValidCondition _condition
+                then Right (AstCondition (Condition _condition _true _false))
                 else Left "Error in if condition: Condition must be a boolean or a function"
         (Left err, _, _) -> Left ("Error in if condition: " ++ err)
         (_, Left err, _) -> Left ("Error in if true branch: " ++ err)
