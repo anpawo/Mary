@@ -106,16 +106,17 @@ checkBool _name args =
         Right _ -> Left ("Bad number or type of arguments for " ++ _name)
         Left err -> Left ("Error parsing arguments: " ++ err)
 
+findDefine :: [Define] -> String -> Either String AST
+findDefine list_define nameToFind =
+    case filter (\def -> name def == nameToFind) list_define of
+        (Define _ defineValue : _) -> Right defineValue
+        [] -> Left ("Define with name '" ++ nameToFind ++ "' not found")
+
 evalAST :: [Define] -> AST -> Either String ([Define], AST)
 evalAST list_define (AstInt num) = Right (list_define, AstInt num)
 evalAST list_define (AstBool True) = Right (list_define, AstBool True)
 evalAST list_define (AstBool False) = Right (list_define, AstBool False)
 evalAST list_define (AstStr str) = Right (list_define, AstStr str)
-    -- case valueEither of
-    --     Right value -> evalAST list_define value >>= \(list_define, evaluatedValue) ->
-    --         Right (list_define, AstDefine (Define _name (Right evaluatedValue)))
-    --     Left err -> Left ("Error evaluating define value: " ++ err)
-
 evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST list_define cond of
     Right (list_define, AstBool True) -> evalAST list_define _t
     Right (list_define, AstBool False) -> evalAST list_define _f
@@ -143,4 +144,8 @@ evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) =
 evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) =
     checkBool "eq?" args >>= \[x, y] ->
         Right (list_define, AstBool (x == y))
+evalAST list_define (AstFunction (Function {func_name = name, args = args})) =
+    case findDefine list_define name of
+        Right value -> evalAST list_define value
+        Left err -> Left err
 evalAST _ _ = Left "Error evaluating the AST"
