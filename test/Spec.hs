@@ -8,6 +8,7 @@
 import Test.HUnit
 import Parser
 import SExprParser
+import AST
 
 testParseChar :: Test
 testParseChar = TestCase $ do
@@ -97,6 +98,68 @@ testParseSExprList  = TestCase $ do
     assertEqual "parseSExprList  on 'define x 5)'" (Left "( not found") (runParser parseSExprList  "define x 5)")
     assertEqual "parseSExprList  on '(define x 5'" (Left "Empty string") (runParser parseSExprList  "(define x 5") --Empty string apparait parce que la string est vide quand on cherche la parenthèse fermante
 
+testFindDefine :: Test
+testFindDefine = TestCase $ do
+    let defines = [Define "x" (AstInt 10), Define "y" (AstStr "hello")]
+    case findDefine defines "x" of
+        Right result ->
+            case result of
+                AstInt 10 -> return ()
+                _ -> assertFailure "findDefine returned an unexpected result for 'x'"
+        Left _ -> assertFailure "findDefine failed to find 'x'"
+    case findDefine defines "z" of
+        Left _ -> return ()
+        Right _ -> assertFailure "findDefine should fail for 'z'"
+
+testSexprToAST :: Test
+testSexprToAST = TestCase $ do
+    case sexprToAST (SExprAtomInt 42) of
+        Right (AstInt 42) -> return ()
+        _ -> assertFailure "sexprToAST failed to parse integer"
+    case sexprToAST (SExprAtomString "#t") of
+        Right (AstBool True) -> return ()
+        _ -> assertFailure "sexprToAST failed to parse boolean"
+    case sexprToAST (SExprList [SExprAtomString "define", SExprAtomString "x", SExprAtomInt 10]) of
+        Right (AstDefine (Define name value)) ->
+            if name == "x"
+                then case value of
+                    AstInt 10 -> return ()
+                    _ -> assertFailure "Unexpected value in define"
+                else assertFailure "Unexpected name in define"
+        _ -> assertFailure "sexprToAST failed to parse define"
+    case sexprToAST (SExprAtomString "#unknown") of
+        Right (AstStr "#unknown") -> return ()
+        _ -> assertFailure "sexprToAST should not fail for valid strings"
+
+testEvalAST :: Test
+testEvalAST = TestCase $ do
+    let defines = [Define "x" (AstInt 10), Define "y" (AstInt 20)]
+    case evalAST defines (AstInt 42) of
+        Right (_, AstInt 42) -> return ()
+        _ -> assertFailure "evalAST failed to evaluate integer"
+    case evalAST defines (AstCondition (Condition (AstBool True) (AstInt 10) (AstInt 20))) of
+        Right (_, AstInt 10) -> return ()
+        _ -> assertFailure "evalAST failed to evaluate true condition"
+    case evalAST defines (AstFunction (Function "+" [Right (AstInt 10), Right (AstInt 20)])) of
+        Right (_, AstInt 30) -> return ()
+        _ -> assertFailure "evalAST failed to evaluate addition"
+    case evalAST defines (AstFunction (Function "z" [])) of
+        Left _ -> return ()
+        _ -> assertFailure "evalAST should fail for undefined variable"
+
+testEvalASTWithDefine :: Test
+testEvalASTWithDefine = TestCase $ do
+    let defines = [Define "x" (AstInt 10)]
+    case evalAST defines (AstFunction (Function "+" [Right (AstInt 10), Right (AstInt 10)])) of
+        Right (_, AstInt 20) -> return ()
+        _ -> assertFailure "evalAST failed to evaluate addition with define"
+    case evalAST defines (AstDefine (Define "y" (AstInt 20))) of
+        Right (newDefines, _) ->
+            if length newDefines == 2
+                then return ()
+                else assertFailure "Define not added correctly"
+        _ -> assertFailure "evalAST failed to add new define"
+
 tests :: Test
 tests = TestList [
     TestLabel "testParseChar" testParseChar,
@@ -114,7 +177,10 @@ tests = TestList [
     TestLabel "testParsePrefix" testParsePrefix,
     TestLabel "testParseSExprAtomInt" testParseSExprAtomInt,
     TestLabel "testParseSExprAtomString" testParseSExprAtomString,
-    TestLabel "testParseSexprList" testParseSExprList
+    TestLabel "testFindDefine" testFindDefine,
+    TestLabel "testSexprToAST" testSexprToAST,
+    TestLabel "testEvalAST" testEvalAST,
+    TestLabel "testEvalASTWithDefine" testEvalASTWithDefine
   ]
 
 main :: IO ()
