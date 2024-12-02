@@ -140,7 +140,7 @@ testEvalAST = TestCase $ do
     case evalAST defines (AstCondition (Condition (AstBool True) (AstInt 10) (AstInt 20))) of
         Right (_, AstInt 10) -> return ()
         _ -> assertFailure "evalAST failed to evaluate true condition"
-    case evalAST defines (AstFunction (Function "+" [Right (AstInt 10), Right (AstInt 20)])) of
+    case evalAST defines (AstFunction (Function "+" [AstInt 10,AstInt 20])) of
         Right (_, AstInt 30) -> return ()
         _ -> assertFailure "evalAST failed to evaluate addition"
     case evalAST defines (AstFunction (Function "z" [])) of
@@ -150,7 +150,7 @@ testEvalAST = TestCase $ do
 testEvalASTWithDefine :: Test
 testEvalASTWithDefine = TestCase $ do
     let defines = [Define "x" (AstInt 10)]
-    case evalAST defines (AstFunction (Function "+" [Right (AstInt 10), Right (AstInt 10)])) of
+    case evalAST defines (AstFunction (Function "+" [AstInt 10, AstInt 10])) of
         Right (_, AstInt 20) -> return ()
         _ -> assertFailure "evalAST failed to evaluate addition with define"
     case evalAST defines (AstDefine (Define "y" (AstInt 20))) of
