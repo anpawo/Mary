@@ -42,7 +42,8 @@ instance Show AST where
     show (AstDefine d) = show d
     show (AstInt n) = show n
     show (AstStr s) = show s
-    show (AstBool b) = show b
+    show (AstBool True) = "#t"
+    show (AstBool False) = "#f"
     show (AstCondition c) = show c
 
 instance Eq AST where
