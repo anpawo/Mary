@@ -132,6 +132,13 @@ evalOpMathFunc list_define func_name args checkAstfunc opMathFunc = case checkAs
     Right [AstInt x, AstInt y] -> Right (list_define, AstInt (opMathFunc x y))
     _ -> Left ("Unexpected error in " ++ func_name)
 
+evalASTCondition :: [Define] -> Condition -> Either String ([Define], AST)
+evalASTCondition list_define (Condition {condition = cond, _true = _t, _false = _f}) = case evalAST list_define cond of
+    Right (list_define, AstBool True) -> evalAST list_define _t
+    Right (list_define, AstBool False) -> evalAST list_define _f
+    Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
+    Left err -> Left err
+
 evalAST :: [Define] -> AST -> Either String ([Define], AST)
 evalAST list_define (AstInt num) = Right (list_define, AstInt num)
 evalAST list_define (AstBool True) = Right (list_define, AstBool True)
@@ -139,11 +146,7 @@ evalAST list_define (AstBool False) = Right (list_define, AstBool False)
 evalAST list_define (AstStr str) = case findDefine list_define str of
     Left err -> Left err
     Right value -> evalAST list_define value
-evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _false = _f})) = case evalAST list_define cond of
-    Right (list_define, AstBool True) -> evalAST list_define _t
-    Right (list_define, AstBool False) -> evalAST list_define _f
-    Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
-    Left err -> Left err
+evalAST list_define (AstCondition cond) = evalASTCondition list_define cond
 evalAST list_define (AstDefine def) = Right (list_define ++ [def], AstDefine def)
 evalAST list_define (AstFunction (Function {func_name = "+", args = args})) = (evalOpMathFunc list_define "+" args checkFunction (+))
 evalAST list_define (AstFunction (Function {func_name = "-", args = args})) = (evalOpMathFunc list_define "-" args checkFunction (-))
