@@ -19,6 +19,10 @@ module AST
 import SExprParser
 import Control.Applicative()
 
+type OpMathFunc = Int -> Int -> Int
+
+type CheckASTFunc = [Define] -> String -> [AST] -> Either String [AST]
+
 data Define = Define { name :: String, value :: AST } deriving (Show)
 
 data Function = Function { func_name :: String, args :: [AST] } deriving (Show)
@@ -122,6 +126,12 @@ findDefine list_define nameToFind =
         (Define _ defineValue : _) -> Right defineValue
         [] -> Left ("Define with name '" ++ nameToFind ++ "' not found")
 
+evalOpMathFunc :: [Define] -> String -> [AST] -> CheckASTFunc -> OpMathFunc -> Either String ([Define], AST)
+evalOpMathFunc list_define func_name args checkAstfunc opMathFunc = case checkAstfunc list_define func_name args of
+    Left err -> Left err
+    Right [AstInt x, AstInt y] -> Right (list_define, AstInt (opMathFunc x y))
+    _ -> Left ("Unexpected error in " ++ func_name)
+
 evalAST :: [Define] -> AST -> Either String ([Define], AST)
 evalAST list_define (AstInt num) = Right (list_define, AstInt num)
 evalAST list_define (AstBool True) = Right (list_define, AstBool True)
@@ -135,36 +145,17 @@ evalAST list_define (AstCondition (Condition {condition = cond, _true = _t, _fal
     Right _ -> Left "Error evaluating the AST: a condition is required to return a bool"
     Left err -> Left err
 evalAST list_define (AstDefine def) = Right (list_define ++ [def], AstDefine def)
-evalAST list_define (AstFunction (Function {func_name = "+", args = args})) = case checkFunction list_define "+" args of
-    Left err -> Left err
-    Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x + y))
-    _ -> Left "Unexpected error in addition"
-evalAST list_define (AstFunction (Function {func_name = "*", args = args})) = case checkFunction list_define "*" args of
-        Left err -> Left err
-        Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x * y))
-        _ -> Left "Unexpected error in multiplication"
-evalAST list_define (AstFunction (Function {func_name = "-", args = args})) = case checkFunction list_define "-" args of
-            Left err -> Left err
-            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x - y))
-            _ -> Left "Unexpected error in subtraction"
+evalAST list_define (AstFunction (Function {func_name = "+", args = args})) = (evalOpMathFunc list_define "+" args checkFunction (+))
+evalAST list_define (AstFunction (Function {func_name = "-", args = args})) = (evalOpMathFunc list_define "-" args checkFunction (-))
+evalAST list_define (AstFunction (Function {func_name = "*", args = args})) = (evalOpMathFunc list_define "*" args checkFunction (*))
+evalAST list_define (AstFunction (Function {func_name = "div", args = args})) = (evalOpMathFunc list_define "div" args checkDivid div)
+evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) = (evalOpMathFunc list_define "mod" args checkDivid mod)
 evalAST list_define (AstFunction (Function {func_name = "<", args = args})) = case checkFunction list_define "<" args of
             Left err -> Left err
             Right [AstInt x, AstInt y] -> Right (list_define, AstBool (x < y))
             _ -> Left "Unexpected error in comparison"
-evalAST list_define (AstFunction (Function {func_name = "div", args = args})) = case checkDivid list_define "div" args of
-            Left err -> Left err
-            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x `div` y))
-            _ -> Left "Unexpected error in division"
-evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) = case checkDivid list_define "mod" args of
-            Left err -> Left err
-            Right [AstInt x, AstInt y] -> Right (list_define, AstInt (x `mod` y))
-            _ -> Left "Unexpected error in modulo"
 evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = case checkBool "eq?" args of
             Left err -> Left err
             Right [x, y] -> Right (list_define, AstBool (x == y))
             _ -> Left "Unexpected error in equality check"
--- evalAST list_define AstFunction (Function {func_name = name, args = args}) =
---         case findDefine list_define name of
---             Left err -> Left err
---             Right value -> evalAST list_define (Right value)
 evalAST _ _ = Left "Error evaluating the AST"
