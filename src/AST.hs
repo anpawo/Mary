@@ -112,13 +112,13 @@ checkDivid list_define _name [x , y] = case evalAST list_define x of
     Left _ -> Left ("Bad number or type of arguments for " ++ _name) 
 checkDivid _ _name _ = Left ("Bad number or type of arguments for " ++ _name)
 
-checkBool :: String -> [AST] -> Either String [AST]
-checkBool _ [x, y] = Right [x, y]
-checkBool _ [AstDefine _, _] = Left "A define type cannot be compared"
-checkBool _ [AstFunction _, _] = Left "A function type cannot be compared"
-checkBool _ [_, AstDefine _] = Left "A define type cannot be compared"
-checkBool _ [_, AstFunction _] = Left "A function type cannot be compared"
-checkBool _name _ = Left ("Bad number or type of arguments for " ++ _name)
+checkBool :: [Define] -> [AST] -> Either String [AST]
+checkBool list_define [x, y] = case evalAST list_define x of
+    Right (_, val_x) -> case evalAST list_define y of
+        Right (_, val_y) -> Right [val_x, val_y]
+        Left err -> Left err
+    Left err -> Left err
+checkBool _ _ = Left "need only 2 arguments"
 
 findDefine :: [Define] -> String -> Either String AST
 findDefine list_define nameToFind =
@@ -157,7 +157,7 @@ evalAST list_define (AstFunction (Function {func_name = "<", args = args})) = ca
             Left err -> Left err
             Right [AstInt x, AstInt y] -> Right (list_define, AstBool (x < y))
             _ -> Left "Unexpected error in comparison"
-evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = case checkBool "eq?" args of
+evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = case checkBool list_define args of
             Left err -> Left err
             Right [x, y] -> Right (list_define, AstBool (x == y))
             _ -> Left "Unexpected error in equality check"
