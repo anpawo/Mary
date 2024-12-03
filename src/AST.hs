@@ -108,10 +108,8 @@ sexprToAST (SExprList [SExprAtomString "lambda", SExprList params, SExprList bod
     case mapM extractParam params of
         Just paramList -> case sexprToAST (SExprList body) of
             Right (AstFunction parsedBody) ->
-                let lambdaArgCount = length paramList
-                    bodyArgCount = countFunctionArgs (AstFunction parsedBody)
-                in if lambdaArgCount == bodyArgCount
-                    then Right (AstLambda (Lambda lambdaArgCount (AstFunction parsedBody)))
+                if length paramList == countFunctionArgs (AstFunction parsedBody)
+                    then Right (AstLambda (Lambda (length paramList) (AstFunction parsedBody)))
                     else Left "Error: Number of lambda arguments does not match the number of arguments in the body"
             Right _ -> Left "Lambda body must be a func"
             Left err -> Left ("Error in lambda body: " ++ err)
@@ -184,11 +182,11 @@ evalAST list_define (AstStr str) = case findDefine list_define str of
     Right value -> evalAST list_define value
 evalAST list_define (AstCondition cond) = evalASTCondition list_define cond
 evalAST list_define (AstDefine def) = Right (list_define ++ [def], AstDefine def)
-evalAST list_define (AstFunction (Function {func_name = "+", args = args})) = (evalOpMathFunc list_define "+" args checkFunction (+))
-evalAST list_define (AstFunction (Function {func_name = "-", args = args})) = (evalOpMathFunc list_define "-" args checkFunction (-))
-evalAST list_define (AstFunction (Function {func_name = "*", args = args})) = (evalOpMathFunc list_define "*" args checkFunction (*))
-evalAST list_define (AstFunction (Function {func_name = "div", args = args})) = (evalOpMathFunc list_define "div" args checkDivid div)
-evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) = (evalOpMathFunc list_define "mod" args checkDivid mod)
+evalAST list_define (AstFunction (Function {func_name = "+", args = args})) = evalOpMathFunc list_define "+" args checkFunction (+)
+evalAST list_define (AstFunction (Function {func_name = "-", args = args})) = evalOpMathFunc list_define "-" args checkFunction (-)
+evalAST list_define (AstFunction (Function {func_name = "*", args = args})) = evalOpMathFunc list_define "*" args checkFunction (*)
+evalAST list_define (AstFunction (Function {func_name = "div", args = args})) = evalOpMathFunc list_define "div" args checkDivid div
+evalAST list_define (AstFunction (Function {func_name = "mod", args = args})) = evalOpMathFunc list_define "mod" args checkDivid mod
 evalAST list_define (AstFunction (Function {func_name = "<", args = args})) = case checkFunction list_define "<" args of
             Left err -> Left err
             Right [AstInt x, AstInt y] -> Right (list_define, AstBool (x < y))
