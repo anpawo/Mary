@@ -27,7 +27,7 @@ data Define = Define { name :: String, value :: AST } deriving (Show)
 
 data Function = Function { func_name :: String, args :: [AST] } deriving (Show)
 
-data Lambda = Lambda { params :: [AST] , body :: AST } deriving (Show)
+data Lambda = Lambda { nb_args :: Int , body :: AST } deriving (Show)
 
 data Condition = Condition { condition :: AST, _true :: AST, _false :: AST } deriving (Show)
 
@@ -76,6 +76,13 @@ countFunctionArgs :: AST -> Int
 countFunctionArgs (AstFunction (Function _ args)) = length args
 countFunctionArgs _ = 0
 
+extractParam :: SExpr -> Maybe AST
+extractParam (SExprAtomString param) = Just (AstStr param)
+extractParam _ = Nothing
+
+changeValLambda :: AST -> [AST] -> AST
+changeValLambda (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) new_param = (AstLambda (Lambda nb_args (AstFunction (Function _name new_param))))
+
 sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String AST
 sexprToASTCondition _condition _true _false =
     case (sexprToAST _condition, sexprToAST _true, sexprToAST _false) of
@@ -97,24 +104,29 @@ sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, _value])
         Right astValue -> Right (AstDefine (Define _name astValue))
         Left err -> Left ("Error in define value: " ++ err)
 sexprToAST (SExprList [SExprAtomString "if", _condition, _true, _false]) = sexprToASTCondition _condition _true _false
-sexprToAST (SExprList (SExprAtomString "lambda" : SExprList params : SExprList body: values)) =
+sexprToAST (SExprList [SExprAtomString "lambda", SExprList params, SExprList body]) =
     case mapM extractParam params of
         Just paramList -> case sexprToAST (SExprList body) of
             Right (AstFunction parsedBody) ->
                 let lambdaArgCount = length paramList
                     bodyArgCount = countFunctionArgs (AstFunction parsedBody)
                 in if lambdaArgCount == bodyArgCount
-                    then Right (AstLambda (Lambda paramList (AstFunction parsedBody)))
+                    then Right (AstLambda (Lambda lambdaArgCount (AstFunction parsedBody)))
                     else Left "Error: Number of lambda arguments does not match the number of arguments in the body"
             Right _ -> Left "Lambda body must be a func"
             Left err -> Left ("Error in lambda body: " ++ err)
         Nothing -> Left "Error parsing lambda parameters"
-  where
-    extractParam (SExprAtomString param) = Just (AstStr param)
-    extractParam _ = Nothing
 sexprToAST (SExprList (SExprAtomString _name : args)) = case sexprToASTList args of
     Right parsedArgs -> Right (AstFunction (Function _name parsedArgs))
     Left err -> Left ("Error in function parse args" ++ err)
+sexprToAST (SExprList (SExprList lambda : values)) = case sexprToAST (SExprList lambda) of
+    Right (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) ->
+        if length values == nb_args
+                then case sexprToASTList values of
+                    Right parsedValues -> Right (changeValLambda (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) parsedValues) 
+                    Left err -> Left ("Error in parsing values: " ++ err)
+                else Left "Error: Number of arguments provided does not match the lambda argument count"
+    Left err -> Left err
 sexprToAST _ = Left "Unrecognized SExpr"
 
 checkFunction :: [Define] -> String -> [AST] -> Either String [AST]
@@ -185,5 +197,5 @@ evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = 
             Left err -> Left err
             Right [x, y] -> Right (list_define, AstBool (x == y))
             _ -> Left "Unexpected error in equality check"
-evalAST list_define (AstLambda lambda) = Right (list_define, AstLambda lambda)
+evalAST list_define (AstLambda (Lambda _ func)) = evalAST list_define func
 evalAST _ _ = Left "Error evaluating the AST"
