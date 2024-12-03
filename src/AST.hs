@@ -198,4 +198,7 @@ evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = 
             Right [x, y] -> Right (list_define, AstBool (x == y))
             _ -> Left "Unexpected error in equality check"
 evalAST list_define (AstLambda (Lambda _ func)) = evalAST list_define func
+evalAST list_define (AstFunction (Function {func_name = _name, args = args})) = case findDefine list_define _name of
+    Left err -> Left err
+    Right value -> evalAST list_define (changeValLambda value args)
 evalAST _ _ = Left "Error evaluating the AST"
