@@ -27,15 +27,12 @@ data Define = Define { name :: String, value :: AST } deriving (Show)
 
 data Function = Function { func_name :: String, args :: [AST] } deriving (Show)
 
-data Lambda = Lambda { arguments :: [String] , body :: AST } deriving (Show)
-
-data Apply = Apply { function :: AST , arg_list :: [AST] } deriving (Show)
+data Lambda = Lambda { params :: [AST] , body :: AST } deriving (Show)
 
 data Condition = Condition { condition :: AST, _true :: AST, _false :: AST } deriving (Show)
 
 data AST = AstFunction Function |
     AstLambda Lambda |
-    AstApply Apply |
     AstDefine Define |
     AstInt Int |
     AstStr String |
@@ -52,7 +49,6 @@ instance Show AST where
     show (AstBool True) = "#t"
     show (AstBool False) = "#f"
     show (AstCondition c) = show c
-    show (AstApply a) = show a
 
 instance Eq AST where
     (==) :: AST -> AST -> Bool
@@ -76,6 +72,10 @@ isValidCondition (AstBool _) = True
 isValidCondition (AstFunction _) = True
 isValidCondition _ = False
 
+countFunctionArgs :: AST -> Int
+countFunctionArgs (AstFunction (Function _ args)) = length args
+countFunctionArgs _ = 0
+
 sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String AST
 sexprToASTCondition _condition _true _false =
     case (sexprToAST _condition, sexprToAST _true, sexprToAST _false) of
@@ -97,23 +97,24 @@ sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, _value])
         Right astValue -> Right (AstDefine (Define _name astValue))
         Left err -> Left ("Error in define value: " ++ err)
 sexprToAST (SExprList [SExprAtomString "if", _condition, _true, _false]) = sexprToASTCondition _condition _true _false
-sexprToAST (SExprList (SExprAtomString _name : args)) = case sexprToASTList args of
-    Right parsedArgs -> Right (AstFunction (Function _name parsedArgs))
-    Left err -> Left ("Error in function parse args" ++ err)
-sexprToAST (SExprList (SExprAtomString "lambda" : SExprList params : body)) =
+sexprToAST (SExprList (SExprAtomString "lambda" : SExprList params : SExprList body: values)) =
     case mapM extractParam params of
-        Just paramList -> case mapM sexprToAST body of
-            Right [parsedBody] -> Right (AstLambda (Lambda paramList parsedBody))
-            Right _ -> Left "Lambda body must have exactly one expression"
+        Just paramList -> case sexprToAST (SExprList body) of
+            Right (AstFunction parsedBody) ->
+                let lambdaArgCount = length paramList
+                    bodyArgCount = countFunctionArgs (AstFunction parsedBody)
+                in if lambdaArgCount == bodyArgCount
+                    then Right (AstLambda (Lambda paramList (AstFunction parsedBody)))
+                    else Left "Error: Number of lambda arguments does not match the number of arguments in the body"
+            Right _ -> Left "Lambda body must be a func"
             Left err -> Left ("Error in lambda body: " ++ err)
         Nothing -> Left "Error parsing lambda parameters"
   where
-    extractParam (SExprAtomString param) = Just param
+    extractParam (SExprAtomString param) = Just (AstStr param)
     extractParam _ = Nothing
-sexprToAST (SExprList (func : args)) = do
-    parsedFunc <- sexprToAST func
-    parsedArgs <- sexprToASTList args
-    Right (AstApply (Apply parsedFunc parsedArgs))
+sexprToAST (SExprList (SExprAtomString _name : args)) = case sexprToASTList args of
+    Right parsedArgs -> Right (AstFunction (Function _name parsedArgs))
+    Left err -> Left ("Error in function parse args" ++ err)
 sexprToAST _ = Left "Unrecognized SExpr"
 
 checkFunction :: [Define] -> String -> [AST] -> Either String [AST]
@@ -185,13 +186,4 @@ evalAST list_define (AstFunction (Function {func_name = "eq?", args = args})) = 
             Right [x, y] -> Right (list_define, AstBool (x == y))
             _ -> Left "Unexpected error in equality check"
 evalAST list_define (AstLambda lambda) = Right (list_define, AstLambda lambda)
-evalAST list_define (AstApply (Apply {function = AstLambda (Lambda {arguments = params, body = body}), arg_list = args})) =
-    if length params /= length args
-        then Left "Error: Incorrect number of arguments supplied to lambda"
-        else do
-            evaluatedArgs <- mapM (evalAST list_define) args
-            let argValues = map snd evaluatedArgs
-            let newDefines = zipWith Define params argValues
-            let extendedEnv = list_define ++ newDefines
-            evalAST extendedEnv body
 evalAST _ _ = Left "Error evaluating the AST"
