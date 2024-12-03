@@ -81,7 +81,7 @@ extractParam (SExprAtomString param) = Just (AstStr param)
 extractParam _ = Nothing
 
 changeValLambda :: AST -> [AST] -> AST
-changeValLambda (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) new_param = (AstLambda (Lambda nb_args (AstFunction (Function _name new_param))))
+changeValLambda (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) new_param = AstLambda (Lambda nb_args (AstFunction (Function _name new_param)))
 
 sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String AST
 sexprToASTCondition _condition _true _false =
