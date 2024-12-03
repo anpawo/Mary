@@ -103,6 +103,13 @@ sexprToAST (SExprList [SExprAtomString "define", SExprAtomString _name, _value])
     case sexprToAST _value of
         Right astValue -> Right (AstDefine (Define _name astValue))
         Left err -> Left ("Error in define value: " ++ err)
+sexprToAST (SExprList [SExprAtomString "define", SExprList _named_func, SExprList _func]) =
+    case sexprToAST (SExprList _named_func) of
+        Right (AstFunction (Function _real_name _real_name_args)) -> case sexprToAST (SExprList _func) of
+            Right (AstFunction (Function _val_func _val_func_args)) -> if (length _real_name_args) == (length _val_func_args)
+                then Right (AstDefine (Define _real_name (AstLambda (Lambda (length _real_name_args) (AstFunction (Function _val_func _val_func_args))))))
+                else Left "error need same nb args"
+        Left err -> Left ("Error in define value: " ++ err)
 sexprToAST (SExprList [SExprAtomString "if", _condition, _true, _false]) = sexprToASTCondition _condition _true _false
 sexprToAST (SExprList [SExprAtomString "lambda", SExprList params, SExprList body]) =
     case mapM extractParam params of
