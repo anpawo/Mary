@@ -80,10 +80,6 @@ extractParam :: SExpr -> Maybe AST
 extractParam (SExprAtomString param) = Just (AstStr param)
 extractParam _ = Nothing
 
-<<<<<<< HEAD
-changeValLambda :: AST -> [AST] -> AST
-changeValLambda (AstLambda (Lambda nb_args (AstFunction (Function _name parsedBody)))) new_param = AstLambda (Lambda nb_args (AstFunction (Function _name new_param)))
-=======
 replaceParam :: AST -> AST -> AST -> AST
 replaceParam target param value
   | target == param = value
@@ -100,7 +96,6 @@ changeValLambda (AstLambda (Lambda params body)) newParams =
     then Right (foldl (\acc (param, value) -> replaceParam acc param value) body (zip params newParams))
     else Left "Error: Number of parameters and values do not match"
 changeValLambda ast _ = Right ast
->>>>>>> change_val_lambda
 
 sexprToASTCondition :: SExpr -> SExpr -> SExpr -> Either String AST
 sexprToASTCondition _condition _true _false =
