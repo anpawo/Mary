@@ -224,6 +224,7 @@ evalAST :: [Define] -> AST -> Either String ([Define], AST)
 evalAST list_define (AstInt num) = Right (list_define, AstInt num)
 evalAST list_define (AstBool True) = Right (list_define, AstBool True)
 evalAST list_define (AstBool False) = Right (list_define, AstBool False)
+evalAST list_define (AstStr "") = Right (list_define, AstStr "")
 evalAST list_define (AstStr str) = case findDefine list_define str of
     Left err -> Left err
     Right value -> evalAST list_define value
