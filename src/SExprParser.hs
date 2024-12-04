@@ -45,7 +45,7 @@ parseSExprAtomInt = Parser fc where
 parseSExprAtomString :: Parser SExpr
 parseSExprAtomString = Parser fc where
     fc str = case runParser (parseMany (parseChar ' ')) str of
-        Right (_, rest) -> case runParser (parseMany (parseNotTheseChars " )")) rest of
+        Right (_, rest) -> case runParser (parseMany (parseNotTheseChars " \n\t)")) rest of
             Right (str, rest1) -> Right (SExprAtomString str, rest1)
             Left _ -> Left "Fail"
         Left _  -> Left "Fail"
