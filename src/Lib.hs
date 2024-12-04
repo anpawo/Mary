@@ -36,8 +36,13 @@ gladosRepl list_define = do
                 putStrLn err
                 gladosRepl list_define
             Right (new_list_define, value) -> do
-                print value
+                valuePrint value
                 gladosRepl new_list_define
+
+valuePrint :: AST -> IO()
+valuePrint value = case value of
+  AstDefine _ -> return ()
+  _ -> print value
 
 parseToAST :: [Define] -> String -> Either String ([Define], AST)
 parseToAST list_define content = case runParser parseSExpr content of
@@ -55,7 +60,7 @@ parseToASTStdin list_define content = case runParser parseSExpr content of
   Right (sexpr, rest) -> case sexprToAST sexpr >>= evalAST list_define of
     Left err -> print $ "Error: " ++ err
     Right (new_list_define, value) -> do
-      print value
+      valuePrint value
       parseToASTStdin new_list_define rest
 
 processArgs :: [String] -> IO (Either String String)
@@ -64,9 +69,7 @@ processArgs args = case args of
     printUsage
     return $ Left "End of the help text"
   ["-f", filePath] -> readFileEither filePath
-  [] -> do
-    input <- getContents
-    return $ Right input
+  [] -> do Right <$> getContents
   ["-repl"] -> do
     putStrLn "Welcome to GLaDOS REPL. Type 'quit' to exit."
     gladosRepl []
