@@ -100,52 +100,125 @@ testParseSExprList  = TestCase $ do
 
 testFindDefine :: Test
 testFindDefine = TestCase $ do
-    let defines = [Define "x" (AstInt 10), Define "y" (AstStr "hello")]
-    case findDefine defines "x" of
-        Right result ->
-            case result of
-                AstInt 10 -> return ()
-                _ -> assertFailure "findDefine returned an unexpected result for 'x'"
-        Left _ -> assertFailure "findDefine failed to find 'x'"
-    case findDefine defines "z" of
-        Left _ -> return ()
-        Right _ -> assertFailure "findDefine should fail for 'z'"
+    let defs = [Define "x" (AstInt 10), Define "y" (AstBool True)]
+    case findDefine defs "x" of
+        Right (AstInt 10) -> return ()
+        _ -> assertFailure "Find existing definition: Expected AstInt 10"
+    case findDefine defs "z" of
+        Left err | err == "Define with name 'z' not found" -> return ()
+        _ -> assertFailure "Fail to find non-existent definition: Expected error 'Define with name 'z' not found'"
 
 testSexprToAST :: Test
 testSexprToAST = TestCase $ do
     case sexprToAST (SExprAtomInt 42) of
         Right (AstInt 42) -> return ()
-        _ -> assertFailure "sexprToAST failed to parse integer"
+        _ -> assertFailure "Convert SExprAtomInt 42: Expected AstInt 42"
     case sexprToAST (SExprAtomString "#t") of
         Right (AstBool True) -> return ()
-        _ -> assertFailure "sexprToAST failed to parse boolean"
-    case sexprToAST (SExprList [SExprAtomString "define", SExprAtomString "x", SExprAtomInt 10]) of
-        Right (AstDefine (Define name value)) ->
-            if name == "x"
-                then case value of
-                    AstInt 10 -> return ()
-                    _ -> assertFailure "Unexpected value in define"
-                else assertFailure "Unexpected name in define"
-        _ -> assertFailure "sexprToAST failed to parse define"
-    case sexprToAST (SExprAtomString "#unknown") of
-        Right (AstStr "#unknown") -> return ()
-        _ -> assertFailure "sexprToAST should not fail for valid strings"
+        _ -> assertFailure "Convert SExprAtomString '#t': Expected AstBool True"
+    case sexprToAST (SExprAtomString "#f") of
+        Right (AstBool False) -> return ()
+        _ -> assertFailure "Convert SExprAtomString '#f': Expected AstBool False"
+    case sexprToAST (SExprList [SExprAtomString "+", SExprAtomInt 1, SExprAtomInt 2]) of
+        Right (AstFunction (Function "+" [AstInt 1, AstInt 2])) -> return ()
+        _ -> assertFailure "Convert simple function call (+ 1 2): Expected AstFunction '+' with arguments [AstInt 1, AstInt 2]"
+    case sexprToAST (SExprList [SExprAtomString "if", SExprAtomString "#t", SExprAtomInt 1, SExprAtomInt 0]) of
+        Right (AstCondition (Condition (AstBool True) (AstInt 1) (AstInt 0))) -> return ()
+        _ -> assertFailure "Convert if condition: Expected AstCondition with correct branches"
+    case sexprToAST (SExprList [SExprAtomString "define", SExprAtomString "x", SExprAtomInt 5]) of
+        Right (AstDefine (Define "x" (AstInt 5))) -> return ()
+        _ -> assertFailure "Convert define expression: Expected AstDefine with name 'x' and value AstInt 5"
+    case sexprToAST (SExprList [SExprAtomString "lambda", SExprList [SExprAtomString "x"],
+                                SExprList [SExprAtomString "+", SExprAtomString "x", SExprAtomInt 1]]) of
+        Right (AstLambda (Lambda [AstStr "x"] (AstFunction (Function "+" [AstStr "x", AstInt 1])))) -> return ()
+        _ -> assertFailure "Convert lambda expression: Expected correct AstLambda representation"
 
 testEvalAST :: Test
 testEvalAST = TestCase $ do
-    let defines = [Define "x" (AstInt 10), Define "y" (AstInt 20)]
-    case evalAST defines (AstInt 42) of
-        Right (_, AstInt 42) -> return ()
-        _ -> assertFailure "evalAST failed to evaluate integer"
-    case evalAST defines (AstCondition (Condition (AstBool True) (AstInt 10) (AstInt 20))) of
-        Right (_, AstInt 10) -> return ()
-        _ -> assertFailure "evalAST failed to evaluate true condition"
-    case evalAST defines (AstFunction (Function "+" [AstInt 10,AstInt 20])) of
-        Right (_, AstInt 30) -> return ()
-        _ -> assertFailure "evalAST failed to evaluate addition"
-    case evalAST defines (AstFunction (Function "z" [])) of
-        Left _ -> return ()
-        _ -> assertFailure "evalAST should fail for undefined variable"
+    case evalAST [] (AstInt 42) of
+        Right (env, AstInt val)
+            | null env && val == 42 -> return ()
+        _ -> assertFailure "Eval integer: Expected ([], AstInt 42)"
+    case evalAST [] (AstCondition (Condition (AstBool True) (AstInt 1) (AstInt 0))) of
+        Right (env, AstInt val)
+            | null env && val == 1 -> return ()
+        _ -> assertFailure "Eval condition (if #t 1 0): Expected ([], AstInt 1)"
+    case evalAST [] (AstFunction (Function "+" [AstInt 1, AstInt 2])) of
+        Right (env, AstInt val)
+            | null env && val == 3 -> return ()
+        _ -> assertFailure "Eval addition (+ 1 2): Expected ([], AstInt 3)"
+    let defs = [Define "x" (AstInt 10)]
+    case evalAST defs (AstStr "x") of
+        Right (defs', AstInt val)
+            | all (checkDefine defs) defs' && val == 10 -> return ()
+        _ -> assertFailure "Eval variable 'x': Expected ([Define \"x\" (AstInt 10)], AstInt 10)"
+    case evalAST [] (AstStr "y") of
+        Left err
+            | err == "Define with name 'y' not found" -> return ()
+        _ -> assertFailure "Error for undefined variable 'y': Expected error 'Define with name 'y' not found'"
+
+checkDefine :: [Define] -> Define -> Bool
+checkDefine defs (Define name value) =
+    any (\(Define n v) -> n == name && compareAst v value) defs
+
+compareAst :: AST -> AST -> Bool
+compareAst (AstInt x) (AstInt y) = x == y
+compareAst (AstBool x) (AstBool y) = x == y
+compareAst (AstStr x) (AstStr y) = x == y
+compareAst (AstFunction (Function f1 args1)) (AstFunction (Function f2 args2)) =
+    f1 == f2 && all (uncurry compareAst) (zip args1 args2)
+compareAst (AstCondition (Condition c1 t1 e1)) (AstCondition (Condition c2 t2 e2)) =
+    compareAst c1 c2 && compareAst t1 t2 && compareAst e1 e2
+compareAst (AstDefine (Define name1 value1)) (AstDefine (Define name2 value2)) =
+    name1 == name2 && compareAst value1 value2
+compareAst _ _ = False
+
+testCountFunctionArgs :: Test
+testCountFunctionArgs = TestCase $ do
+    let func = AstFunction (Function "f" [AstInt 1, AstInt 2])
+    assertEqual "Count arguments of a function"
+        2
+        (countFunctionArgs func)
+    assertEqual "Count arguments of non-function AST"
+        0
+        (countFunctionArgs (AstInt 42))
+
+testIsValidCondition :: Test
+testIsValidCondition = TestCase $ do
+    assertBool "Boolean condition is valid" (isValidCondition (AstBool True))
+    assertBool "Function condition is valid" (isValidCondition (AstFunction (Function "f" [])))
+    assertBool "Non-condition AST is invalid" (not $ isValidCondition (AstInt 42))
+
+testReplaceParam :: Test
+testReplaceParam = TestCase $ do
+    let target = AstFunction (Function "f" [AstStr "x"])
+        param = AstStr "x"
+        value = AstInt 42
+        expected = AstFunction (Function "f" [AstInt 42])
+        result = replaceParam target param value
+    case result of
+        AstFunction (Function fName args)
+            | fName == "f" && args == [AstInt 42] -> return ()
+        _ -> assertFailure "Replace parameter in function arguments: Result does not match expected output"
+
+testChangeValLambda :: Test
+testChangeValLambda = TestCase $ do
+    let lambda = AstLambda (Lambda [AstStr "x"] (AstFunction (Function "f" [AstStr "x"])))
+        newValues = [AstInt 42]
+        expected = Right (AstFunction (Function "f" [AstInt 42]))
+        result = changeValLambda lambda newValues
+    case result of
+        Right (AstFunction (Function fName args))
+            | fName == "f" && args == [AstInt 42] -> return ()
+        _ -> assertFailure "Change parameter value in lambda: Result does not match expected output"
+
+testEvalOpMathFunc :: Test
+testEvalOpMathFunc = TestCase $ do
+    let result = evalOpMathFunc [] "+" [AstInt 1, AstInt 2] checkFunction (+)
+    case result of
+        Right ([], AstInt 3) -> return ()
+        _ -> assertFailure "Evaluate addition operation: Result does not match expected output"
+
 
 testEvalASTWithDefine :: Test
 testEvalASTWithDefine = TestCase $ do
@@ -180,7 +253,12 @@ tests = TestList [
     TestLabel "testFindDefine" testFindDefine,
     TestLabel "testSexprToAST" testSexprToAST,
     TestLabel "testEvalAST" testEvalAST,
-    TestLabel "testEvalASTWithDefine" testEvalASTWithDefine
+    TestLabel "testEvalASTWithDefine" testEvalASTWithDefine,
+    TestLabel "testCountFunctionArgs" testCountFunctionArgs,
+    TestLabel "testIsValidCondition" testIsValidCondition,
+    TestLabel "testReplaceParam" testReplaceParam,
+    TestLabel "testChangeValLambda" testChangeValLambda,
+    TestLabel "testEvalOpMathFunc" testEvalOpMathFunc
   ]
 
 main :: IO ()
