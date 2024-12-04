@@ -95,7 +95,7 @@ checkFunction list_define _name [x , y] = case evalAST list_define x of
     Right (_, AstInt val_x) -> case evalAST list_define y of
         Right (_, AstInt val_y) -> Right [AstInt val_x, AstInt val_y]
         Left _ -> Left ("Bad number or type of arguments for " ++ _name)
-    Left _ -> Left ("Bad number or type of arguments for " ++ _name) 
+    Left _ -> Left ("Bad number or type of arguments for " ++ _name)
 checkFunction _ _name _ = Left ("Bad number or type of arguments for " ++ _name)
 
 checkDivid :: [Define] -> String -> [AST] -> Either String [AST]
@@ -105,7 +105,7 @@ checkDivid list_define _name [x , y] = case evalAST list_define x of
         Right (_, AstInt val_y) -> Right [AstInt val_x, AstInt val_y]
         Right (_, AstInt 0) -> Left "Division by 0 is forbidden"
         Left _ -> Left ("Bad number or type of arguments for " ++ _name)
-    Left _ -> Left ("Bad number or type of arguments for " ++ _name) 
+    Left _ -> Left ("Bad number or type of arguments for " ++ _name)
 checkDivid _ _name _ = Left ("Bad number or type of arguments for " ++ _name)
 
 checkBool :: String -> [AST] -> Either String [AST]
