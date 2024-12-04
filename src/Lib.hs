@@ -22,10 +22,7 @@ glados = do
   result <- processArgs args
   case result of
     Left err -> putStrLn err
-    Right content -> case parseToAST [] content of
-        Left err -> putStrLn err
-        Right (_, value) -> do
-            print value
+    Right content -> parseToASTStdin [] content
 
 gladosRepl :: [Define] -> IO ()
 gladosRepl list_define = do
@@ -40,7 +37,6 @@ gladosRepl list_define = do
                 gladosRepl list_define
             Right (new_list_define, value) -> do
                 print value
-                -- print new_list_define
                 gladosRepl new_list_define
 
 parseToAST :: [Define] -> String -> Either String ([Define], AST)
@@ -50,11 +46,28 @@ parseToAST list_define content = case runParser parseSExpr content of
     Left err -> Left $ "Error: " ++ err
     Right res -> Right res
 
+parseToASTStdin :: [Define] -> String -> IO ()
+parseToASTStdin list_define content = case runParser parseSExpr content of
+  Left err -> print $ "Parsing error: " ++ err
+  Right (sexpr, "") -> case sexprToAST sexpr >>= evalAST list_define of
+    Left err -> print $ "Error: " ++ err
+    Right (new_list_define, value) -> print value
+  Right (sexpr, rest) -> case sexprToAST sexpr >>= evalAST list_define of
+    Left err -> print $ "Error: " ++ err
+    Right (new_list_define, value) -> do
+      print value
+      parseToASTStdin new_list_define rest
+
 processArgs :: [String] -> IO (Either String String)
 processArgs args = case args of
+  ["-h"] -> do
+    printUsage
+    return $ Left "End of the help text"
   ["-f", filePath] -> readFileEither filePath
-  ["--file", filePath] -> readFileEither filePath
   [] -> do
+    input <- getContents
+    return $ Right input
+  ["-repl"] -> do
     putStrLn "Welcome to GLaDOS REPL. Type 'quit' to exit."
     gladosRepl []
     return $ Left "REPL mode exited."
@@ -76,11 +89,12 @@ printUsage =
       [ "Usage: glados [OPTIONS] [EXPRESSION]",
         "",
         "Options:",
-        "  -f, --file <file>   Evaluate expressions from the given file.",
-        "  --help              Show this help text.",
+        "  -f <file>   Evaluate expressions from the given file.",
+        "  -repl        Start REPL mode.",
+        "  -h             Show this help text.",
         "",
         "Examples:",
         "  ./glados \"(+ 1 2)\"     Evaluate the expression.",
         "  ./glados -f expr.txt   Evaluate expressions from 'expr.txt'.",
-        "  ./glados              Start REPL mode."
+        "  ./glados -repl              Start REPL mode."
       ]

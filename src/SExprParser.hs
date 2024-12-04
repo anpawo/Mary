@@ -35,7 +35,7 @@ parseSExprAtomInt :: Parser SExpr
 parseSExprAtomInt = Parser fc where
     fc str = case runParser (parseMany (parseChar ' ')) str of
         Right (_, rest) -> case runParser parseUInt rest of
-            Right (num, rest1) -> 
+            Right (num, rest1) ->
                 case runParser (parseAnyChar ['a'..'z'] <|> parseAnyChar ['A'..'Z']) rest1 of
                     Right (_, _) -> Left "Fail"
                     Left _ -> Right (SExprAtomInt num, rest1)
@@ -60,7 +60,10 @@ parseSExprList = parseChar '(' >> parseMany (parseAnyChar " \t\n") >>
     >> parseChar ')' >> return (SExprList values)
 
 parseSExpr :: Parser SExpr
-parseSExpr = parseSExprList <|> parseSExprAtomInt <|> parseSExprAtomString
+parseSExpr = Parser fc where
+    fc str = case runParser (parseMany (parseAnyChar " \t\n")) str of
+        Right (_, rest) -> runParser (parseSExprList <|> parseSExprAtomInt <|> parseSExprAtomString) rest
+        Left _  -> Left "Fail"
 
 getSymbol :: SExpr -> Maybe String
 getSymbol (SExprAtomString s) = Just s
