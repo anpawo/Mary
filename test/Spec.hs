@@ -128,6 +128,9 @@ testSexprToAST = TestCase $ do
     case sexprToAST (SExprList [SExprAtomString "define", SExprAtomString "x", SExprAtomInt 5]) of
         Right (AstDefine (Define "x" (AstInt 5))) -> return ()
         _ -> assertFailure "Convert define expression: Expected AstDefine with name 'x' and value AstInt 5"
+    -- case sexprToAST (SExprAtomString "!") of
+    --     Left err | err == "Unrecognized SExpr" -> return ()
+    --     _ -> assertFailure "Error on unrecognized SExpr: Expected error 'Unrecognized SExpr'"
     case sexprToAST (SExprList [SExprAtomString "lambda", SExprList [SExprAtomString "x"],
                                 SExprList [SExprAtomString "+", SExprAtomString "x", SExprAtomInt 1]]) of
         Right (AstLambda (Lambda [AstStr "x"] (AstFunction (Function "+" [AstStr "x", AstInt 1])))) -> return ()
