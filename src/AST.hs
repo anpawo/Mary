@@ -10,9 +10,27 @@ module AST
     ( sexprToAST,
         evalAST,
         findDefine,
+        sexprToASTList,
+        isValidCondition,
+        countFunctionArgs,
+        extractParam,
+        replaceParam,
+        changeValLambda,
+        sexprToASTCondition,
+        sexprToASTDefine,
+        sexprToASTLambdaWithVal,
+        sexprToASTLambda,
+        checkFunction,
+        checkBool,
+        checkDivid,
+        evalOpMathFunc,
+        evalASTCondition,
         AST(..),
+        OpMathFunc(),
+        CheckASTFunc(),
         Define(..),
         Function(..),
+        Lambda(..),
         Condition(..)
     ) where
 
@@ -127,7 +145,7 @@ sexprToASTLambdaWithVal (SExprList (SExprList lambda : values)) = case sexprToAS
     Right (AstLambda (Lambda paramList body)) ->
         if length values == length paramList
             then case sexprToASTList values of
-                Right parsedValues -> (changeValLambda (AstLambda (Lambda paramList body)) parsedValues) 
+                Right parsedValues -> changeValLambda (AstLambda (Lambda paramList body)) parsedValues
                 Left err -> Left ("Error in parsing values: " ++ err)
             else Left "Error: Number of arguments provided does not match the lambda argument count"
     Left err -> Left err
