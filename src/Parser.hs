@@ -132,12 +132,11 @@ parseUInt = Parser fc where
 
 parseInt :: Parser Int
 parseInt = Parser fc where
-    fc str = case runParser (parseAndWith
-            (\x y -> read x * y) (fmap (:[]) (parseChar '-')) parseUInt) str of
-        Right (res, str1) -> Right (res, str1)
-        Left _ -> case runParser parseUInt str of
-            Right (res, str1) -> Right (res, str1)
-            Left _ -> Left "Parse int failed"
+    fc str = case runParser (parseChar '-') str of
+        Right (res, str1) ->  case runParser parseUInt str1 of
+            Right (value, str2) -> Right (value * (-1), str2)
+            Left err -> Left err
+        Left _ -> runParser parseUInt str
 
 parseWord :: String -> Parser String
 parseWord word = Parser fc where

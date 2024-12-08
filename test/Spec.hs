@@ -60,8 +60,8 @@ testParseUInt = TestCase $ do
 testParseInt :: Test
 testParseInt = TestCase $ do
     assertEqual "parseInt on '123'" (Right (123, "")) (runParser parseInt "123")
-    -- assertEqual "parseInt on '-123'" (Right (-123, "")) (runParser parseInt "-123")
-    assertEqual "parseInt on 'abc'" (Left "Parse int failed") (runParser parseInt "abc")
+    assertEqual "parseInt on '-123'" (Right (-123, "")) (runParser parseInt "-123")
+    assertEqual "parseInt on 'abc'" (Left "Fail") (runParser parseInt "abc")
 
 testParseWord :: Test
 testParseWord = TestCase $ do
