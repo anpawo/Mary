@@ -28,6 +28,9 @@ library
       AST
       Lib
       Parser
+      Part2.Bootstrap2
+      Part2.ErrMessage
+      Part2.Token
       SExprParser
   other-modules:
       Paths_glados
