@@ -4,6 +4,7 @@
 -- File description:
 -- glados
 -}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 module Lib
   ( glados,

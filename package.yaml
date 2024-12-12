@@ -35,6 +35,8 @@ ghc-options:
 
 library:
   source-dirs: src
+  dependencies:
+    - megaparsec
 
 executables:
   glados-exe:
@@ -46,6 +48,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - glados
+    - megaparsec
 
 tests:
   glados-test:
@@ -58,3 +61,5 @@ tests:
     dependencies:
     - glados
     - HUnit
+    - megaparsec
+    - hspec

@@ -30,8 +30,9 @@ library
       Parser
       Part2.Bootstrap2
       Part2.ErrMessage
-      Part2.Token
       SExprParser
+      Token
+      Tokenizer
   other-modules:
       Paths_glados
   autogen-modules:
@@ -41,6 +42,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , megaparsec
   default-language: Haskell2010
 
 executable glados-exe
@@ -55,12 +57,14 @@ executable glados-exe
   build-depends:
       base >=4.7 && <5
     , glados
+    , megaparsec
   default-language: Haskell2010
 
 test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TokenizerSpec
       Paths_glados
   autogen-modules:
       Paths_glados
@@ -71,4 +75,6 @@ test-suite glados-test
       HUnit
     , base >=4.7 && <5
     , glados
+    , hspec
+    , megaparsec
   default-language: Haskell2010

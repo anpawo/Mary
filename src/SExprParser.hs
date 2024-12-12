@@ -4,6 +4,8 @@
 -- File description:
 -- glados
 -}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module SExprParser
     ( parseSExpr,
