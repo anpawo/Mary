@@ -14,7 +14,7 @@ import Data.Either (isLeft)
 import Tokenizer
 
 tsucc :: (Show a, Eq a) => Parser a -> String -> a -> Expectation
-tsucc parser input expected = runParser parser "" input `shouldBe` (Right expected)
+tsucc parser input expected = runParser parser "" input `shouldBe` Right expected
 
 tfail :: (Show a) => Parser a -> String -> Expectation
 tfail parser input = runParser parser "" input `shouldSatisfy` isLeft
@@ -23,24 +23,36 @@ spec :: Spec
 spec = do
   describe "edge case" $ do
     it "no comment" $
-      tsucc rmComments "x = 5\ny = 6" "x = 5\ny = 6"
+      tsucc comment "x = 5\ny = 6" "x = 5\ny = 6"
     it "unfinished string" $
-      tfail rmComments "x = 5\"y = 6"
+      tfail comment "x = 5\"y = 6"
 
   describe "remove single line comment" $ do
     it "terminated by \\n" $
-      tsucc rmComments "x = 5// variable x\ny = 6" "x = 5\ny = 6"
+      tsucc comment "x = 5// variable x\ny = 6" "x = 5\ny = 6"
     it "terminated by eof" $
-      tsucc rmComments "x = 5// variable x" "x = 5"
+      tsucc comment "x = 5// variable x" "x = 5"
     it "with string" $
-      tsucc rmComments "x = \"lol\"// variable x" "x = \"lol\""
+      tsucc comment "x = \"lol\"// variable x" "x = \"lol\""
 
   describe "remove multi line comment" $ do
     it "on single line" $
-      tsucc rmComments "x = 5/* variable x*/\ny = 6" "x = 5\ny = 6"
+      tsucc comment "x = 5/* variable x*/\ny = 6" "x = 5\ny = 6"
     it "on two lines" $
-      tsucc rmComments "x = 5/*\ncomment*/variable x" "x = 5variable x"
+      tsucc comment "x = 5/*\ncomment*/variable x" "x = 5variable x"
     it "missing closing part" $
-      tfail rmComments "x = 5/*\ncommentvariable x"
+      tfail comment "x = 5/*\ncommentvariable x"
     it "with string" $
-      tsucc rmComments "x = \"lol\"/* variable x*/\ny = 6" "x = \"lol\"\ny = 6"
+      tsucc comment "x = \"lol\"/* variable x*/\ny = 6" "x = \"lol\"\ny = 6"
+
+  describe "macro" $ do
+    it "macro FAILURE 84" $
+      tsucc macro "macro FAILURE 84\nreturn FAILURE;" "return 84;"
+  
+  describe "namespace" $ do
+    it "import math" $
+      tsucc namespace "import math\nmath.facto" "_ZN4mathfacto"
+  
+  describe "combinator" $ do
+    it "&>" $
+      tsucc (macro &> namespace) "macro FAILURE 84\nreturn FAILURE;import math\nmath.facto" "return 84;_ZN4mathfacto"
