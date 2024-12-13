@@ -141,7 +141,7 @@ namespace = getImport ~> applyNamespace
             where
                 applyOne :: [Import] -> Parser String
                 applyOne [] = empty
-                applyOne (name: rst) = trace name ((string (name ++ ".") $> ("_ZN" ++ show (length name) ++ name)) <|> applyOne rst)
+                applyOne (name: rst) = (string (name ++ ".") $> ("_ZN" ++ show (length name) ++ name)) <|> applyOne rst
 -- namespace
 
 
