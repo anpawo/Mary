@@ -23,7 +23,7 @@ module Tokenizer
 
     ) where
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 import Data.Void (Void)
 import Data.List (singleton)
@@ -33,7 +33,7 @@ import Control.Monad (void)
 
 import Text.Megaparsec (Parsec, many, noneOf, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, ParsecT, setInput)
 import Text.Megaparsec.Char (char, string)
-import Text.Megaparsec.Char.Lexer (decimal, float, signed)
+-- import Text.Megaparsec.Char.Lexer (decimal, float, signed)
 
 type Parser = Parsec Void String
 
