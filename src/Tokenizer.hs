@@ -20,6 +20,7 @@ module Tokenizer
     parseTest,
     setInput,
     eof,
+    tokenize,
 
     ) where
 
@@ -31,9 +32,11 @@ import Data.Functor (($>))
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
-import Text.Megaparsec (Parsec, many, noneOf, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, ParsecT, setInput)
-import Text.Megaparsec.Char (char, string)
--- import Text.Megaparsec.Char.Lexer (decimal, float, signed)
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy)
+import Text.Megaparsec.Char (char, string, alphaNumChar)
+import Text.Megaparsec.Char.Lexer (decimal, float, signed)
+
+import Token
 
 type Parser = Parsec Void String
 
@@ -49,19 +52,43 @@ t = parseTest
 
 -- utils
 skipString :: Parser String
-skipString = (\s -> '"' : s ++ "\"" ) <$> (char '"' *> many (noneOf "\"") <* (char '"' <?> errmsg))
-    where
-        errmsg = "closing quote `\"` of the string."
+skipString = (\s -> '"' : s ++ "\"" ) <$> (quote *> manyTill (escaped <|> anySingle) (quote <?> "closing quote `\"` of the string."))
 
--- space :: Parser Char
--- space = oneOf " \n\t"
+between :: Parser a -> Parser b -> Parser a
+between  p around = around *> p <* around
+
+escaped :: Parser Char
+escaped = escape *> choice [quote, escape]
+
+quote :: Parser Char
+quote = char '"'
+
+keyword :: String -> Parser String
+keyword s = string s <* notFollowedBy prefixIdentifierChar
+
+prefixIdentifierChar :: Parser Char
+prefixIdentifierChar = alphaNumChar <|> underscore
+
+infixIdentifierChar :: Parser Char
+infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$', '.']
+
+underscore :: Parser Char
+underscore = char '_'
+
+escape :: Parser Char
+escape = char '\\'
+
+spaces :: Parser String
+spaces = many $ oneOf " \n\t"
 
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
 
+-- combine p1 and p2 but they produce other parameters
 (~>) :: Parser (a, String) -> (a -> Parser b) -> Parser b
 (~>) p1 p2 = p1 >>= (\(out, input) -> setInput input >> p2 out)
 
+-- combine p1 and p2
 (&>) :: Parser String -> Parser String -> Parser String
 (&>) p1 p2 = p1 >>= (\s -> setInput s >> p2)
 -- utils
@@ -115,6 +142,7 @@ macro = getSimple ~> applySimple
                 applyOne :: [(Before, After)] -> Parser String
                 applyOne [] = empty
                 applyOne ((a, b): rst) = string a $> b <|> applyOne rst
+-- macro
 
 -- namespace (working but may be useless according to what we decide to do)
 type Import = String
@@ -144,6 +172,66 @@ namespace = getImport ~> applyNamespace
                 applyOne (name: rst) = (string (name ++ ".") $> ("_ZN" ++ show (length name) ++ name)) <|> applyOne rst
 -- namespace
 
+
+-- TokenType
+tokenize :: Parser [TokenType]
+tokenize = manyTill (spaces *> tokens) eof
+    where
+        tokens = choice
+            [
+              -- Literal
+              intLit
+            , fltLit
+            , strLit
+
+            -- Symbol
+            ,  curtlyOpenSym
+            ,  curtlyCloseSym
+            ,  parenOpenSym
+            ,  parenCloseSym
+            ,  assignSym
+            ,  semicolonSym
+            ,  scopeSym -- not sure if needed
+
+            -- Keyword
+            , functionKw
+            , infixKw
+            , structKw
+            , importKw
+            , asKw
+
+            -- Any Identifier
+            , prefixId
+            , infixId
+            ]
+
+        -- Literal
+        intLit = Lit . IntLit <$> signed mempty decimal
+        fltLit = Lit . FloatLit <$> signed mempty float
+        strLit = Lit . StringLit <$> manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string.")
+
+        -- Symbol
+        curtlyOpenSym = Sym <$> (char '{' $> CurlyOpen)
+        curtlyCloseSym = Sym <$> (char '}' $> CurlyClose)
+
+        parenOpenSym = Sym <$> (char '(' $> CurlyOpen)
+        parenCloseSym = Sym <$> (char ')' $> CurlyClose)
+
+        assignSym = Sym <$> (char '=' $> CurlyClose)
+        scopeSym = Sym <$> (char '.' $> CurlyClose)
+        semicolonSym = Sym <$> (char ';' $> CurlyClose)
+
+        -- Keyword
+        functionKw = Kw <$> (keyword "fn" $> FnKw)
+        infixKw = Kw <$> (keyword "fn" $> FnKw)
+        structKw = Kw <$> (keyword "struct" $> StructKw)
+        importKw = Kw <$> (keyword "import" $> ImportKw)
+        asKw = Kw <$> (keyword "as" $> AsKw)
+
+        -- Identifier
+        prefixId = Id . PrefixId <$> some prefixIdentifierChar
+        infixId = Id . InfixId <$> some infixIdentifierChar
+-- TokenType
 
 
 -- TODO
