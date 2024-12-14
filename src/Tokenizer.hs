@@ -85,7 +85,7 @@ linespaces = some $ oneOf " \t"
 (~>) p1 p2 = p1 >>= (\(out, input) -> setInput input >> p2 out)
 
 -- combine p1 and p2 while updating the input
-(&>) :: Parser String -> Parser String -> Parser String
+(&>) :: Parser String -> Parser a -> Parser a
 (&>) p1 p2 = p1 >>= (\s -> setInput s >> p2)
 -- utils
 
@@ -196,7 +196,7 @@ tokenize = manyTill (spaces *> tokens) eof
             , importKw
             , asKw
 
-            -- Any Identifier
+            -- Identifier
             , prefixId
             , infixId
             ]
