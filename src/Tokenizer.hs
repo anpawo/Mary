@@ -16,6 +16,7 @@ module Tokenizer
 
     -- test
     t,
+    dbg,
     runParser,
 
     ) where
@@ -31,6 +32,7 @@ import Control.Monad (void)
 import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try)
 import Text.Megaparsec.Char (char, string, alphaNumChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
+import Text.Megaparsec.Debug (dbg)
 
 import Token
 
@@ -204,7 +206,7 @@ tokenize = manyTill (spaces *> tokens) eof
         -- Literal
         intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
         fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
-        strLit = StringLit <$> manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string.")
+        strLit = StringLit <$> try (manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
         curtlyOpenSym =  char '{' $> CurlyOpen
@@ -218,15 +220,15 @@ tokenize = manyTill (spaces *> tokens) eof
         semicolonSym = char ';' $> CurlyClose
 
         -- Keyword
-        functionKw =  keyword "fn" $> FnKw
-        infixKw =  keyword "fn" $> FnKw
-        structKw = keyword "struct" $> StructKw
-        importKw =  keyword "import" $> ImportKw
-        asKw = keyword "as" $> AsKw
+        functionKw =  try $ keyword "fn" $> FnKw
+        infixKw =  try $ keyword "fn" $> FnKw
+        structKw = try $ keyword "struct" $> StructKw
+        importKw =  try $ keyword "import" $> ImportKw
+        asKw = try $ keyword "as" $> AsKw
 
         -- Identifier
-        prefixId = PrefixId <$> some prefixIdentifierChar
-        infixId = InfixId <$> some infixIdentifierChar
+        prefixId = try $ PrefixId <$> some prefixIdentifierChar
+        infixId = try $ InfixId <$> some infixIdentifierChar
 -- TokenType
 
 
