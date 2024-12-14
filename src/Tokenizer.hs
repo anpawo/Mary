@@ -11,16 +11,12 @@ module Tokenizer
     comment,
     macro,
     namespace,
+    tokenize,
     (&>),
 
     -- test
     t,
-    Parser,
     runParser,
-    parseTest,
-    setInput,
-    eof,
-    tokenize,
 
     ) where
 
@@ -32,9 +28,9 @@ import Data.Functor (($>))
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
-import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy)
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try)
 import Text.Megaparsec.Char (char, string, alphaNumChar)
-import Text.Megaparsec.Char.Lexer (decimal, float, signed)
+import Text.Megaparsec.Char.Lexer (decimal, float)
 
 import Token
 
@@ -84,11 +80,11 @@ spaces = many $ oneOf " \n\t"
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
 
--- combine p1 and p2 but they produce other parameters
+-- combine p1 and p2 while updating the input, p2 needs a from (p1 => (a, b))
 (~>) :: Parser (a, String) -> (a -> Parser b) -> Parser b
 (~>) p1 p2 = p1 >>= (\(out, input) -> setInput input >> p2 out)
 
--- combine p1 and p2
+-- combine p1 and p2 while updating the input
 (&>) :: Parser String -> Parser String -> Parser String
 (&>) p1 p2 = p1 >>= (\s -> setInput s >> p2)
 -- utils
@@ -115,7 +111,7 @@ comment = concat <$> manyTill (skipString <|> lineComment <|> blockComment <|> (
                 errmsg = "end of multi-line comment \"*/\"."
 -- comments
 
--- macro
+-- macro (may need to add space instead of removing everything because the parser will indicate the wrong place otherwise)
 type Before = String
 type After = String
 
@@ -174,7 +170,7 @@ namespace = getImport ~> applyNamespace
 
 
 -- TokenType
-tokenize :: Parser [TokenType]
+tokenize :: Parser [Token]
 tokenize = manyTill (spaces *> tokens) eof
     where
         tokens = choice
@@ -206,31 +202,31 @@ tokenize = manyTill (spaces *> tokens) eof
             ]
 
         -- Literal
-        intLit = Lit . IntLit <$> signed mempty decimal
-        fltLit = Lit . FloatLit <$> signed mempty float
-        strLit = Lit . StringLit <$> manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string.")
+        intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
+        fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
+        strLit = StringLit <$> manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string.")
 
         -- Symbol
-        curtlyOpenSym = Sym <$> (char '{' $> CurlyOpen)
-        curtlyCloseSym = Sym <$> (char '}' $> CurlyClose)
+        curtlyOpenSym =  char '{' $> CurlyOpen
+        curtlyCloseSym =  char '}' $> CurlyClose
 
-        parenOpenSym = Sym <$> (char '(' $> CurlyOpen)
-        parenCloseSym = Sym <$> (char ')' $> CurlyClose)
+        parenOpenSym =  char '(' $> CurlyOpen
+        parenCloseSym =  char ')' $> CurlyClose
 
-        assignSym = Sym <$> (char '=' $> CurlyClose)
-        scopeSym = Sym <$> (char '.' $> CurlyClose)
-        semicolonSym = Sym <$> (char ';' $> CurlyClose)
+        assignSym =  char '=' $> CurlyClose
+        scopeSym =  char '.' $> CurlyClose
+        semicolonSym = char ';' $> CurlyClose
 
         -- Keyword
-        functionKw = Kw <$> (keyword "fn" $> FnKw)
-        infixKw = Kw <$> (keyword "fn" $> FnKw)
-        structKw = Kw <$> (keyword "struct" $> StructKw)
-        importKw = Kw <$> (keyword "import" $> ImportKw)
-        asKw = Kw <$> (keyword "as" $> AsKw)
+        functionKw =  keyword "fn" $> FnKw
+        infixKw =  keyword "fn" $> FnKw
+        structKw = keyword "struct" $> StructKw
+        importKw =  keyword "import" $> ImportKw
+        asKw = keyword "as" $> AsKw
 
         -- Identifier
-        prefixId = Id . PrefixId <$> some prefixIdentifierChar
-        infixId = Id . InfixId <$> some infixIdentifierChar
+        prefixId = PrefixId <$> some prefixIdentifierChar
+        infixId = InfixId <$> some infixIdentifierChar
 -- TokenType
 
 
