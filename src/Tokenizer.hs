@@ -8,6 +8,8 @@
 module Tokenizer
     (
     -- main
+    run,
+    Parser,
     comment,
     macro,
     namespace,
@@ -16,7 +18,6 @@ module Tokenizer
 
     -- test
     dbg,
-    runParser,
     parseTest,
 
     ) where
@@ -29,7 +30,7 @@ import Data.Functor (($>))
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
-import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try)
+import Text.Megaparsec (Parsec, ParseErrorBundle, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try, someTill)
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
@@ -44,6 +45,9 @@ type Parser = Parsec Void String
 
 
 -- utils
+run :: Parser a -> String -> Either (ParseErrorBundle String Void) a
+run parser = runParser parser ""
+
 skipString :: Parser String
 skipString = (\s -> '"' : s ++ "\"" ) <$> (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
@@ -106,9 +110,7 @@ comment = concat <$> manyTill (skipString <|> lineComment <|> blockComment <|> (
                 startComment = string "/*"
 
                 endComment :: Parser String
-                endComment = string "*/" <?> errmsg
-
-                errmsg = "end of multi-line comment \"*/\"."
+                endComment = string "*/" <?> "end of multi-line comment \"*/\"."
 -- comments
 
 -- macro (may need to add space instead of removing everything because the parser will indicate the wrong place otherwise)
@@ -116,24 +118,25 @@ type Before = String
 type After = String
 
 macro ::  Parser String
-macro = getSimple ~> applySimple
+macro = getMacros ~> applyMacros
     where
-        getSimple :: Parser ([(Before, After)], String)
-        getSimple = temp [] "" where
-            temp :: [(Before, After)] -> String -> Parser ([(Before, After)], String)
-            temp macros str =
-                    (eof >> return (macros, str))
-                <|> (skipString >>= \s -> temp macros (str ++ s))
-                <|> (simpleMacro >>= \m -> temp (m : macros) str)
-                <|> (anySingle >>= \c -> temp macros (str ++ [c]))
+        getMacros :: Parser ([(Before, After)], String)
+        getMacros = temp [] ""
+            where
+                temp :: [(Before, After)] -> String -> Parser ([(Before, After)], String)
+                temp macros str =
+                        (eof >> return (macros, str))
+                    <|> (skipString >>= \s -> temp macros (str ++ s))
+                    <|> (simpleMacro >>= \m -> temp (m : macros) str)
+                    <|> (anySingle >>= \c -> temp macros (str ++ [c]))
 
         simpleMacro :: Parser (Before, After)
-        simpleMacro = (,) <$> (string macroPrefix *> linespaces *> manyTill anySingle linespaces) <*> manyTill anySingle (void (char '\n') <|> eof)
+        simpleMacro = (,) <$> (string macroPrefix *> linespaces *> someTill anySingle linespaces) <*> manyTill anySingle (void (char '\n') <|> eof)
 
         macroPrefix = "macro"
 
-        applySimple :: [(Before, After)] -> Parser String
-        applySimple macros = concat <$> manyTill (applyOne macros <|> (singleton <$> anySingle)) eof
+        applyMacros :: [(Before, After)] -> Parser String
+        applyMacros macros = concat <$> manyTill (applyOne macros <|> (singleton <$> anySingle)) eof
             where
                 applyOne :: [(Before, After)] -> Parser String
                 applyOne [] = empty
@@ -178,8 +181,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
               -- Literal
               charLit
             , boolLit
-            , intLit
             , fltLit
+            , intLit
             , strLit
 
             -- Symbol
@@ -196,14 +199,9 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , functionKw
             , infixKw
             , structKw
+            , isKw
             , importKw
             , asKw
-            , isKw
-            , atKw
-
-            -- Identifier
-            , symbolId
-            , operatorId
 
             -- Type
             , charT
@@ -213,13 +211,17 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , strT
             , arrT
 
+            -- Identifier
+            , symbolId
+            , operatorId
+
             ]
 
         -- Literal
         charLit = CharLit <$> try (singlequote *> asciiChar <* (singlequote <?> "closing singlequote `\'` of the char."))
         boolLit = BoolLit <$> (try (string "true" $> True) <|> try (string "false" $> False))
-        intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
         fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
+        intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
         strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
@@ -230,18 +232,17 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         parenCloseSym =  char ')' $> ParenClose
 
         assignSym =  symbol "=" $> Assign
-        arrowSym =  symbol "->" $> Assign
+        arrowSym =  symbol "->" $> Arrow
         scopeSym =  symbol "." $> Scope
         semicolonSym = char ';' $> SemiColon
 
         -- Keyword
-        functionKw =  try $ keyword "fn" $> FunctionKw
-        infixKw =  try $ keyword "fn" $> FunctionKw
+        functionKw = try $ keyword "function" $> FunctionKw
+        infixKw =  try $ keyword "infix" $> InfixKw -- do we need infix l or r ?
         structKw = try $ keyword "struct" $> StructKw
+        isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw
         asKw = try $ keyword "as" $> AsKw
-        isKw = try $ keyword "is" $> IsKw
-        atKw = try $ keyword "at" $> AtKw
 
         -- Type
         charT = try $ keyword "char" $> CharT
@@ -255,7 +256,3 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         symbolId = try $ SymbolId <$> some prefixIdentifierChar
         operatorId = try $ OperatorId <$> some infixIdentifierChar
 -- TokenType
-
-
--- TODO
--- complexMacro
