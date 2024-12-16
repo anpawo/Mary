@@ -15,9 +15,9 @@ module Tokenizer
     (&>),
 
     -- test
-    t,
     dbg,
     runParser,
+    parseTest,
 
     ) where
 
@@ -30,7 +30,7 @@ import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
 import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try)
-import Text.Megaparsec.Char (char, string, alphaNumChar)
+import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
 
@@ -42,27 +42,28 @@ type Parser = Parsec Void String
 -- ParsecT supports I/O
 -- Parsec has Identity for monad so no I/O
 
--- used for tests
-t :: Show a => Parser a -> String -> IO ()
-t = parseTest
--- used for tests
-
 
 -- utils
 skipString :: Parser String
-skipString = (\s -> '"' : s ++ "\"" ) <$> (quote *> manyTill (escaped <|> anySingle) (quote <?> "closing quote `\"` of the string."))
+skipString = (\s -> '"' : s ++ "\"" ) <$> (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
-between :: Parser a -> Parser b -> Parser a
-between  p around = around *> p <* around
+-- escaped :: Parser Char
+-- escaped = escape *> choice [quote, escape]
 
-escaped :: Parser Char
-escaped = escape *> choice [quote, escape]
+-- escape :: Parser Char
+-- escape = char '\\'
 
 quote :: Parser Char
 quote = char '"'
 
+singlequote :: Parser Char
+singlequote = char '\''
+
 keyword :: String -> Parser String
 keyword s = string s <* notFollowedBy prefixIdentifierChar
+
+symbol :: String -> Parser String
+symbol s = string s <* notFollowedBy infixIdentifierChar
 
 prefixIdentifierChar :: Parser Char
 prefixIdentifierChar = alphaNumChar <|> underscore
@@ -72,9 +73,6 @@ infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '
 
 underscore :: Parser Char
 underscore = char '_'
-
-escape :: Parser Char
-escape = char '\\'
 
 spaces :: Parser String
 spaces = many $ oneOf " \n\t"
@@ -173,21 +171,24 @@ namespace = getImport ~> applyNamespace
 
 -- TokenType
 tokenize :: Parser [Token]
-tokenize = manyTill (spaces *> tokens) eof
+tokenize = spaces *> manyTill (tokens <* spaces) eof
     where
         tokens = choice
             [
               -- Literal
-              intLit
+              charLit
+            , boolLit
+            , intLit
             , fltLit
             , strLit
 
             -- Symbol
-            ,  curtlyOpenSym
-            ,  curtlyCloseSym
+            ,  curlyOpenSym
+            ,  curlyCloseSym
             ,  parenOpenSym
             ,  parenCloseSym
             ,  assignSym
+            ,  arrowSym
             ,  semicolonSym
             ,  scopeSym -- not sure if needed
 
@@ -197,38 +198,62 @@ tokenize = manyTill (spaces *> tokens) eof
             , structKw
             , importKw
             , asKw
+            , isKw
+            , atKw
 
             -- Identifier
-            , prefixId
-            , infixId
+            , symbolId
+            , operatorId
+
+            -- Type
+            , charT
+            , boolT
+            , intT
+            , floatT
+            , strT
+            , arrT
+
             ]
 
         -- Literal
+        charLit = CharLit <$> try (singlequote *> asciiChar <* (singlequote <?> "closing singlequote `\'` of the char."))
+        boolLit = BoolLit <$> (try (string "true" $> True) <|> try (string "false" $> False))
         intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
         fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
-        strLit = StringLit <$> try (manyTill (escaped <|> anySingle) quote `between` (quote <?> "closing quote `\"` of the string."))
+        strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
-        curtlyOpenSym =  char '{' $> CurlyOpen
-        curtlyCloseSym =  char '}' $> CurlyClose
+        curlyOpenSym =  char '{' $> CurlyOpen
+        curlyCloseSym =  char '}' $> CurlyClose
 
-        parenOpenSym =  char '(' $> CurlyOpen
-        parenCloseSym =  char ')' $> CurlyClose
+        parenOpenSym =  char '(' $> ParenOpen
+        parenCloseSym =  char ')' $> ParenClose
 
-        assignSym =  char '=' $> CurlyClose
-        scopeSym =  char '.' $> CurlyClose
-        semicolonSym = char ';' $> CurlyClose
+        assignSym =  symbol "=" $> Assign
+        arrowSym =  symbol "->" $> Assign
+        scopeSym =  symbol "." $> Scope
+        semicolonSym = char ';' $> SemiColon
 
         -- Keyword
-        functionKw =  try $ keyword "fn" $> FnKw
-        infixKw =  try $ keyword "fn" $> FnKw
+        functionKw =  try $ keyword "fn" $> FunctionKw
+        infixKw =  try $ keyword "fn" $> FunctionKw
         structKw = try $ keyword "struct" $> StructKw
         importKw =  try $ keyword "import" $> ImportKw
         asKw = try $ keyword "as" $> AsKw
+        isKw = try $ keyword "is" $> IsKw
+        atKw = try $ keyword "at" $> AtKw
+
+        -- Type
+        charT = try $ keyword "char" $> CharT
+        boolT = try $ keyword "bool" $> BoolT
+        intT = try $ keyword "int" $> IntT
+        floatT = try $ keyword "float" $> FloatT
+        strT = try $ keyword "str" $> StrT
+        arrT = try $ keyword "arr" $> ArrT
 
         -- Identifier
-        prefixId = try $ PrefixId <$> some prefixIdentifierChar
-        infixId = try $ InfixId <$> some infixIdentifierChar
+        symbolId = try $ SymbolId <$> some prefixIdentifierChar
+        operatorId = try $ OperatorId <$> some infixIdentifierChar
 -- TokenType
 
 
