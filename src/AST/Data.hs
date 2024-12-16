@@ -50,8 +50,8 @@ instance Show AST where
   show (AstCondition c) = show c
 
 instance Eq AST where
-    (==) :: AST -> AST -> Bool
-    (AstInt x) == (AstInt y) = x == y
-    (AstStr str1) == (AstStr str2) = str1 == str2
-    (AstBool bool1) == (AstBool bool2) = bool1 == bool2
-    _ == _ = False
+  (==) :: AST -> AST -> Bool
+  (AstInt x) == (AstInt y) = x == y
+  (AstStr str1) == (AstStr str2) = str1 == str2
+  (AstBool bool1) == (AstBool bool2) = bool1 == bool2
+  _ == _ = False

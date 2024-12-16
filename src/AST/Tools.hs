@@ -6,35 +6,22 @@
 -}
 
 module AST.Tools
-    ( sexprToAST,
-        findDefine,
-        sexprToASTList,
-        isValidCondition,
-        countFunctionArgs,
-        extractParam,
-        replaceParam,
-        changeValLambda,
-        sexprToASTCondition,
-        sexprToASTDefine,
-        sexprToASTLambdaWithVal,
-        sexprToASTLambda,
-        checkFunction,
-        checkBool,
-        checkDivid,
-        AST(..),
-        OpMathFunc(),
-        CheckASTFunc(),
-        Define(..),
-        Function(..),
-        Lambda(..),
-        Condition(..)
-    ) where
+  ( isValidCondition,
+    countFunctionArgs,
+    extractParam,
+    replaceParam,
+    changeValLambda,
+  )
+where
 
-import SExprParser
-import Control.Applicative()
 import AST.Data
--- import AST.Eval
--- import AST.Check
+  ( AST (AstBool, AstCondition, AstFunction, AstLambda, AstStr),
+    Condition (Condition),
+    Function (Function),
+    Lambda (Lambda),
+  )
+import Control.Applicative ()
+import SExprParser (SExpr (SExprAtomString))
 
 isValidCondition :: AST -> Bool
 isValidCondition (AstBool _) = True
@@ -55,8 +42,9 @@ replaceParam target param value
   | otherwise = case target of
       AstFunction (Function name args) -> AstFunction (Function name (map (\arg -> replaceParam arg param value) args))
       AstLambda (Lambda params body) -> AstLambda (Lambda params (replaceParam body param value))
-      AstCondition (Condition cond _t _f) -> AstCondition
-        (Condition (replaceParam cond param value) (replaceParam _t param value) (replaceParam _f param value))
+      AstCondition (Condition cond _t _f) ->
+        AstCondition
+          (Condition (replaceParam cond param value) (replaceParam _t param value) (replaceParam _f param value))
       _ -> target
 
 changeValLambda :: AST -> [AST] -> Either String AST

@@ -10,9 +10,9 @@ module Lib
   )
 where
 
-import AST.Tools
-import AST.Eval
-import AST.Check
+import AST.Eval ( evalAST )
+import AST.Data ( AST(AstDefine), Define )
+import AST.Sexpression ( sexprToAST )
 import Control.Exception (IOException, catch)
 import Parser (runParser)
 import SExprParser (parseSExpr)
