@@ -14,29 +14,42 @@ module Token (Token (..)) where
 data Token
   =
   -- Keyword
-    FnKw --       \| fn
+    FunctionKw -- \| fn
   | InfixKw --    \| infix
   | StructKw --   \| struct
-  | IsKw --       \| is
   | ImportKw --   \| import
   | AsKw --       \| as
-  | Symbol
+  | IsKw --       \| is
+  | AtKw --       \| at
+
+  -- Symbol
   | CurlyOpen --  \|  {   -> struct definition
   | CurlyClose -- \|  }   -> struct definition
+  | Arrow --      \|  ->  -> return type of functions
   | ParenOpen --  \|  (   -> resolve expressions
   | ParenClose -- \|  )   -> resolve expressions
   | Assign --     \|  =   -> assign expression to a name (can be a func or a var)
   | Scope --      \|  .   -> used to import a module (std.print, math.facto, ...)
   | SemiColon --  \|  ;   -> end of statement
-  
+
+  -- Type
+  | CharT --  \| char
+  | BoolT --  \| bool
+  | IntT --   \| int
+  | FloatT -- \| float
+  | StrT --   \| str
+  | ArrT --   \| arr
+
   -- Literal
+  | CharLit Char --     \| 'c'   -> may be a list of char
+  | BoolLit Bool --     \| true | false
   | IntLit Int --       \| 2
   | FloatLit Double --  \| 1.5
-  | StringLit String -- \| "yo"
+  | StringLit String -- \| "yo"   -> may be a list of char
   
   -- Identifier
-  | PrefixId String --  \| factorial, add_2
-  | InfixId String  --  \| <*>, +
+  | SymbolId String --  \| factorial, add_2, x
+  | OperatorId String  --  \| <*>, +
 
   -- Type ? (int, float, string, char, number ?)
 
