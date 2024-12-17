@@ -5,7 +5,7 @@
 -- Tokenizer
 -}
 
-module Tokenizer
+module Parser.Tokenizer
     (
     -- main
     run,
@@ -35,7 +35,7 @@ import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
 
-import Token
+import Parser.Token
 
 type Parser = Parsec Void String
 

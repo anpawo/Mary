@@ -5,7 +5,7 @@
 -- Token
 -}
 
-module Token (Token (..)) where
+module Parser.Token (Token (..)) where
 
 data Token
   =
