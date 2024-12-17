@@ -193,6 +193,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  assignSym
             ,  arrowSym
             ,  semicolonSym
+            ,  commaSym
             ,  scopeSym -- not sure if needed
 
             -- Keyword
@@ -235,6 +236,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         arrowSym =  symbol "->" $> Arrow
         scopeSym =  symbol "." $> Scope
         semicolonSym = char ';' $> SemiColon
+        commaSym = char ',' $> Comma
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw

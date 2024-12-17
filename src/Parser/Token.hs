@@ -25,6 +25,7 @@ data Token
   | Arrow --      \|  ->  -> return type of functions
   | Scope --      \|  .   -> used to import a module (std.print, math.facto, ...)
   | SemiColon --  \|  ;   -> end of statement
+  | Comma --      \|  ,   -> separate arguments in function call/creation
   -- Type
   | CharT --  \| char
   | BoolT --  \| bool
