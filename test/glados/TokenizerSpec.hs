@@ -109,6 +109,10 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "import" ==> [ImportKw]
   it "as" $
     run tokenize "as" ==> [AsKw]
+  it "if" $
+    run tokenize "if" ==> [IfKw]
+  it "else" $
+    run tokenize "else" ==> [ElseKw]
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do

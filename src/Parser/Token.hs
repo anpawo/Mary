@@ -16,6 +16,8 @@ data Token
   | IsKw --       \| is
   | ImportKw --   \| import
   | AsKw --       \| as
+  | IfKw --       \| if
+  | ElseKw --     \| else
   -- Symbol
   | CurlyOpen --  \|  {   -> struct definition
   | CurlyClose -- \|  }   -> struct definition

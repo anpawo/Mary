@@ -1,2 +1,7 @@
-(define x 5)
-x
+function (int a, int b, char c, char d) -> int {
+    if (a < b) {
+        print c;
+    } else {
+        print d;
+    }
+}
