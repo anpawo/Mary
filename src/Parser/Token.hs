@@ -16,7 +16,7 @@ data Token
   | IsKw --       \| is       -> compare types
   | ImportKw --   \| import   -> for imports (bonus)
   | AsKw --       \| as       -> for imports (bonus)
-  | Atw --        \| at       -> get elem from array
+  | AtKw --       \| at       -> get elem from array
   | IfKw --       \| if       -> if
   | ElseKw --     \| else     -> else
   -- Symbol
