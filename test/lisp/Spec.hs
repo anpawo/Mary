@@ -2,8 +2,13 @@
 -- EPITECH PROJECT, 2024
 -- Spec.hs
 -- File description:
--- glados
+-- Main
 -}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use when" #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unused-local-binds #-}
 
 import Test.HUnit
 import Parser
@@ -271,3 +276,4 @@ main = do
     if errors counts + failures counts > 0
         then error "Tests failed!"
         else return ()
+
