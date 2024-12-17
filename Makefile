@@ -26,7 +26,7 @@ re: fclean
 re: all
 
 tests_run:
-	stack test
+	stack test glados:lisp-test
 
 .PHONY: functionnal-tests
 functionnal-tests:
@@ -34,11 +34,11 @@ functionnal-tests:
 
 .PHONY: unit-tests
 unit-tests:
-	stack test
+	stack test glados:glados-test
 
 .PHONY: coverage
 coverage:
-	stack test --coverage
+	stack test glados:glados-test --coverage
 
 test: re
 test: unit-tests
