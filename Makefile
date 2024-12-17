@@ -16,7 +16,7 @@ all:
 	cp $(BIN_PATH)$(BIN_EXE) $(NAME)
 
 clean :
-	stack clean
+	@ stack clean
 
 fclean: clean
 	@ $(RM) $(NAME)

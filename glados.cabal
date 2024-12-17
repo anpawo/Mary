@@ -31,8 +31,6 @@ library
       AST.Tools
       Lib
       Parser
-      Part2.Bootstrap2
-      Part2.ErrMessage
       SExprParser
       Token
       Tokenizer
