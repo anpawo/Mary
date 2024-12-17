@@ -4,6 +4,9 @@
 -- File description:
 -- Eval
 -}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module AST.Eval
   ( evalAST,

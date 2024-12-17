@@ -4,6 +4,8 @@
 -- File description:
 -- Sexpression
 -}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module AST.Sexpression
   ( sexprToAST,
