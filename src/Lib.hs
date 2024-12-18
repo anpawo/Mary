@@ -11,14 +11,12 @@ module Lib
   )
 where
 
-import AST.Data ( AST(AstDefine), Define )
--- import AST.Sexpression ( sexprToAST )
 import Control.Exception (IOException, catch)
 import System.Environment (getArgs)
 import Parser.Tokenizer ( run, tokenize )
 import AST.Conv ( tokenToAST )
 import Text.Megaparsec (errorBundlePretty)
-import Parser.SortToken ( splitBySemicolon, sortToken )
+import Parser.SortToken ( sortToken )
 
 -- parseToAST :: [Define] -> String -> Either String ([Define], AST)
 -- parseToAST list_define content = case runParser parseSExpr content of
@@ -47,13 +45,15 @@ import Parser.SortToken ( splitBySemicolon, sortToken )
 --   AstDefine _ -> return ()
 --   _ -> print value
 
-compileStdin :: [Define] -> String -> IO ()
-compileStdin list_define content = case run tokenize content of
+compileStdin :: String -> IO ()
+compileStdin content = case run tokenize content of
   Left err -> print (errorBundlePretty err)
-  Right res -> print (sortToken res)
-    -- case sequence (map tokenToAST res) of
-    -- Right asts -> print asts
-    -- Left err -> putStrLn $ "Error: " ++ err
+  -- Right res -> print (sortToken res)
+  Right res -> case (sortToken res) of
+    Right sort_list -> case sequence (map tokenToAST sort_list) of
+        Right asts -> print asts
+        Left err -> putStrLn $ "Error token to ast: " ++ err
+    Left err -> putStrLn $ "Error sort token: " ++ err
 
 readFileEither :: FilePath -> IO (Either String String)
 readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
@@ -100,4 +100,4 @@ glados = do
   result <- processArgs args
   case result of
     Left err -> putStrLn err
-    Right content -> compileStdin [] content
+    Right content -> compileStdin content
