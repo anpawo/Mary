@@ -206,6 +206,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , atKw
             , ifKw
             , elseKw
+            , returnKw
 
             -- Type
             , charT
@@ -251,6 +252,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         atKw = try $ keyword "at" $> AtKw
         ifKw = try $ keyword "if" $> IfKw
         elseKw = try $ keyword "else" $> ElseKw
+        returnKw = try $ keyword "return" $> ReturnKw
 
         -- Type
         charT = try $ keyword "char" $> CharT

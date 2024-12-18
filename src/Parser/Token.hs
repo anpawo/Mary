@@ -20,6 +20,7 @@ data Token
   | AtKw --       \| at       -> get elem from array
   | IfKw --       \| if       -> if
   | ElseKw --     \| else     -> else
+  | ReturnKw --     \| return     -> return
   -- Symbol
   | CurlyOpen --    \|  {   -> struct definition
   | CurlyClose --   \|  }   -> struct definition
