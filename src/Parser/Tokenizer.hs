@@ -179,17 +179,19 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         tokens = choice
             [
               -- Literal
-              charLit
-            , boolLit
-            , fltLit
-            , intLit
-            , strLit
+              Literal <$> charLit
+            , Literal <$> boolLit
+            , Literal <$> fltLit
+            , Literal <$> intLit
+            , Literal <$> strLit
 
             -- Symbol
             ,  curlyOpenSym
             ,  curlyCloseSym
             ,  parenOpenSym
             ,  parenCloseSym
+            ,  bracketOpenSym
+            ,  bracketCloseSym
             ,  assignSym
             ,  arrowSym
             ,  semicolonSym
@@ -198,6 +200,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
             -- Keyword
             , functionKw
+            , operatorKw
             , precedenceKw
             , structKw
             , isKw
@@ -209,16 +212,17 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , returnKw
 
             -- Type
-            , charT
-            , boolT
-            , intT
-            , floatT
-            , strT
-            , arrT
+            , Type <$> charT
+            , Type <$> voidT
+            , Type <$> boolT
+            , Type <$> intT
+            , Type <$> floatT
+            , Type <$> strT
+            , Type <$> arrT
 
             -- Identifier
-            , symbolId
-            , operatorId
+            , Identifier <$> symbolId
+            , Identifier <$> operatorId
 
             ]
 
@@ -230,20 +234,21 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
-        curlyOpenSym =  char '{' $> CurlyOpen
-        curlyCloseSym =  char '}' $> CurlyClose
-
-        parenOpenSym =  char '(' $> ParenOpen
-        parenCloseSym =  char ')' $> ParenClose
-
-        assignSym =  symbol "=" $> Assign
-        arrowSym =  symbol "->" $> Arrow
-        scopeSym =  symbol "." $> Scope
+        curlyOpenSym = symbol "{" $> CurlyOpen
+        curlyCloseSym = symbol "}" $> CurlyClose
+        parenOpenSym = symbol "(" $> ParenOpen
+        parenCloseSym = symbol ")" $> ParenClose
+        bracketOpenSym = symbol "[" $> BracketOpen
+        bracketCloseSym = symbol "]" $> BracketClose
+        assignSym = symbol "=" $> Assign
+        arrowSym = symbol "->" $> Arrow
+        scopeSym = symbol "." $> Scope
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
+        operatorKw = try $ keyword "operator" $> OperatorKw
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
         structKw = try $ keyword "struct" $> StructKw
         isKw = try $ keyword "is" $> IsKw
@@ -255,12 +260,13 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         returnKw = try $ keyword "return" $> ReturnKw
 
         -- Type
-        charT = try $ keyword "char" $> CharT
-        boolT = try $ keyword "bool" $> BoolT
-        intT = try $ keyword "int" $> IntT
-        floatT = try $ keyword "float" $> FloatT
-        strT = try $ keyword "str" $> StrT
-        arrT = try $ keyword "arr" $> ArrT
+        charT = try $ keyword "char" $> CharType
+        voidT = try $ keyword "void" $> VoidType
+        boolT = try $ keyword "bool" $> BoolType
+        intT = try $ keyword "int" $> IntType
+        floatT = try $ keyword "float" $> FloatType
+        strT = try $ keyword "str" $> StrType
+        arrT = try $ keyword "arr" $> ArrType
 
         -- Identifier
         symbolId = try $ SymbolId <$> some prefixIdentifierChar

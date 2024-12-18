@@ -6,13 +6,37 @@
 -}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Parser.Token (Token (..)) where
+module Parser.Token (Token (..), Type (..), Literal(..), Identifier(..)) where
+
+data Type
+  = CharType --             \| char
+  | VoidType --             \| void
+  | BoolType --             \| bool
+  | IntType --              \| int
+  | FloatType --            \| float
+  | StrType --              \| str
+  | ArrType --              \| arr
+  deriving (Show, Eq)
+
+data Literal
+  = CharLit Char --      \| 'c'   -> may be a list of char
+  | BoolLit Bool --      \| true | false
+  | IntLit Int --        \| 2
+  | FloatLit Double --   \| 1.5
+  | StringLit String --  \| "yo"   -> may be a list of char
+  deriving (Show, Eq)
+
+data Identifier
+  = SymbolId String --   \| factorial, add_2, x
+  | OperatorId String -- \| <*>, +, *, **
+  deriving (Show, Eq)
 
 data Token
   =
   -- Keyword
     FunctionKw --        \| function     -> declare a function
-  | PrecedenceKw --      \| precedence   -> declare an operator
+  | OperatorKw --        \| operator     -> declare an operator
+  | PrecedenceKw --      \| precedence   -> declare an operator precedence
   | StructKw --          \| struct       -> declare a struct
   | IsKw --              \| is           -> compare types
   | ImportKw --          \| import       -> for imports (bonus)
@@ -34,23 +58,9 @@ data Token
   | SemiColon --         \|  ;   -> end of statement
   | Comma --             \|  ,   -> separate arguments in function call/creation
   -- Type
-  | CharT --             \| char
-  | BoolT --             \| bool
-  | IntT --              \| int
-  | FloatT --            \| float
-  | StrT --              \| str
-  | ArrT --              \| arr
+  | Type Type
   -- Literal
-  | CharLit Char --      \| 'c'   -> may be a list of char
-  | BoolLit Bool --      \| true | false
-  | IntLit Int --        \| 2
-  | FloatLit Double --   \| 1.5
-  | StringLit String --  \| "yo"   -> may be a list of char
+  | Literal Literal
   -- Identifier
-  | SymbolId String --   \| factorial, add_2, x
-  | OperatorId String -- \| <*>, +, *, **
-  -- -- Sort token
-  -- | Line [Token]
-  -- | FunctionSort {funcSortName :: String, funcSortParam:: [Token], funcSortType :: Token, funcSortBody :: [Token]}
-  -- | StructureSort {structSortName :: String, structSortBody :: [Token]}
+  | Identifier Identifier
   deriving (Show, Eq)
