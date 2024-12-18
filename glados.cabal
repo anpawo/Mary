@@ -29,7 +29,6 @@ library
       AST.Data
       Lib
       Parser.SortToken
-      Parser.SortTokenData
       Parser.Token
       Parser.Tokenizer
   other-modules:
@@ -76,20 +75,4 @@ test-suite glados-test
     , glados
     , hspec
     , megaparsec
-  default-language: Haskell2010
-
-test-suite lisp-test
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Paths_glados
-  autogen-modules:
-      Paths_glados
-  hs-source-dirs:
-      test/lisp
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      HUnit
-    , base >=4.7 && <5
-    , glados
   default-language: Haskell2010

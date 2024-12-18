@@ -51,17 +51,6 @@ executables:
     - megaparsec
 
 tests:
-  lisp-test:
-    main:                Spec.hs
-    source-dirs:         test/lisp
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - glados
-    - HUnit
-  
   glados-test:
     main:                Spec.hs
     source-dirs:         test/glados
