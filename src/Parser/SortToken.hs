@@ -46,8 +46,8 @@ sortTokenStruct (SymbolId name: CurlyOpen : rest) =
           let (linesList, _) = splitBySemicolon insideStruct
           restTokens <- sortToken restAfterStruct
           Right (StructureSort name linesList : restTokens)
-    _ -> Left "error: invalid structure format"
-sortTokenStruct _ = Left "error: invalid struct format"
+    _ -> Left "invalid structure format"
+sortTokenStruct _ = Left "invalid struct format"
 
 sortTokenFunct :: [Token] -> Either String [Token]
 sortTokenFunct (SymbolId name : ParenOpen : rest) =
@@ -59,12 +59,12 @@ sortTokenFunct (SymbolId name : ParenOpen : rest) =
            let (sortParams, _) = splitByComma params
            restTokens <- sortToken (drop 1 restAfterParam)
            Right (FunctionSort name sortParams functionType linesList : restTokens)
-         else Left "error: missing or extra tokens after closing curly brace"
-    _ -> Left "error: invalid function format"
-sortTokenFunct _ = Left "error: invalid function format"
+         else Left "missing or extra tokens after closing curly brace"
+    _ -> Left "invalid function format"
+sortTokenFunct _ = Left "invalid function format"
 
 sortToken :: [Token] -> Either String [Token]
 sortToken [] = Right []
 sortToken (FunctionKw : function) = sortTokenFunct function
 sortToken (StructKw : structure) = sortTokenStruct structure
-sortToken _ = Left "error: invalid file format"
+sortToken _ = Left "invalid file format"

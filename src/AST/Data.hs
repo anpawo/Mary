@@ -20,7 +20,7 @@ data AST =
   | AstFloat Double
   | AstStr String
   | AstBool Bool
-  | AstFunction {funcName :: String, funcType :: Token, funcArgs :: [AST]}
+  | AstFunction {funcName :: String, funcType :: Token, funcArgs :: [AST], funcBody :: [AST]}
   | AstVar {varName :: String, varType:: Token, varValue :: AST}
   | AstStructure {structName :: String, structArgs :: [AST]}
   deriving (Show)
