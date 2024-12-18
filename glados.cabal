@@ -25,12 +25,9 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Ast.Ast
       Parser.Token
       Parser.Tokenizer
-      Ryan.Conv
-      Ryan.Data
-      Ryan.SortToken
   other-modules:
       Paths_glados
   autogen-modules:
