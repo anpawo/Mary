@@ -28,10 +28,10 @@ library
       AST.Conv
       AST.Data
       Lib
+      Parser.SortToken
+      Parser.SortTokenData
       Parser.Token
       Parser.Tokenizer
-      Part2.Bootstrap2
-      Part2.ErrMessage
   other-modules:
       Paths_glados
   autogen-modules:
@@ -63,6 +63,7 @@ test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TokenizerSpec
       Paths_glados
   autogen-modules:
       Paths_glados

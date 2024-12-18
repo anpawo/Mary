@@ -18,6 +18,7 @@ import System.Environment (getArgs)
 import Parser.Tokenizer ( run, tokenize )
 import AST.Conv ( tokenToAST )
 import Text.Megaparsec (errorBundlePretty)
+import Parser.SortToken ( splitBySemicolon, sortToken )
 
 -- parseToAST :: [Define] -> String -> Either String ([Define], AST)
 -- parseToAST list_define content = case runParser parseSExpr content of
@@ -49,7 +50,7 @@ import Text.Megaparsec (errorBundlePretty)
 compileStdin :: [Define] -> String -> IO ()
 compileStdin list_define content = case run tokenize content of
   Left err -> print (errorBundlePretty err)
-  Right res -> print res
+  Right res -> print (sortToken res)
     -- case sequence (map tokenToAST res) of
     -- Right asts -> print asts
     -- Left err -> putStrLn $ "Error: " ++ err
