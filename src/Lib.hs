@@ -9,21 +9,16 @@ module Lib (handleArgs) where
 
 import Control.Exception (IOException, catch)
 import Parser.Tokenizer ( run, tokenize )
-import AST.Conv ( tokenToAST )
+-- import AST.Conv ( tokenToAST )
 import Text.Megaparsec (errorBundlePretty)
-import Parser.SortToken ( sortToken )
+-- import Parser.SortToken ( sortToken )
 
 import System.Exit (ExitCode(ExitFailure), exitWith)
 
 glados :: String -> IO ()
 glados content = case run tokenize content of
   Left err -> putStrLn (errorBundlePretty err)
-  -- Right res -> print (sortToken res)
-  Right res -> case sortToken res of
-    Right sort_list -> case mapM tokenToAST sort_list of
-        Right asts -> print asts
-        Left err -> putStrLn $ "Error token to ast: " ++ err
-    Left err -> putStrLn $ "Error sort token: " ++ err
+  Right res -> print res
 
 helper :: IO ()
 helper = do

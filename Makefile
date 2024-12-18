@@ -20,7 +20,6 @@ clean :
 
 fclean: clean
 	@ $(RM) $(NAME)
-	@ find -name '*~' -delete -o -name '#*#' -delete
 
 re: fclean
 re: all

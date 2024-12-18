@@ -198,7 +198,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
             -- Keyword
             , functionKw
-            , infixKw
+            , precedenceKw
             , structKw
             , isKw
             , importKw
@@ -244,7 +244,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
-        infixKw =  try $ keyword "infix" $> InfixKw -- do we need infix l or r ?
+        precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
         structKw = try $ keyword "struct" $> StructKw
         isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw

@@ -99,8 +99,8 @@ tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
   it "function" $
     run tokenize "function" ==> [FunctionKw]
-  it "infix" $
-    run tokenize "infix" ==> [InfixKw]
+  it "precedence" $
+    run tokenize "precedence" ==> [PrecedenceKw]
   it "struct" $
     run tokenize "struct" ==> [StructKw]
   it "is" $
