@@ -4,6 +4,7 @@
 -- File description:
 -- Token
 -}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 module Parser.Token (Token (..)) where
 

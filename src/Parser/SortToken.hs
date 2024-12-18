@@ -11,12 +11,6 @@ module Parser.SortToken
     ) where
 
 
-import Data.Void (Void)
-import Data.List (singleton)
-import Data.Functor (($>))
-import Control.Applicative ((<|>), some, empty)
-import Control.Monad (void)
-
 import Parser.Token
 
 findParams :: [Token] -> [Token] -> ([Token], [Token])

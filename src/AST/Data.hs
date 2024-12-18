@@ -4,7 +4,7 @@
 -- File description:
 -- glados
 -}
-{-# LANGUAGE InstanceSigs #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 module AST.Data
   ( AST (..)
