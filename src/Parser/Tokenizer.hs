@@ -203,6 +203,9 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , isKw
             , importKw
             , asKw
+            , atKw
+            , ifKw
+            , elseKw
 
             -- Type
             , charT
@@ -245,6 +248,9 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw
         asKw = try $ keyword "as" $> AsKw
+        atKw = try $ keyword "at" $> AtKw
+        ifKw = try $ keyword "if" $> IfKw
+        elseKw = try $ keyword "else" $> ElseKw
 
         -- Type
         charT = try $ keyword "char" $> CharT

@@ -12,8 +12,8 @@ import Test.Hspec.Runner (SpecWith)
 
 import Data.Either (isLeft)
 
-import Tokenizer
-import Token
+import Parser.Tokenizer
+import Parser.Token
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -92,6 +92,8 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "." ==> [Scope]
   it ";" $
     run tokenize ";" ==> [SemiColon]
+  it "," $
+    run tokenize "," ==> [Comma]
 
 tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
@@ -107,6 +109,12 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "import" ==> [ImportKw]
   it "as" $
     run tokenize "as" ==> [AsKw]
+  it "at" $
+    run tokenize "at" ==> [AtKw]
+  it "if" $
+    run tokenize "if" ==> [IfKw]
+  it "else" $
+    run tokenize "else" ==> [ElseKw]
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do

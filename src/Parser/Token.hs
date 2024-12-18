@@ -10,22 +10,27 @@ module Parser.Token (Token (..)) where
 data Token
   =
   -- Keyword
-    FunctionKw -- \| function
-  | InfixKw --    \| infix
-  | StructKw --   \| struct
-  | IsKw --       \| is
-  | ImportKw --   \| import
-  | AsKw --       \| as
+    FunctionKw -- \| function -> declare a function
+  | InfixKw --    \| infix    -> declare an operator
+  | StructKw --   \| struct   -> declare a struct
+  | IsKw --       \| is       -> compare types
+  | ImportKw --   \| import   -> for imports (bonus)
+  | AsKw --       \| as       -> for imports (bonus)
+  | AtKw --       \| at       -> get elem from array
+  | IfKw --       \| if       -> if
+  | ElseKw --     \| else     -> else
   -- Symbol
-  | CurlyOpen --  \|  {   -> struct definition
-  | CurlyClose -- \|  }   -> struct definition
-  | ParenOpen --  \|  (   -> resolve expressions
-  | ParenClose -- \|  )   -> resolve expressions
-  | Assign --     \|  =   -> assign expression to a name (can be a func or a var)
-  | Arrow --      \|  ->  -> return type of functions
-  | Scope --      \|  .   -> used to import a module (std.print, math.facto, ...)
-  | Comma
-  | SemiColon --  \|  ;   -> end of statement
+  | CurlyOpen --    \|  {   -> struct definition
+  | CurlyClose --   \|  }   -> struct definition
+  | ParenOpen --    \|  (   -> resolve expressions
+  | ParenClose --   \|  )   -> resolve expressions
+  | BracketOpen --  \|  [   -> array start
+  | BracketClose -- \|  ]   -> array end
+  | Assign --       \|  =   -> assign expression to a name (can be a func or a var)
+  | Arrow --        \|  ->  -> return type of functions
+  | Scope --        \|  .   -> used to import a module (std.print, math.facto, ...)
+  | SemiColon --    \|  ;   -> end of statement
+  | Comma --       \|  ,   -> separate arguments in function call/creation
   -- Type
   | CharT --  \| char
   | BoolT --  \| bool

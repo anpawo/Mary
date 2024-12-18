@@ -4,12 +4,8 @@
 -- File description:
 -- glados
 -}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
 
-module Lib
-  ( glados,
-  )
-where
+module Lib (handleArgs) where
 
 import Control.Exception (IOException, catch)
 import System.Environment (getArgs)
@@ -17,6 +13,31 @@ import Parser.Tokenizer ( run, tokenize )
 import AST.Conv ( tokenToAST )
 import Text.Megaparsec (errorBundlePretty)
 import Parser.SortToken ( sortToken )
+
+import Control.Exception (catch, IOException)
+import System.Exit (ExitCode(ExitFailure), exitWith)
+
+glados :: String -> IO ()
+glados content = case run tokenize content of
+  Left err -> print (errorBundlePretty err)
+  Right res -> print res
+
+helper :: IO ()
+helper = do
+    putStrLn "execute the file given as argument.\n"
+    putStrLn "--help       => help."
+    putStrLn "--bytecode   => generate bytecode but do not execute it.\n"
+    
+
+handleArgs :: [String] -> IO ()
+handleArgs ["--help"] = helper
+handleArgs ["--bytecode"] = putStrLn "todo bytecode"
+handleArgs [file] = catch (readFile file >>= glados) invalidFile
+    where
+        invalidFile :: IOException -> IO ()
+        invalidFile _ = putStrLn "Invalid file." >> exitWith (ExitFailure 84)
+handleArgs _ = helper
+
 
 -- parseToAST :: [Define] -> String -> Either String ([Define], AST)
 -- parseToAST list_define content = case runParser parseSExpr content of
@@ -55,44 +76,44 @@ compileStdin content = case run tokenize content of
         Left err -> putStrLn $ "Error token to ast: " ++ err
     Left err -> putStrLn $ "Error sort token: " ++ err
 
-readFileEither :: FilePath -> IO (Either String String)
-readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
-  where
-    handleReadError :: IOException -> IO (Either String String)
-    handleReadError _ = return $ Left "Error reading file"
+-- readFileEither :: FilePath -> IO (Either String String)
+-- readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
+--   where
+--     handleReadError :: IOException -> IO (Either String String)
+--     handleReadError _ = return $ Left "Error reading file"
 
-printUsage :: IO ()
-printUsage =
-  putStrLn $
-    unlines
-      [ "Usage: glados [OPTIONS] [EXPRESSION]",
-        "",
-        "Options:",
-        "  -f <file>   Evaluate expressions from the given file.",
-        "  -repl        Start REPL mode.",
-        "  -h             Show this help text.",
-        "",
-        "Examples:",
-        "  ./glados \"(+ 1 2)\"     Evaluate the expression.",
-        "  ./glados -f expr.txt   Evaluate expressions from 'expr.txt'.",
-        "  ./glados -repl              Start REPL mode."
-      ]
+-- printUsage :: IO ()
+-- printUsage =
+--   putStrLn $
+--     unlines
+--       [ "Usage: glados [OPTIONS] [EXPRESSION]",
+--         "",
+--         "Options:",
+--         "  -f <file>   Evaluate expressions from the given file.",
+--         "  -repl        Start REPL mode.",
+--         "  -h             Show this help text.",
+--         "",
+--         "Examples:",
+--         "  ./glados \"(+ 1 2)\"     Evaluate the expression.",
+--         "  ./glados -f expr.txt   Evaluate expressions from 'expr.txt'.",
+--         "  ./glados -repl              Start REPL mode."
+--       ]
 
-processArgs :: [String] -> IO (Either String String)
-processArgs args = case args of
-  ["-h"] -> do
-    printUsage
-    return $ Left "End of the help text"
-  ["-f", filePath] -> readFileEither filePath
-  [] -> do Right <$> getContents
-  -- ["-repl"] -> do
-  --   putStrLn "Welcome to GLaDOS REPL. Type 'quit' to exit."
-  --   gladosRepl []
-  --   return $ Left "REPL mode exited."
-  [expression] -> return $ Right expression
-  _ -> do
-    printUsage
-    return $ Left "Invalid arguments."
+-- processArgs :: [String] -> IO (Either String String)
+-- processArgs args = case args of
+--   ["-h"] -> do
+--     printUsage
+--     return $ Left "End of the help text"
+--   ["-f", filePath] -> readFileEither filePath
+--   [] -> do Right <$> getContents
+--   -- ["-repl"] -> do
+--   --   putStrLn "Welcome to GLaDOS REPL. Type 'quit' to exit."
+--   --   gladosRepl []
+--   --   return $ Left "REPL mode exited."
+--   [expression] -> return $ Right expression
+--   _ -> do
+--     printUsage
+--     return $ Left "Invalid arguments."
 
 glados :: IO ()
 glados = do
