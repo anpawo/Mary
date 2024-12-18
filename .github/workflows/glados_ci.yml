@@ -36,4 +36,4 @@ jobs:
         run : |
           export STACK_ROOT=/tmp/.stack
           stack test --stack-root=$STACK_ROOT --allow-different-user
-        timeout-minutes: 2
+        timeout-minutes: 10
