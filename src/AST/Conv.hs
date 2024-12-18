@@ -28,6 +28,10 @@ tokenToAST (CharLit c) = Right $ AstChar c
 tokenToAST (StringLit str) = Right $ AstStr str
 tokenToAST (BoolLit bool) = Right $ AstBool bool
 tokenToAST (FloatLit float) = Right $ AstFloat float
+tokenToAST (SymbolId _varName) = Right $ AstWord _varName
+tokenToAST (Line [ReturnKw, _value]) = case tokenToAST _value of
+    Right res -> Right $ AstReturn res
+    Left err -> Left err
 tokenToAST (Line [_type, SymbolId _varName]) = Right $ AstVar _varName _type AstNull
 tokenToAST (Line [_type, SymbolId _varName, Assign, _value]) = tokenToASTAssignVar _varName _type _value
 --need to convert the body of the function

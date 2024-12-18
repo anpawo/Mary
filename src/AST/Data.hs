@@ -23,6 +23,8 @@ data AST =
   | AstFunction {funcName :: String, funcType :: Token, funcArgs :: [AST], funcBody :: [AST]}
   | AstVar {varName :: String, varType:: Token, varValue :: AST}
   | AstStructure {structName :: String, structArgs :: [AST]}
+  | AstReturn AST
+  | AstWord String
   deriving (Show)
 
 -- instance Show AST where
