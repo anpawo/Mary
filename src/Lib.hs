@@ -20,7 +20,11 @@ import System.Exit (ExitCode(ExitFailure), exitWith)
 glados :: String -> IO ()
 glados content = case run tokenize content of
   Left err -> print (errorBundlePretty err)
-  Right res -> print res
+  Right res -> case (sortToken res) of
+    Right sort_list -> case sequence (map tokenToAST sort_list) of
+        Right asts -> print asts
+        Left err -> putStrLn $ "Error token to ast: " ++ err
+    Left err -> putStrLn $ "Error sort token: " ++ err
 
 helper :: IO ()
 helper = do
@@ -37,88 +41,3 @@ handleArgs [file] = catch (readFile file >>= glados) invalidFile
         invalidFile :: IOException -> IO ()
         invalidFile _ = putStrLn "Invalid file." >> exitWith (ExitFailure 84)
 handleArgs _ = helper
-
-
--- parseToAST :: [Define] -> String -> Either String ([Define], AST)
--- parseToAST list_define content = case runParser parseSExpr content of
---   Left err -> Left $ "Parsing error: " ++ err
---   Right (sexpr, _) -> case sexprToAST sexpr >>= evalAST list_define of
---     Left err -> Left $ "Error: " ++ err
---     Right res -> Right res
-
--- gladosRepl :: [Define] -> IO ()
--- gladosRepl list_define = do
---   putStr "> "
---   input <- getLine
---   if input == "quit"
---     then return ()
---     else do
---         case parseToAST list_define input of
---             Left err -> do
---                 putStrLn err
---                 gladosRepl list_define
---             Right (new_list_define, value) -> do
---                 valuePrint value
---                 gladosRepl new_list_define
-
--- valuePrint :: AST -> IO()
--- valuePrint value = case value of
---   AstDefine _ -> return ()
---   _ -> print value
-
-compileStdin :: String -> IO ()
-compileStdin content = case run tokenize content of
-  Left err -> print (errorBundlePretty err)
-  -- Right res -> print (sortToken res)
-  Right res -> case (sortToken res) of
-    Right sort_list -> case sequence (map tokenToAST sort_list) of
-        Right asts -> print asts
-        Left err -> putStrLn $ "Error token to ast: " ++ err
-    Left err -> putStrLn $ "Error sort token: " ++ err
-
--- readFileEither :: FilePath -> IO (Either String String)
--- readFileEither filePath = catch (Right <$> readFile filePath) handleReadError
---   where
---     handleReadError :: IOException -> IO (Either String String)
---     handleReadError _ = return $ Left "Error reading file"
-
--- printUsage :: IO ()
--- printUsage =
---   putStrLn $
---     unlines
---       [ "Usage: glados [OPTIONS] [EXPRESSION]",
---         "",
---         "Options:",
---         "  -f <file>   Evaluate expressions from the given file.",
---         "  -repl        Start REPL mode.",
---         "  -h             Show this help text.",
---         "",
---         "Examples:",
---         "  ./glados \"(+ 1 2)\"     Evaluate the expression.",
---         "  ./glados -f expr.txt   Evaluate expressions from 'expr.txt'.",
---         "  ./glados -repl              Start REPL mode."
---       ]
-
--- processArgs :: [String] -> IO (Either String String)
--- processArgs args = case args of
---   ["-h"] -> do
---     printUsage
---     return $ Left "End of the help text"
---   ["-f", filePath] -> readFileEither filePath
---   [] -> do Right <$> getContents
---   -- ["-repl"] -> do
---   --   putStrLn "Welcome to GLaDOS REPL. Type 'quit' to exit."
---   --   gladosRepl []
---   --   return $ Left "REPL mode exited."
---   [expression] -> return $ Right expression
---   _ -> do
---     printUsage
---     return $ Left "Invalid arguments."
-
-glados :: IO ()
-glados = do
-  args <- getArgs
-  result <- processArgs args
-  case result of
-    Left err -> putStrLn err
-    Right content -> compileStdin content
