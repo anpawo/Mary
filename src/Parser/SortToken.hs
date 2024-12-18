@@ -48,9 +48,9 @@ splitBySemicolon tokens = findLine tokens []
 sortTokenStruct :: [Token] -> Either String [Token]
 sortTokenStruct (SymbolId name: CurlyOpen : rest) =
   case span (/= CurlyClose) rest of
-    (inside_struct, CurlyClose: rest_after_struct) -> do
-          let (linesList, _) = splitBySemicolon inside_struct
-          restTokens <- sortToken rest_after_struct
+    (insideStruct, CurlyClose: restAfterStruct) -> do
+          let (linesList, _) = splitBySemicolon insideStruct
+          restTokens <- sortToken restAfterStruct
           Right (StructureSort name linesList : restTokens)
     _ -> Left "error: invalid structure format"
 sortTokenStruct _ = Left "error: invalid struct format"
@@ -58,13 +58,13 @@ sortTokenStruct _ = Left "error: invalid struct format"
 sortTokenFunct :: [Token] -> Either String [Token]
 sortTokenFunct (SymbolId name : ParenOpen : rest) =
   case span (/= ParenClose) rest of
-    (params, ParenClose : Arrow : function_type :CurlyOpen : bodyTokens) ->
-      let (linesList, rest_after_param) = splitBySemicolon bodyTokens
-      in if head rest_after_param == CurlyClose
+    (params, ParenClose : Arrow : functionType :CurlyOpen : bodyTokens) ->
+      let (linesList, restAfterParam) = splitBySemicolon bodyTokens
+      in if head restAfterParam == CurlyClose
          then do
-           let (sort_params, _) = splitByComma params
-           restTokens <- sortToken (drop 1 rest_after_param)
-           Right (FunctionSort name sort_params function_type linesList : restTokens)
+           let (sortParams, _) = splitByComma params
+           restTokens <- sortToken (drop 1 restAfterParam)
+           Right (FunctionSort name sortParams functionType linesList : restTokens)
          else Left "error: missing or extra tokens after closing curly brace"
     _ -> Left "error: invalid function format"
 sortTokenFunct _ = Left "error: invalid function format"

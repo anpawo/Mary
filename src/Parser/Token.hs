@@ -44,6 +44,6 @@ data Token
   | OperatorId String  --  \| <*>, +
   -- Sort token
   | Line [Token]
-  | FunctionSort {func_sort_name :: String, func_sort_param:: [Token], func_sort_type :: Token, func_sort_body :: [Token]}
-  | StructureSort {struct_sort_name :: String, struct_sort_body :: [Token]}
+  | FunctionSort {funcSortName :: String, funcSortParam:: [Token], funcSortType :: Token, funcSortBody :: [Token]}
+  | StructureSort {structSortName :: String, structSortBody :: [Token]}
   deriving (Show, Eq)
