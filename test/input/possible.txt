@@ -2,6 +2,7 @@ function add_mul(int a, int b, int c) -> int {
     return a + b * c;
 }
 
+/*
 struct vec {
     int x;
     int y;
@@ -27,3 +28,4 @@ function helper(str message) -> void {
     print(message);
     exit(0);
 }
+*/

@@ -9,6 +9,10 @@
 
 module Ast.Ast (Ast(..), Expression (..), tokenToAst) where
 import Parser.Token
+    ( Token(StructKw, FunctionKw, OperatorKw),
+      Identifier(..),
+      Literal,
+      Type(IntType) )
 
 data Expression
   = VariableCall { varName :: Identifier }
