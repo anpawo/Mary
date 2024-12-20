@@ -10,7 +10,6 @@
 module Main (main) where
 
 import System.Environment (getArgs)
-import System.Exit (ExitCode(ExitFailure), exitWith)
 import Control.Exception (IOException, catch)
 
 import Parser.Tokenizer (run, tokenize)

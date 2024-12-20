@@ -1,3 +1,7 @@
+function add_mul(int a, int b, int c) -> int {
+    return a + b * c;
+}
+
 struct vec {
     int x;
     int y;
@@ -13,13 +17,13 @@ function print_c_or_d(int a, int b, char c, char d) -> int {
 
 operator ** precedence 8 (int n, int p) -> int {
     if (p == 0) {
-        return 1
+        return 1;
     } else {
-        return n * n ** (p - 1)
+        return n * n ** (p - 1);
     }
 }
 
 function helper(str message) -> void {
-    print(message)
-    exit(0)
+    print(message);
+    exit(0);
 }
