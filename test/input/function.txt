@@ -1,0 +1,7 @@
+function add_mul(int a, int b, int c) -> int {
+    return a + b * c;
+}
+
+function add_mul() -> int {
+    return a + b * c;
+}

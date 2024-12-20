@@ -16,7 +16,7 @@ data Type
   | FloatType --            \| float
   | StrType --              \| str
   | ArrType --              \| arr
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data Literal
   = CharLit Char --      \| 'c'   -> may be a list of char
@@ -24,12 +24,12 @@ data Literal
   | IntLit Int --        \| 2
   | FloatLit Double --   \| 1.5
   | StringLit String --  \| "yo"   -> may be a list of char
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data Identifier
   = SymbolId String --   \| factorial, add_2, x
   | OperatorId String -- \| <*>, +, *, **
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data Token
   =
@@ -63,4 +63,4 @@ data Token
   | Literal Literal
   -- Identifier
   | Identifier Identifier
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
