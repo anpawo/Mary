@@ -62,13 +62,13 @@ tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
 
 ast :: Ctx -> Parser Ctx
-ast ctx = (eof $> []) <|> ((function ctx <|> operator ctx <|> structure) >>= (\x -> ast (x : ctx)))
+ast ctx = (eof $> []) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (x : ctx)))
 
 tok :: MyToken -> Parser MyToken
 tok = single
 
 sym :: Parser String
-sym = satisfy isSym >>= (\token -> case token of
+sym = satisfy isSym >>= (\t -> case t of
   Identifier (SymbolId name) -> pure name
   _ -> fail errImpossibleCase
   )
@@ -77,7 +77,7 @@ sym = satisfy isSym >>= (\token -> case token of
     isSym _ = False
 
 types :: Bool -> Parser Type
-types canBeVoid = (choice (t ++ vt)) <|> (offset 1 *> fail (errExpectedType canBeVoid))
+types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
   where
     t =
       [ tok (Type CharType) $> CharType
@@ -91,8 +91,8 @@ types canBeVoid = (choice (t ++ vt)) <|> (offset 1 *> fail (errExpectedType canB
       | canBeVoid = [tok (Type VoidType) $> VoidType]
       | otherwise = []
 
-offset :: MonadParsec e s m => Int -> m ()
-offset i = setOffset =<< fmap (+ i) getOffset
+failN :: (MonadParsec e s m, MonadFail m) => String -> m a
+failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
 
 -- The function exists to be able to return the value expected
 notTaken :: [String] -> (a -> String) -> a -> Parser a
@@ -118,7 +118,7 @@ getFnArgs names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
 -- getFnArgs names = tok ParenOpen *> many ((,) <$> types <*> sym <* (lookAhead (tok ParenClose) <|> tok Comma)) <* tok ParenClose
 
 getFnRetType :: Parser Type
-getFnRetType = tok Arrow *> (types True)
+getFnRetType = tok Arrow *> types True
 
 getNames :: Ctx -> [String]
 getNames [] = []
@@ -126,11 +126,11 @@ getNames (Structure {structName = name}:rst) = name : getNames rst
 getNames (Function {fnName = name}:rst) = name : getNames rst
 getNames (Operator {opName = name}:rst) = name : getNames rst
 
-expression :: Ctx -> Parser Expression
-expression ctx = fail "expression todo"
+-- expression :: Ctx -> Parser Expression
+-- expression ctx = fail "expression todo"
 
-functionBody :: Ctx -> [(Type, String)] -> Type -> Parser [Expression]
-functionBody _ _ _ = pure []
+-- functionBody :: Ctx -> [(Type, String)] -> Type -> Parser [Expression]
+-- functionBody _ _ _ = pure []
 -- functionBody ctx args retT = do
 --   expr <- notFollowedBy (tok CurlyClose) >> expression
 --   expr
@@ -145,8 +145,9 @@ function ctx = do
   return $ Function name args retT []
 
 operator :: Ctx -> Parser Ast
-operator _ = pure $ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
+operator _ = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
+-- temporary
 
 structure :: Parser Ast
-structure = pure $ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
+structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
 -- tu peux delete ce qui est au dessus c juste pour pouvoir compiler
