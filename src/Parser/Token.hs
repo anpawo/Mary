@@ -2,11 +2,10 @@
 -- EPITECH PROJECT, 2024
 -- glados
 -- File description:
--- Token
+-- MyToken
 -}
-{-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Parser.Token (Token (..), Type (..), Literal(..), Identifier(..)) where
+module Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..)) where
 
 data Type
   = CharType --             \| char
@@ -16,7 +15,16 @@ data Type
   | FloatType --            \| float
   | StrType --              \| str
   | ArrType --              \| arr
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord)
+
+instance Show Type where
+  show CharType = "char"
+  show VoidType = "void"
+  show BoolType = "bool"
+  show IntType = "int"
+  show FloatType = "float"
+  show StrType = "str"
+  show ArrType = "arr"
 
 data Literal
   = CharLit Char --      \| 'c'   -> may be a list of char
@@ -24,14 +32,26 @@ data Literal
   | IntLit Int --        \| 2
   | FloatLit Double --   \| 1.5
   | StringLit String --  \| "yo"   -> may be a list of char
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord)
+
+instance Show Literal where
+  show (CharLit x) = show x
+  show (BoolLit True) = "true"
+  show (BoolLit False) = "false"
+  show (IntLit x) = show x
+  show (FloatLit x) = show x
+  show (StringLit x) = show x
 
 data Identifier
   = SymbolId String --   \| factorial, add_2, x
   | OperatorId String -- \| <*>, +, *, **
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord)
 
-data Token
+instance Show Identifier where
+  show (SymbolId x) = x
+  show (OperatorId x) = x
+
+data MyToken
   =
   -- Keyword
     FunctionKw --        \| function     -> declare a function
@@ -63,4 +83,32 @@ data Token
   | Literal Literal
   -- Identifier
   | Identifier Identifier
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord)
+
+instance Show MyToken where
+  show FunctionKw = "function"
+  show OperatorKw = "operator"
+  show PrecedenceKw = "precedence"
+  show StructKw = "struct"
+  show IsKw = "is"
+  show ImportKw = "import"
+  show AsKw = "as"
+  show AtKw = "at"
+  show IfKw = "if"
+  show ElseKw = "else"
+  show ReturnKw = "return"
+
+  show CurlyOpen = "{"
+  show CurlyClose = "}"
+  show ParenOpen = "("
+  show ParenClose = ")"
+  show BracketOpen = "{"
+  show BracketClose = "}"
+  show Assign = "="
+  show Arrow = "->"
+  show Scope = "."
+  show SemiColon = ";"
+  show Comma = ","
+  show (Type t) = show t
+  show (Literal l) = show l
+  show (Identifier i) = show i
