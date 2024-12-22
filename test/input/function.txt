@@ -1,4 +1,4 @@
-function add_mul1(int blob, int blob, int c) -> int {
+function add_mul1(int a, int b, int c) -> int {
     return a + b * c;
 }
 /*
