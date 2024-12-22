@@ -1,7 +1,12 @@
-function add_mul(int a, int b, int c) -> int {
+function add_mul1(int blob, int blob, int c) -> int {
     return a + b * c;
+}
+/*
+function add_mul2() -> int {
+    return 1 + 2 * 3;
 }
 
-function add_mul() -> int {
-    return a + b * c;
+function add_mul3(int a) -> int {
+    return a + 2 * 3;
 }
+*/

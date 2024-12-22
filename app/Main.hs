@@ -10,16 +10,20 @@ module Main (main) where
 import System.Environment (getArgs)
 import Control.Exception (IOException, catch)
 
-import Parser.Tokenizer (run, tokenize, (&>), comment)
 import Text.Megaparsec (errorBundlePretty)
--- import Ast.Ast (tokenToAst)
+
+import Parser.Tokenizer (run, tokenize, (&>), comment)
+import Ast.Ast (tokenToAst)
+import Ast.Error
 
 type ArgInfo = String
 
 glados :: String -> IO ()
 glados content = case run (comment &> tokenize) content of
-  Left err -> putStrLn (errorBundlePretty err)
-  Right res -> print {-- tokenToAst --} res
+  Left err -> print $ errorBundlePretty err
+  Right tokens -> case run tokenToAst tokens of
+    Left err' -> putStrLn $ prettyPrintError tokens err'
+    Right res' -> print res'
 
 
 helper :: String
