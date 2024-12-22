@@ -45,7 +45,7 @@ type Parser = Parsec Void String
 
 
 -- utils
-run :: Parser a -> String -> Either (ParseErrorBundle String Void) a
+run :: Parsec Void input output -> input -> Either (ParseErrorBundle input Void) output
 run parser = runParser parser ""
 
 skipString :: Parser String
@@ -173,7 +173,7 @@ namespace = getImport ~> applyNamespace
 
 
 -- TokenType
-tokenize :: Parser [Token]
+tokenize :: Parser [MyToken]
 tokenize = spaces *> manyTill (tokens <* spaces) eof
     where
         tokens = choice
