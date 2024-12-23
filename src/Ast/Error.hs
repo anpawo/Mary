@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef) where
+module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType) where
 
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
 import Parser.Token
@@ -20,6 +20,21 @@ errExpectedType :: Bool -> String
 errExpectedType voidOk
     | voidOk = "expected a " ++ purple "type" ++ " (including void)."
     | otherwise = "expected a " ++ purple "type" ++ " (excluding void)."
+
+errExpectedStartBody :: String
+errExpectedStartBody = "expected a '" ++ purple "{" ++ "' representing the start of the " ++ purple "body" ++ " of the function."
+
+errExpectedEndBody :: String
+errExpectedEndBody = "expected a '" ++ purple "}" ++ "' representing the end of the " ++ purple "body" ++ " of the function."
+
+errTodo :: String -> String
+errTodo s = "todo: " ++ purple s ++ "."
+
+errVoidRet :: String
+errVoidRet = purple "void" ++ " function should not " ++ purple "return" ++ "."
+
+errRetType :: String -> String -> String
+errRetType expected got = "invalid " ++ purple "return type" ++ " expected " ++ purple expected ++ " got " ++ purple got ++ "."
 
 errTopLevelDef :: String
 errTopLevelDef = "top level declaration must be " ++ purple "function" ++ ", " ++ purple "operator" ++ " or " ++ purple "struct."
@@ -41,7 +56,7 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | otherwise = ""
                 tokLeft = let tc = take 3 (drop pos tokens) in unwords $ show <$> tc
                 pointer = replicate (length tokCons + 2) ' ' ++ replicate (length tokErr - 2) '^'
-        x -> "This error should be transformed into a custom one" ++ show x
+        x -> "This error should be transformed into a custom one:\n" ++ show x
 
 suffix :: [a] -> [a]
 suffix l
