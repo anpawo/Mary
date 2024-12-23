@@ -20,10 +20,14 @@ module Ast.Ast
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset)
+-- import Debug.Trace (trace)
+
+import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional)
 import Data.Void (Void)
-import Control.Applicative ((<|>))
 import Data.Functor (($>))
+import Data.List (find)
+import Control.Applicative ((<|>))
+import Control.Monad (void)
 
 import Parser.Token (MyToken(..), Identifier(..), Literal(..), Type(..))
 import Ast.Error
@@ -39,7 +43,7 @@ data SubExpression
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varName :: String, fnValue :: SubExpression } -- variable creation inside a function
+  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation inside a function
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
   deriving (Show, Eq)
@@ -70,7 +74,7 @@ tok = single
 sym :: Parser String
 sym = satisfy isSym >>= (\t -> case t of
   Identifier (SymbolId name) -> pure name
-  _ -> fail errImpossibleCase
+  _ -> failN errImpossibleCase
   )
   where
     isSym (Identifier (SymbolId _)) = True
@@ -113,9 +117,7 @@ getFnArgs names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
       case endFound of
         ParenClose -> pure [arg]
         Comma -> (arg :) <$> getAllArgs (snd arg : names')
-        _ -> fail errImpossibleCase
-
--- getFnArgs names = tok ParenOpen *> many ((,) <$> types <*> sym <* (lookAhead (tok ParenClose) <|> tok Comma)) <* tok ParenClose
+        _ -> failN errImpossibleCase
 
 getFnRetType :: Parser Type
 getFnRetType = tok Arrow *> types True
@@ -126,23 +128,72 @@ getNames (Structure {structName = name}:rst) = name : getNames rst
 getNames (Function {fnName = name}:rst) = name : getNames rst
 getNames (Operator {opName = name}:rst) = name : getNames rst
 
--- expression :: Ctx -> Parser Expression
--- expression ctx = fail "expression todo"
+-- type Variable = [(Type, String)]
+type LocalVariable = [(Type, String)]
+type RetType = Type
 
--- functionBody :: Ctx -> [(Type, String)] -> Type -> Parser [Expression]
--- functionBody _ _ _ = pure []
--- functionBody ctx args retT = do
---   expr <- notFollowedBy (tok CurlyClose) >> expression
---   expr
+expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
+expression ctx locVar retT =
+      exprReturn ctx locVar retT
+  <|> exprIf ctx locVar retT
+  <|> exprVariable ctx locVar retT
+  <|> exprSubexpr ctx locVar retT
+
+exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprIf _ _ _ = failN $ errTodo "if expression"
+
+exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprReturn _ _ VoidType = failN errVoidRet
+exprReturn ctx locVar retT = do
+  void (tok ReturnKw)
+  subexpr <- subexpression ctx locVar
+  case subexpr of
+    (VariableCall x) -> let v = find (\(_, n) -> n == x) locVar in
+      case v of
+        Just (t, _)
+          | t == retT -> return $ Return subexpr
+          | otherwise -> failN $ errRetType (show retT) (show t)
+        Nothing -> failN errImpossibleCase
+    _ -> failN $ errTodo "return (u did only variable call)"
+
+exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprVariable _ _ _ = failN $ errTodo "variable creation expression"
+
+exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprSubexpr _ _ _ = failN $ errTodo "sub expression"
+
+subexpression :: Ctx -> LocalVariable -> Parser SubExpression
+subexpression _ _ = failN $ errTodo "subexpression"
+
+getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
+getFnBody ctx locVar retT = do
+  void (tok CurlyOpen) <|> failN errExpectedStartBody
+  expr <- getExprAndUpdateCtx ctx locVar retT
+  void (tok CurlyClose) <|> failN errExpectedEndBody
+  return expr
+  where
+    getExprAndUpdateCtx :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
+    getExprAndUpdateCtx c l r = do
+      next <- optional $ lookAhead $ tok CurlyClose
+      case next of
+        Just CurlyClose -> pure []
+        _ -> do
+          expr <- expression c l r
+          case expr of
+            x@(Variable metadata _) -> (:) x <$> getExprAndUpdateCtx c (metadata : l) r
+            x@(Return {}) -> pure [x]
+            x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
+            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r
+
 
 function :: Ctx -> Parser Ast
 function ctx = do
   name <- getFnName (getNames ctx)
   args <- getFnArgs (name : getNames ctx)
   retT <- getFnRetType
-  -- body <- tok CurlyOpen *> functionBody (Function name args retT [] : ctx) args retT <* tok CurlyClose
-  -- return $ Function name args retT body
-  return $ Function name args retT []
+  let shellFn = Function name args retT []
+  body <- getFnBody (shellFn : ctx) args retT
+  return $ Function name args retT body
 
 operator :: Ctx -> Parser Ast
 operator _ = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}

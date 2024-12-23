@@ -1,7 +1,12 @@
-function add_mul1(int a, int b, int c) -> int {
+function add_mul1(int alpha) -> int {
+    return a;
+}
+
+/*
+function add_mul1(int alpha, int beta, int charlie) -> void {
     return a + b * c;
 }
-/*
+
 function add_mul2() -> int {
     return 1 + 2 * 3;
 }
