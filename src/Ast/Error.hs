@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType) where
+module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyGroup, errEmptyExpr, errOpNotDefined, errMissingOperand) where
 
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
 import Parser.Token
@@ -32,6 +32,24 @@ errTodo s = "todo: " ++ purple s ++ "."
 
 errVoidRet :: String
 errVoidRet = purple "void" ++ " function should not " ++ purple "return" ++ "."
+
+errEndSubexpr :: String
+errEndSubexpr = "expected end of expression '" ++ purple ";" ++ "'."
+
+errEmptyGroup :: String
+errEmptyGroup = "groups '" ++ purple "(...)" ++ "' cannot be empty."
+
+errEmptyExpr :: String
+errEmptyExpr = "expressions '" ++ purple "...;" ++ "' cannot be empty."
+
+errOpNotDefined :: String -> String
+errOpNotDefined op = "the operator '" ++ purple op ++ "' is not defined."
+
+errMissingOperand :: String -> String -> String
+errMissingOperand side name = "missing the " ++ purple side ++ " operand for the operator '" ++ purple name ++ "'."
+
+errInvalidExprToken :: MyToken -> String
+errInvalidExprToken t = "invalid expression '" ++ purple (show t) ++ "'."
 
 errRetType :: String -> String -> String
 errRetType expected got = "invalid " ++ purple "return type" ++ " expected " ++ purple expected ++ " got " ++ purple got ++ "."
