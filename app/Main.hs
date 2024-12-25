@@ -20,7 +20,7 @@ type ArgInfo = String
 
 glados :: String -> IO ()
 glados content = case run (comment &> tokenize) content of
-  Left err -> print $ errorBundlePretty err
+  Left err -> putStrLn $ errorBundlePretty err
   Right tokens -> case run tokenToAst tokens of
     Left err' -> putStrLn $ prettyPrintError tokens err'
     Right res' -> print res'
