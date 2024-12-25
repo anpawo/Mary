@@ -73,7 +73,7 @@ prefixIdentifierChar :: Parser Char
 prefixIdentifierChar = alphaNumChar <|> underscore
 
 infixIdentifierChar :: Parser Char
-infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$', '.']
+infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -234,15 +234,15 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
-        curlyOpenSym = symbol "{" $> CurlyOpen
-        curlyCloseSym = symbol "}" $> CurlyClose
-        parenOpenSym = symbol "(" $> ParenOpen
-        parenCloseSym = symbol ")" $> ParenClose
-        bracketOpenSym = symbol "[" $> BracketOpen
-        bracketCloseSym = symbol "]" $> BracketClose
-        assignSym = symbol "=" $> Assign
-        arrowSym = symbol "->" $> Arrow
-        scopeSym = symbol "." $> Scope
+        curlyOpenSym = char '{' $> CurlyOpen
+        curlyCloseSym = char '}' $> CurlyClose
+        parenOpenSym = char '(' $> ParenOpen
+        parenCloseSym = char ')' $> ParenClose
+        bracketOpenSym = char '[' $> BracketOpen
+        bracketCloseSym = char ']' $> BracketClose
+        assignSym = char '=' $> Assign
+        arrowSym = try $ symbol "->" $> Arrow
+        scopeSym = char '.' $> Scope
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
 
@@ -269,6 +269,6 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         arrT = try $ keyword "arr" $> ArrType
 
         -- Identifier
-        symbolId = try $ SymbolId <$> some prefixIdentifierChar
-        operatorId = try $ OperatorId <$> some infixIdentifierChar
+        symbolId = SymbolId <$> some prefixIdentifierChar -- thought i prevented numbers as starting names
+        operatorId = OperatorId <$> some infixIdentifierChar
 -- TokenType
