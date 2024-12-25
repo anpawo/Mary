@@ -103,6 +103,9 @@ types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
 
+failI :: (MonadParsec e s m, MonadFail m) => Int -> String -> m a
+failI idx err = setOffset idx *> fail err
+
 -- The function exists to be able to return the value expected
 notTaken :: [String] -> (a -> String) -> a -> Parser a
 notTaken names f x
@@ -166,17 +169,29 @@ exprVariable _ _ _ = failN $ errTodo "variable creation expression"
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprSubexpr _ _ _ = failN $ errTodo "sub expression"
 
-data Group = GGr [Group] | GLit Parser.Token.Literal | GFn String [Group] | GVar String | GOp String [Group] deriving (Show) -- should contain an index to make better errors
+type Idx = Int
+type Prec = Int
+type Name = String
+
+data Group
+  = GGr Idx [Group]
+  | GLit Idx Parser.Token.Literal
+  | GFn Idx String [Group]
+  | GVar Idx String
+  | GOp Idx String [Group]
+  deriving (Show) -- should contain an index to make better errors
 
 getGroup :: Parser Group
-getGroup = choice
-  [ eof *> fail errEndSubexpr
-  , GGr <$> (tok ParenOpen *> someTill getGroup (tok ParenClose) <|> failN errEmptyGroup)
-  , GLit <$> glit
-  , GVar <$> try gsym <* notFollowedBy (tok ParenOpen)
-  , GFn <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-  , GOp <$> gop <*> pure []
-  ]
+getGroup = do
+  offset <- (+1) <$> getOffset
+  choice
+    [ eof *> fail errEndSubexpr
+    , GGr offset <$> (tok ParenOpen *> someTill getGroup (tok ParenClose) <|> failN errEmptyGroup)
+    , GLit offset <$> glit
+    , GVar offset <$> try gsym <* notFollowedBy (tok ParenOpen)
+    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , GOp offset <$> gop <*> pure []
+    ]
   where
     glit = satisfy (\case
       Parser.Token.Literal _ -> True
@@ -201,39 +216,40 @@ getGroup = choice
         Comma -> (arg :) <$> getAllArgs
         _ -> failN errImpossibleCase
 
-type Idx = Int
-type Prec = Int
-type Name = String
-
 mountGroup :: Ctx -> [Group] -> Parser Group
-mountGroup _ [] = fail errEmptyExpr -- should never happen
+mountGroup _ [] = fail errEmptyExpr
 mountGroup _ [x@(GLit {})] = pure x
 mountGroup _ [x@(GFn {})] = pure x
 mountGroup _ [x@(GVar {})] = pure x
-mountGroup _ [x@(GOp _ [_, _])] = pure x
-mountGroup ctx (GGr group: rst) = mountGroup ctx group >>= mountGroup ctx . (:rst)
+mountGroup _ [x@(GOp _ _ [_, _])] = pure x
+mountGroup ctx (GGr _ group: rst) = mountGroup ctx group >>= mountGroup ctx . (:rst)
 mountGroup ctx group = do
-  trace ("group=" ++ show group) (pure ())
   opId <- calcPrec Nothing (-1) 1 group
-  trace ("opid=" ++ show opId) (pure ())
   case opId of
     Nothing -> fail errImpossibleCase
     (Just (x, name))
-      | x <= 0 -> fail $ errMissingOperand "left" name
-      | x >= length group - 1 -> fail $ errMissingOperand "right" name
-      | otherwise -> let l = group !! (x - 1)
-                         r = group !! (x + 1) in
-                        case l of
-                          (GOp _ []) -> fail $ errMissingOperand "left" name
-                          _ -> case r of
-                            (GOp _ []) -> fail $ errMissingOperand "right" name
-                            _ -> mountGroup ctx (take (x - 1) group ++ (GOp (getOpName (group !! x)) [l, r] : drop (x + 2) group))
+      | x <= 0 -> failI (getOpIdx (head group)) $ errMissingOperand "left" name
+      | x >= length group - 1 -> failI (getOpIdx (last group)) $ errMissingOperand "right" name
+      | otherwise -> do
+        let tmpL = group !! (x - 1)
+        let tmpR = group !! (x + 1)
+        l <- case tmpL of
+          (GGr {}) -> mountGroup ctx [tmpL]
+          _ -> pure tmpL
+        r <- case tmpR of
+          (GGr {}) -> mountGroup ctx [tmpR]
+          _ -> pure tmpR
+        case l of
+          (GOp _ _ []) -> failI (getOpIdx (group !! x)) $ errMissingOperand "left" name
+          _ -> case r of
+            (GOp _ _ []) -> failI (getOpIdx (group !! x)) $ errMissingOperand "right" name
+            _ -> mountGroup ctx (take (x - 1) group ++ (GOp (getOpIdx (group !! x)) (getOpName (group !! x)) [l, r] : drop (x + 2) group))
   where
     calcPrec :: Maybe (Prec, Name) -> Idx -> Idx -> [Group] -> Parser (Maybe (Idx, Name))
     calcPrec Nothing _ _ [] = pure Nothing
     calcPrec (Just (_, name)) idx _ [] = pure $ Just (idx, name)
-    calcPrec prec idx idx2 (GOp name []: rst) = case find (isSame name) ctx of
-      Nothing -> fail $ errOpNotDefined name
+    calcPrec prec idx idx2 (GOp tokIdx name []: rst) = case find (isSame name) ctx of
+      Nothing -> failI tokIdx $ errOpNotDefined name
       Just (Operator {..}) -> case prec of
         Nothing -> calcPrec (Just (opPrecedence, opName)) (idx + idx2) 1 rst
         Just (oldPrec, _)
@@ -246,8 +262,12 @@ mountGroup ctx group = do
     isSame _ _ = False
 
 getOpName :: Group -> String
-getOpName (GOp name _) = name
+getOpName (GOp _ name _) = name
 getOpName _ = error "error: the token isn't an operator"
+
+getOpIdx :: Group -> Int
+getOpIdx (GOp index _ _) = index
+getOpIdx _ = error "error: the token isn't an operator"
 
 validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
 validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
