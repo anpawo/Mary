@@ -1,3 +1,22 @@
 function add_mul1(int alpha) -> int {
-    return a + + b * c * d;
+    return a * (a + b) * c;
 }
+
+/*
+### handled errors to check with unit tests:
+- missing right operand of an operator in the center
+    return + b * * c *;
+- missing right operand of the last operator
+    return + b * c *;
+- missing left operand of an operator in the center
+    return + b + * c *;
+- missing left operand of the first operator
+    return * b * c *;
+- invalid operator name
+    return a <*> b;
+- missing operands in parenthesis
+    return a * (*) * c;
+- group priority being respected
+    return a * (a + b) * c;
+
+*/
