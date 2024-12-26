@@ -10,6 +10,10 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# HLINT ignore "Use isNothing" #-}
+-- to prevent warnings
+{-# HLINT ignore "Redundant return" #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Ast.Ast
   (
@@ -21,8 +25,6 @@ module Ast.Ast
     runParser,
     function
   ) where
-
-import Debug.Trace (trace)
 
 import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill)
 import Data.Void (Void)
@@ -39,7 +41,6 @@ type Parser = Parsec Void [MyToken]
 data SubExpression
   = VariableCall { varName :: String }
   | FunctionCall { fnName :: String, fnArgs :: [SubExpression]}
-  | OperatorCall { opName :: String, opArgs :: [SubExpression]}
   | Literal Literal
   | Builtin { builtinName :: String } -- operator + - * / -- this should only be set my default at the start of the parsing and handled by the vm
   deriving (Show, Eq)
@@ -70,7 +71,7 @@ tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
 
 ast :: Ctx -> Parser Ctx
-ast ctx = (eof $> []) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (x : ctx)))
+ast ctx = (eof $> ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (x : ctx)))
 
 tok :: MyToken -> Parser MyToken
 tok = single
@@ -160,7 +161,8 @@ exprReturn ctx locVar retT = do
           | t == retT -> return $ Return subexpr
           | otherwise -> failN $ errRetType (show retT) (show t)
         Nothing -> failN $ errImpossibleCase "exprReturn case v"
-    _ -> failN $ errTodo "return (u did only variable call)"
+    (FunctionCall {}) -> return $ Return subexpr
+    _ -> failN $ errTodo "return (u did only variable call and function call)"
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
@@ -283,14 +285,18 @@ validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
 validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
 
 toSubexpr :: Group -> Parser SubExpression
-toSubexpr group = failN $ errTodo "convert to subexpr"
+toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
+toSubexpr (GLit _ lit) = pure $ Ast.Ast.Literal lit
+toSubexpr (GFn _ name body) = FunctionCall name <$> traverse toSubexpr body
+toSubexpr (GVar _ name) = pure $ VariableCall name
+toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 
 subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
   group <- someTill getGroup (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
-  subex <- trace (show mount) (toSubexpr mount)
-  validateSubexpr ctx locVar subex
+  subex <- toSubexpr mount
+  -- trace (show subex) (validateSubexpr ctx locVar subex)
   return subex
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
@@ -311,7 +317,7 @@ getFnBody ctx locVar retT = do
             x@(Variable metadata _) -> (:) x <$> getExprAndUpdateCtx c (metadata : l) r
             x@(Return {}) -> pure [x]
             x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
-            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r
+            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
 
 function :: Ctx -> Parser Ast

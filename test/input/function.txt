@@ -1,5 +1,5 @@
-function add_mul1(int alpha) -> int {
-    return a + b * c;
+function add_mul(int a, int b, int c) -> int {
+    return a + b * c ;
 }
 
 /*
