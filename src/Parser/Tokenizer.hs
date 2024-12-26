@@ -45,7 +45,7 @@ type Parser = Parsec Void String
 
 
 -- utils
-run :: Parser a -> String -> Either (ParseErrorBundle String Void) a
+run :: Parsec Void input output -> input -> Either (ParseErrorBundle input Void) output
 run parser = runParser parser ""
 
 skipString :: Parser String
@@ -73,7 +73,7 @@ prefixIdentifierChar :: Parser Char
 prefixIdentifierChar = alphaNumChar <|> underscore
 
 infixIdentifierChar :: Parser Char
-infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$', '.']
+infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -173,23 +173,25 @@ namespace = getImport ~> applyNamespace
 
 
 -- TokenType
-tokenize :: Parser [Token]
+tokenize :: Parser [MyToken]
 tokenize = spaces *> manyTill (tokens <* spaces) eof
     where
         tokens = choice
             [
               -- Literal
-              charLit
-            , boolLit
-            , fltLit
-            , intLit
-            , strLit
+              Literal <$> charLit
+            , Literal <$> boolLit
+            , Literal <$> fltLit
+            , Literal <$> intLit
+            , Literal <$> strLit
 
             -- Symbol
             ,  curlyOpenSym
             ,  curlyCloseSym
             ,  parenOpenSym
             ,  parenCloseSym
+            ,  bracketOpenSym
+            ,  bracketCloseSym
             ,  assignSym
             ,  arrowSym
             ,  semicolonSym
@@ -198,7 +200,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
             -- Keyword
             , functionKw
-            , infixKw
+            , operatorKw
+            , precedenceKw
             , structKw
             , isKw
             , importKw
@@ -209,16 +212,17 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , returnKw
 
             -- Type
-            , charT
-            , boolT
-            , intT
-            , floatT
-            , strT
-            , arrT
+            , Type <$> charT
+            , Type <$> voidT
+            , Type <$> boolT
+            , Type <$> intT
+            , Type <$> floatT
+            , Type <$> strT
+            , Type <$> arrT
 
             -- Identifier
-            , symbolId
-            , operatorId
+            , Identifier <$> symbolId
+            , Identifier <$> operatorId
 
             ]
 
@@ -230,21 +234,22 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
-        curlyOpenSym =  char '{' $> CurlyOpen
-        curlyCloseSym =  char '}' $> CurlyClose
-
-        parenOpenSym =  char '(' $> ParenOpen
-        parenCloseSym =  char ')' $> ParenClose
-
-        assignSym =  symbol "=" $> Assign
-        arrowSym =  symbol "->" $> Arrow
-        scopeSym =  symbol "." $> Scope
+        curlyOpenSym = char '{' $> CurlyOpen
+        curlyCloseSym = char '}' $> CurlyClose
+        parenOpenSym = char '(' $> ParenOpen
+        parenCloseSym = char ')' $> ParenClose
+        bracketOpenSym = char '[' $> BracketOpen
+        bracketCloseSym = char ']' $> BracketClose
+        assignSym = char '=' $> Assign
+        arrowSym = try $ symbol "->" $> Arrow
+        scopeSym = char '.' $> Scope
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
-        infixKw =  try $ keyword "infix" $> InfixKw -- do we need infix l or r ?
+        operatorKw = try $ keyword "operator" $> OperatorKw
+        precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
         structKw = try $ keyword "struct" $> StructKw
         isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw
@@ -255,14 +260,15 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         returnKw = try $ keyword "return" $> ReturnKw
 
         -- Type
-        charT = try $ keyword "char" $> CharT
-        boolT = try $ keyword "bool" $> BoolT
-        intT = try $ keyword "int" $> IntT
-        floatT = try $ keyword "float" $> FloatT
-        strT = try $ keyword "str" $> StrT
-        arrT = try $ keyword "arr" $> ArrT
+        charT = try $ keyword "char" $> CharType
+        voidT = try $ keyword "void" $> VoidType
+        boolT = try $ keyword "bool" $> BoolType
+        intT = try $ keyword "int" $> IntType
+        floatT = try $ keyword "float" $> FloatType
+        strT = try $ keyword "str" $> StrType
+        arrT = try $ keyword "arr" $> ArrType
 
         -- Identifier
-        symbolId = try $ SymbolId <$> some prefixIdentifierChar
-        operatorId = try $ OperatorId <$> some infixIdentifierChar
+        symbolId = SymbolId <$> some prefixIdentifierChar -- thought i prevented numbers as starting names
+        operatorId = OperatorId <$> some infixIdentifierChar
 -- TokenType
