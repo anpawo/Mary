@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyGroup, errEmptyExpr, errOpNotDefined, errMissingOperand) where
+module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr) where
 
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
 import Parser.Token
@@ -36,8 +36,8 @@ errVoidRet = purple "void" ++ " function should not " ++ purple "return" ++ "."
 errEndSubexpr :: String
 errEndSubexpr = "expected end of expression '" ++ purple ";" ++ "'."
 
-errEmptyGroup :: String
-errEmptyGroup = "groups '" ++ purple "(...)" ++ "' cannot be empty."
+errEmptyParen :: String
+errEmptyParen = ":2expected an expression inside the " ++ purple "parenthesis" ++ "."
 
 errEmptyExpr :: String
 errEmptyExpr = "expressions '" ++ purple "...;" ++ "' cannot be empty."
@@ -51,21 +51,28 @@ errMissingOperand side name = "missing the " ++ purple side ++ " operand for the
 errInvalidExprToken :: MyToken -> String
 errInvalidExprToken t = "invalid expression '" ++ purple (show t) ++ "'."
 
+errTooManyExpr :: Int -> String
+errTooManyExpr n = ":" ++ show n ++ "too many expressions, expected " ++ purple "one" ++ "."
+
 errRetType :: String -> String -> String
 errRetType expected got = "invalid " ++ purple "return type" ++ " expected " ++ purple expected ++ " got " ++ purple got ++ "."
 
 errTopLevelDef :: String
 errTopLevelDef = "top level declaration must be " ++ purple "function" ++ ", " ++ purple "operator" ++ " or " ++ purple "struct."
 
-errImpossibleCase :: String
-errImpossibleCase = "Impossible case."
+errImpossibleCase :: String -> String
+errImpossibleCase location = "Impossible case. (from " ++ location ++ ")."
 
 prettyPrintError :: [MyToken] -> ParseErrorBundle [MyToken] Void -> String
 prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
     case errors of
         (FancyError pos fancySet :| _) ->
             case 0 `elemAt` fancySet of
-                (ErrorFail err) -> " |\n | " ++ tokCons ++ red tokErr ++ tokLeft ++ "\n |" ++ red pointer ++ "\n" ++ red "error" ++ ": " ++ err
+                (ErrorFail (':': input)) -> do
+                    (n, err) <- (reads input :: [(Int, String)])
+                    " |\n | " ++ tokCons ++ red (tokErr2 n) ++ tokLeft2 n ++ "\n |" ++ red (pointer2 n) ++ "\n" ++ red "error" ++ ": " ++ err
+                (ErrorFail err) ->
+                    " |\n | " ++ tokCons ++ red tokErr ++ tokLeft ++ "\n |" ++ red pointer ++ "\n" ++ red "error" ++ ": " ++ err
                 x -> "This error should be transformed into a custom one:\n" ++ show x
             where
                 tokCons = unwords $ show <$> suffix (take (pos - 1) tokens)
@@ -74,6 +81,10 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | otherwise = ""
                 tokLeft = let tc = take 3 (drop pos tokens) in unwords $ show <$> tc
                 pointer = replicate (length tokCons + 2) ' ' ++ replicate (length tokErr - 2) '^'
+                
+                tokErr2 n = (\s -> " " ++ s ++ " ") <$> unwords $ show <$> take n (drop (pos - 1) tokens)
+                tokLeft2 n = let tc = take 3 (drop (pos + n - 1) tokens) in unwords $ show <$> tc
+                pointer2 n = replicate (length tokCons + 2) ' ' ++ replicate (length (tokErr2 n) - 2) '^'
         x -> "This error should be transformed into a custom one:\n" ++ show x
 
 suffix :: [a] -> [a]

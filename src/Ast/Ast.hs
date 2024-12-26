@@ -7,7 +7,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Use lambda-case" #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# HLINT ignore "Use isNothing" #-}
@@ -77,9 +76,9 @@ tok :: MyToken -> Parser MyToken
 tok = single
 
 sym :: Parser String
-sym = satisfy isSym >>= (\t -> case t of
+sym = satisfy isSym >>= (\case
   Identifier (SymbolId name) -> pure name
-  _ -> failN errImpossibleCase
+  _ -> failN $ errImpossibleCase "sym case t"
   )
   where
     isSym (Identifier (SymbolId _)) = True
@@ -125,7 +124,7 @@ getFnArgs names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
       case endFound of
         ParenClose -> pure [arg]
         Comma -> (arg :) <$> getAllArgs (snd arg : names')
-        _ -> failN errImpossibleCase
+        _ -> failN $ errImpossibleCase "getFnArgs case endFound"
 
 getFnRetType :: Parser Type
 getFnRetType = tok Arrow *> types True
@@ -142,7 +141,7 @@ type RetType = Type
 expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
 expression ctx locVar retT =
       exprReturn ctx locVar retT
-  <|> exprIf ctx locVar retT
+  <|> exprIf ctx locVar retT -- jean garice
   <|> exprVariable ctx locVar retT
   <|> exprSubexpr ctx locVar retT
 
@@ -160,7 +159,7 @@ exprReturn ctx locVar retT = do
         Just (t, _)
           | t == retT -> return $ Return subexpr
           | otherwise -> failN $ errRetType (show retT) (show t)
-        Nothing -> failN errImpossibleCase
+        Nothing -> failN $ errImpossibleCase "exprReturn case v"
     _ -> failN $ errTodo "return (u did only variable call)"
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
@@ -186,35 +185,35 @@ getGroup = do
   offset <- (+1) <$> getOffset
   choice
     [ eof *> fail errEndSubexpr
-    , GGr offset <$> (tok ParenOpen *> someTill getGroup (tok ParenClose) <|> failN errEmptyGroup)
-    , GLit offset <$> glit
-    , GVar offset <$> try gsym <* notFollowedBy (tok ParenOpen)
-    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-    , GOp offset <$> gop <*> pure []
+    , try $ GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
+    , try $ GLit offset <$> glit
+    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
+    , try $ GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , try $ GOp offset <$> gop <*> pure []
     ]
   where
     glit = satisfy (\case
       Parser.Token.Literal _ -> True
       _ -> False) >>= (\case
           (Parser.Token.Literal x) -> pure x
-          _ -> failN errImpossibleCase)
+          _ -> failN $ errImpossibleCase "getGroup case glit")
     gsym = satisfy (\case
       Parser.Token.Identifier (SymbolId _) -> True
       _ -> False) >>= (\case
           (Parser.Token.Identifier (SymbolId x)) -> pure x
-          _ -> failN errImpossibleCase)
+          _ -> failN $ errImpossibleCase "getGroup case gsym")
     gop = satisfy (\case
       Parser.Token.Identifier (OperatorId _) -> True
       _ -> False) >>= (\case
           (Parser.Token.Identifier (OperatorId x)) -> pure x
-          _ -> failN errImpossibleCase)
+          _ -> failN $ errImpossibleCase "getGroup case gop")
     getAllArgs = do
       arg <- getGroup
       endFound <- tok ParenClose <|> tok Comma
       case endFound of
         ParenClose -> pure [arg]
         Comma -> (arg :) <$> getAllArgs
-        _ -> failN errImpossibleCase
+        _ -> failN $ errImpossibleCase "getGroup case getAllArgs"
 
 mountGroup :: Ctx -> [Group] -> Parser Group
 mountGroup _ [] = fail errEmptyExpr
@@ -226,7 +225,10 @@ mountGroup ctx (GGr _ group: rst) = mountGroup ctx group >>= mountGroup ctx . (:
 mountGroup ctx group = do
   opId <- calcPrec Nothing (-1) 1 group
   case opId of
-    Nothing -> fail errImpossibleCase
+    Nothing -> do
+      let errorIndex = getGrIdx (head group)
+      nbInvalidToken <- subtract errorIndex <$> getOffset
+      failI errorIndex $ errTooManyExpr nbInvalidToken
     (Just (x, name))
       | x <= 0 -> failI (getOpIdx (head group)) $ errMissingOperand "left" name
       | x >= length group - 1 -> failI (getOpIdx (last group)) $ errMissingOperand "right" name
@@ -255,15 +257,23 @@ mountGroup ctx group = do
         Just (oldPrec, _)
           | oldPrec < opPrecedence -> calcPrec (Just (opPrecedence, opName)) (idx + idx2) 1 rst
           | otherwise -> calcPrec prec idx (idx2 + 1) rst
-      Just _ -> fail errImpossibleCase
+      Just _ -> fail $ errImpossibleCase "moungGroup calcPrec case find"
     calcPrec prec idx idx2 (_: rst) = calcPrec prec idx (idx2 + 1) rst
 
     isSame name (Operator {..}) = name == opName
     isSame _ _ = False
 
+
 getOpName :: Group -> String
 getOpName (GOp _ name _) = name
 getOpName _ = error "error: the token isn't an operator"
+
+getGrIdx :: Group -> Int
+getGrIdx (GOp index _ _) = index
+getGrIdx (GGr index _) = index
+getGrIdx (GLit index _) = index
+getGrIdx (GFn index _ _) = index
+getGrIdx (GVar index _) = index
 
 getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
@@ -273,7 +283,7 @@ validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
 validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
 
 toSubexpr :: Group -> Parser SubExpression
-toSubexpr group = failN $ errTodo "validate to subexpr"
+toSubexpr group = failN $ errTodo "convert to subexpr"
 
 subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do

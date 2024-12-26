@@ -1,5 +1,5 @@
 function add_mul1(int alpha) -> int {
-    return a * (a + b) * c;
+    return a + b * c;
 }
 
 /*
@@ -18,5 +18,9 @@ function add_mul1(int alpha) -> int {
     return (*);
 - group priority being respected
     return a * (a + b) * c;
+- empty parenthesis
+    return ();
+- more than one expression
+    return a b;
 
 */
