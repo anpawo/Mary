@@ -27,6 +27,7 @@ library
   exposed-modules:
       Ast.Ast
       Ast.Error
+      Bytecode.Compiler
       Parser.Token
       Parser.Tokenizer
   other-modules:

@@ -20,6 +20,8 @@ module Ast.Ast
     -- main
     Ast(..),
     tokenToAst,
+    Expression(..),
+    SubExpression(..),
 
     -- test
     runParser,
