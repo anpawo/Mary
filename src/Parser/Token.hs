@@ -15,6 +15,7 @@ data Type
   | FloatType --            \| float
   | StrType --              \| str
   | ArrType --              \| arr
+  -- ArrType Type              \| arr -> garice arr devrais etre ça
   deriving (Eq, Ord)
 
 instance Show Type where
@@ -32,6 +33,7 @@ data Literal
   | IntLit Int --        \| 2
   | FloatLit Double --   \| 1.5
   | StringLit String --  \| "yo"   -> may be a list of char
+  -- | ArrLit [Literal]  \| [1, 2, 3] -- garice
   deriving (Eq, Ord)
 
 instance Show Literal where
