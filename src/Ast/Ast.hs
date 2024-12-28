@@ -10,10 +10,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# HLINT ignore "Use isNothing" #-}
--- to prevent warnings
-{-# HLINT ignore "Redundant return" #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Ast.Ast
   (
@@ -30,6 +26,7 @@ import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadPa
 import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
+import Data.Foldable (traverse_)
 import Control.Applicative ((<|>))
 import Control.Monad (void)
 
@@ -281,8 +278,64 @@ getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
 getOpIdx _ = error "error: the token isn't an operator"
 
-validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
-validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
+isType :: Type -> Literal -> Bool
+isType CharType (CharLit _) = True
+isType IntType (IntLit _) = True
+isType BoolType (BoolLit _) = True
+isType FloatType (FloatLit _) = True
+isType StrType (StringLit _) = True
+isType ArrType _ = error $ errTodo "isType arr"
+isType _ _ = False
+
+lType :: Literal -> Type
+lType (CharLit _) = CharType
+lType (IntLit _) = IntType
+lType (BoolLit _) = BoolType
+lType (FloatLit _) = FloatType
+lType (StringLit _) = StrType
+
+getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
+getGrType ctx _ (GOp index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GOp")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidOpType name (show expected) (show t)) . opRetType)
+  (find (opNameIs name) ctx)
+getGrType ctx _ (GFn index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GFn")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidFnType name (show expected) (show t)) . fnRetType)
+  (find (fnNameIs name) ctx)
+getGrType _ locVar (GVar index name) expected = maybe
+  (error $ errImpossibleCase "getGrType GVar")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
+  (find ((== name) . snd) locVar)
+getGrType _ _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType lit)
+getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
+
+validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
+validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
+validateMount _ locVar (GVar index name) = maybe (failI index $ errVariableNotBound name) (const $ pure ()) (find ((== name) . snd) locVar)
+validateMount _ _ (GLit {}) = pure ()
+validateMount ctx locVar (GFn index name args) = case find (fnNameIs name) ctx of
+  Nothing -> failI index $ errFunctionNotBound name
+  Just (Function _ args' _ _)
+    | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
+    | otherwise -> mapM_ (\((t, _), g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
+    where
+      expected = length args'
+      found = length args
+  Just _ -> failI index $ errImpossibleCase "validateMount GFn"
+validateMount ctx locVar (GOp index name [l, r]) = case find (opNameIs name) ctx of
+  Nothing -> failI index $ errOperatorNotBound name
+  Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
+  Just _ -> failI index $ errImpossibleCase "validateMount GOp"
+validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
+
+opNameIs :: String -> Ast -> Bool
+opNameIs name' (Operator {..}) = name' == opName
+opNameIs _ _ = False
+
+fnNameIs :: String -> Ast -> Bool
+fnNameIs name' (Function {..}) = name' == fnName
+fnNameIs _ _ = False
 
 toSubexpr :: Group -> Parser SubExpression
 toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
@@ -295,9 +348,8 @@ subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
   group <- someTill getGroup (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
-  subex <- toSubexpr mount
-  -- trace (show subex) (validateSubexpr ctx locVar subex)
-  return subex
+  validateMount ctx locVar mount
+  toSubexpr mount
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getFnBody ctx locVar retT = do
