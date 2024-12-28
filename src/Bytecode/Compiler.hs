@@ -81,11 +81,16 @@ astToEnvVar :: Ast -> Either String EnvVar
 astToEnvVar (Function fnName fnArgs _ fnBody) = Right $ EnvVar fnName (compileParams fnArgs ++ compileExpressions fnBody)
 astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
 
-compiler :: [Ast] -> Either String [EnvVar]
+findMainFunc :: [EnvVar] -> Bool
+findMainFunc envVars = any (\envVar -> envVarName envVar == "main") envVars
+
+compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
 compiler asts =
   case mapM astToEnvVar asts of
     Left err -> Left err
-    Right envVars -> Right envVars
+    Right envVars -> if findMainFunc envVars
+      then Right ([PushEnv "main", Call], envVars)
+      else Right ([], envVars)
 
 testCompiler :: IO ()
 testCompiler = do
