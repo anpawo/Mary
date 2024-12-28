@@ -17,7 +17,16 @@
 
 module Bytecode.Compiler
   (
-    testCompiler
+    testCompiler,
+    Instruction(..),
+    Value(..),
+    EnvVar(..),
+    convertLiteral,
+    compileSubExpression,
+    compileExpression,
+    compileExpressions,
+    compileParam,
+    compileParams
   ) where
 
 import Ast.Ast
@@ -30,7 +39,7 @@ data Instruction
   | Store String
   | Load String
   | PushEnv String
-  deriving Show
+  deriving (Show, Eq)
 
 data Value
   = VmChar Char
@@ -38,9 +47,9 @@ data Value
   | VmInt Int
   | VmFloat Double
   | VmString String
-  deriving Show
+  deriving (Show, Eq)
 
-data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving Show
+data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
 
 convertLiteral :: Literal -> Value
 convertLiteral (CharLit c) = VmChar c
@@ -66,10 +75,10 @@ compileParam :: (Type, String) -> [Instruction]
 compileParam (_, paramName) = [Store paramName]
 
 compileParams :: [(Type, String)] -> [Instruction]
-compileParams params = concatMap compileParam params
+compileParams params = concatMap compileParam (reverse params)
 
 astToEnvVar :: Ast -> Either String EnvVar
-astToEnvVar (Function fnName fnArgs _ fnBody) = Right $ EnvVar fnName (compileParams (reverse fnArgs) ++ compileExpressions fnBody)
+astToEnvVar (Function fnName fnArgs _ fnBody) = Right $ EnvVar fnName (compileParams fnArgs ++ compileExpressions fnBody)
 astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
 
 compiler :: [Ast] -> Either String [EnvVar]
