@@ -17,10 +17,13 @@
 
 module Bytecode.Compiler
   (
-    testCompiler,
+    --main
+    compiler,
     Instruction(..),
     Value(..),
     EnvVar(..),
+
+    --test
     convertLiteral,
     compileSubExpression,
     compileExpression,
@@ -92,37 +95,37 @@ compiler asts =
       then Right ([PushEnv "main", Call], envVars)
       else Right ([], envVars)
 
-testCompiler :: IO ()
-testCompiler = do
-  let asts = [Function {
-      fnName = "add_mul",
-      fnArgs = [
-          (IntType, "a"),
-          (IntType, "b"),
-          (IntType, "c")
-      ],
-      fnRetType = IntType,
-      fnBody = [
-        Return {
-          retValue = FunctionCall {
-              fnName = "+",
-              fnArgs = [
-                  VariableCall {varName = "a"},
-                  FunctionCall {
-                      fnName = "*",
-                      fnArgs = [ VariableCall {varName = "b"}, VariableCall {varName = "c"} ]
-                  }
-              ]
-          }
-        }
-      ]
-    }, Function {
-      fnName = "main",
-      fnArgs = [],
-      fnRetType = IntType,
-      fnBody = [
-        SubExpression FunctionCall { fnName = "add_mul", fnArgs = [Literal (IntLit 1), Literal (IntLit 2), Literal (IntLit 3)]},
-        Return {retValue = Literal (IntLit 0)}
-      ]
-    }]
-  print $ compiler asts
+-- testCompiler :: IO ()
+-- testCompiler = do
+--   let asts = [Function {
+--       fnName = "add_mul",
+--       fnArgs = [
+--           (IntType, "a"),
+--           (IntType, "b"),
+--           (IntType, "c")
+--       ],
+--       fnRetType = IntType,
+--       fnBody = [
+--         Return {
+--           retValue = FunctionCall {
+--               fnName = "+",
+--               fnArgs = [
+--                   VariableCall {varName = "a"},
+--                   FunctionCall {
+--                       fnName = "*",
+--                       fnArgs = [ VariableCall {varName = "b"}, VariableCall {varName = "c"} ]
+--                   }
+--               ]
+--           }
+--         }
+--       ]
+--     }, Function {
+--       fnName = "main",
+--       fnArgs = [],
+--       fnRetType = IntType,
+--       fnBody = [
+--         SubExpression FunctionCall { fnName = "add_mul", fnArgs = [Literal (IntLit 1), Literal (IntLit 2), Literal (IntLit 3)]},
+--         Return {retValue = Literal (IntLit 0)}
+--       ]
+--     }]
+--   print $ compiler asts
