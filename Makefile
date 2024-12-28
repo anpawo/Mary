@@ -20,13 +20,12 @@ clean :
 
 fclean: clean
 	@ $(RM) $(NAME)
-	@ find -name '*~' -delete -o -name '#*#' -delete
 
 re: fclean
 re: all
 
 tests_run:
-	stack test glados:lisp-test
+	stack test
 
 .PHONY: functionnal-tests
 functionnal-tests:
