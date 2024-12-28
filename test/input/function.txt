@@ -1,0 +1,26 @@
+function add_mul(int a, int b, int c) -> int {
+    return a + b * c ;
+}
+
+/*
+### handled errors to check with unit tests:
+- missing right operand of an operator in the center
+    return a * + b;
+- missing right operand of the last operator
+    return b +;
+- missing left operand of an operator in the center
+    return a + * b;
+- missing left operand of the first operator
+    return + b;
+- invalid operator name
+    return a <*> b;
+- missing operands in parenthesis
+    return (*);
+- group priority being respected
+    return a * (a + b) * c;
+- empty parenthesis
+    return ();
+- more than one expression
+    return a b;
+
+*/

@@ -12,8 +12,8 @@ import Test.Hspec.Runner (SpecWith)
 
 import Data.Either (isLeft)
 
-import Tokenizer
-import Token
+import Parser.Tokenizer
+import Parser.Token
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -41,36 +41,36 @@ tokenizerUtils = describe "utils" $ do
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
   it "fibonacci" $
-    run tokenize "fibonacci" ==> [SymbolId "fibonacci"]
+    run tokenize "fibonacci" ==> [Identifier $ SymbolId "fibonacci"]
   it "add1" $
-    run tokenize "add1" ==> [SymbolId "add1"]
+    run tokenize "add1" ==> [Identifier $ SymbolId "add1"]
   it "str_cmp" $
-    run tokenize "str_cmp" ==> [SymbolId "str_cmp"]
+    run tokenize "str_cmp" ==> [Identifier $ SymbolId "str_cmp"]
   it "+" $
-    run tokenize "+" ==> [OperatorId "+"]
+    run tokenize "+" ==> [Identifier $ OperatorId "+"]
   it "<*>" $
-    run tokenize "<*>" ==> [OperatorId "<*>"]
+    run tokenize "<*>" ==> [Identifier $ OperatorId "<*>"]
 
 tokenizerLiteralSpec :: SpecWith ()
 tokenizerLiteralSpec = describe "tokenize literals" $ do
   it "'c'" $
-    run tokenize "'c'" ==> [CharLit 'c']
+    run tokenize "'c'" ==> [Literal $ CharLit 'c']
   it "'c" $
     run tokenize "'c" === isLeft
   it "true" $
-    run tokenize "true" ==> [BoolLit True]
+    run tokenize "true" ==> [Literal $ BoolLit True]
   it "false" $
-    run tokenize "false" ==> [BoolLit False]
+    run tokenize "false" ==> [Literal $ BoolLit False]
   it "4" $
-    run tokenize "4" ==> [IntLit 4]
+    run tokenize "4" ==> [Literal $ IntLit 4]
   it "-4" $
-    run tokenize "-4" ==> [IntLit (-4)]
+    run tokenize "-4" ==> [Literal $ IntLit (-4)]
   it "-4.2" $
-    run tokenize "-4.2" ==> [FloatLit (-4.2)]
+    run tokenize "-4.2" ==> [Literal $ FloatLit (-4.2)]
   it "4.2" $
-    run tokenize "4.2" ==> [FloatLit 4.2]
+    run tokenize "4.2" ==> [Literal $ FloatLit 4.2]
   it "\"yo\"" $
-    run tokenize "\"yo\"" ==> [StringLit "yo"]
+    run tokenize "\"yo\"" ==> [Literal $ StringLit "yo"]
   it "\"yo" $
     run tokenize "\"yo" === isLeft
 
@@ -84,6 +84,10 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "(" ==> [ParenOpen]
   it ")" $
     run tokenize ")" ==> [ParenClose]
+  it "[" $
+    run tokenize "[" ==> [BracketOpen]
+  it "]" $
+    run tokenize "]" ==> [BracketClose]
   it "=" $
     run tokenize "=" ==> [Assign]
   it "->" $
@@ -92,13 +96,17 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "." ==> [Scope]
   it ";" $
     run tokenize ";" ==> [SemiColon]
+  it "," $
+    run tokenize "," ==> [Comma]
 
 tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
   it "function" $
     run tokenize "function" ==> [FunctionKw]
-  it "infix" $
-    run tokenize "infix" ==> [InfixKw]
+  it "operator" $
+    run tokenize "operator" ==> [OperatorKw]
+  it "precedence" $
+    run tokenize "precedence" ==> [PrecedenceKw]
   it "struct" $
     run tokenize "struct" ==> [StructKw]
   it "is" $
@@ -107,21 +115,31 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "import" ==> [ImportKw]
   it "as" $
     run tokenize "as" ==> [AsKw]
+  it "at" $
+    run tokenize "at" ==> [AtKw]
+  it "if" $
+    run tokenize "if" ==> [IfKw]
+  it "else" $
+    run tokenize "else" ==> [ElseKw]
+  it "return" $
+    run tokenize "return" ==> [ReturnKw]
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
   it "char" $
-    run tokenize "char" ==> [CharT]
+    run tokenize "char" ==> [Type CharType]
+  it "void" $
+    run tokenize "void" ==> [Type VoidType]
   it "bool" $
-    run tokenize "bool" ==> [BoolT]
+    run tokenize "bool" ==> [Type BoolType]
   it "int" $
-    run tokenize "int" ==> [IntT]
+    run tokenize "int" ==> [Type IntType]
   it "float" $
-    run tokenize "float" ==> [FloatT]
+    run tokenize "float" ==> [Type FloatType]
   it "str" $
-    run tokenize "str" ==> [StrT]
+    run tokenize "str" ==> [Type StrType]
   it "arr" $
-    run tokenize "arr" ==> [ArrT]
+    run tokenize "arr" ==> [Type ArrType]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do

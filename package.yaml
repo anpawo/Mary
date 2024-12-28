@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- containers >= 0.6.7
 
 ghc-options:
 - -Wall
@@ -37,6 +38,7 @@ library:
   source-dirs: src
   dependencies:
     - megaparsec
+    - containers
 
 executables:
   glados-exe:
@@ -49,19 +51,9 @@ executables:
     dependencies:
     - glados
     - megaparsec
+    - containers
 
 tests:
-  lisp-test:
-    main:                Spec.hs
-    source-dirs:         test/lisp
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - glados
-    - HUnit
-  
   glados-test:
     main:                Spec.hs
     source-dirs:         test/glados
@@ -74,3 +66,4 @@ tests:
     - HUnit
     - megaparsec
     - hspec
+    - containers

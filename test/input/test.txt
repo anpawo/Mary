@@ -1,0 +1,4 @@
+function test(int a, int b, char c, char d) -> int {
+    print c;
+    print d;
+}
