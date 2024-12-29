@@ -417,7 +417,7 @@ getOpeName :: [String] -> Parser String
 getOpeName names = tok OperatorKw *> ope >>= notTaken names id
 
 getOpePrec :: Parser Int
-getOpePrec = tok PrecedenceKw *> precValue <|> pure 0
+getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
   where
     precValue = satisfy (\case
       Parser.Token.Literal (IntLit _) -> True
