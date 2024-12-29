@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType) where
+module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -43,6 +43,9 @@ errEmptyParen = printf ":2expected an expression inside the %s." $ purple "paren
 errEmptyExpr :: String
 errEmptyExpr = "expected an expression."
 
+errSemiColon :: String
+errSemiColon = printf "expected a SemiColon '%s' at the end of the expression." (purple ";")
+
 errOpNotDefined :: String -> String
 errOpNotDefined = printf "the operator '%s' is not defined." . purple
 
@@ -54,6 +57,9 @@ errInvalidExprToken = printf "invalid expression '%s'." . purple . show
 
 errTooManyExpr :: Int -> String
 errTooManyExpr = printf ":%stoo many expressions, expected one." . show
+
+errOpArgs :: Int -> Int -> String -> String
+errOpArgs lenErr nargs name = printf ":%soperators must take 2 arguments. '%s' has %s argument%s." (show lenErr) (purple name) (purple . show $ nargs) (if nargs <= 1 then "" else "s")
 
 errRetType :: String -> String -> String
 errRetType expected got = printf "invalid return type, expected '%s' got '%s'." (purple expected) (purple got)
@@ -116,7 +122,8 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | len < 10 = l
                     | otherwise = drop (len - 10) l
                     where len = length l
-        x -> "This error should be transformed into a custom one:\n" ++ show x
+        (TrivialError offset unexpected expected :| _) ->
+            printf "This error should be transformed into a custom one:\n\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show $ tokens !! offset) (show unexpected) (show expected)
 
 red :: String -> String
 red s = "\ESC[91m" ++ s ++ reset
