@@ -64,16 +64,18 @@ type Ctx = [Ast]
 
 builtin :: Ctx
 builtin =
-    [ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
+    [ Operator {opName = "-", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "-"]}
+    , Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
     , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "*"]}
     , Function {fnName = "print", fnArgs = [], fnRetType = VoidType, fnBody = [SubExpression $ Builtin "print"]} -- todo: im not really sure about this one (maybe we need the any type)
-    ]
+    ] -- at 
+      -- len (needs any type to work on any array)
 
 tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
 
 ast :: Ctx -> Parser Ctx
-ast ctx = (eof $> ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (x : ctx)))
+ast ctx = (eof $> drop (length builtin) ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (ctx ++ [x])))
 
 tok :: MyToken -> Parser MyToken
 tok = single
@@ -86,6 +88,15 @@ sym = satisfy isSym >>= (\case
   where
     isSym (Identifier (SymbolId _)) = True
     isSym _ = False
+
+ope :: Parser String
+ope = satisfy isOpe >>= (\case
+  Identifier (OperatorId name) -> pure name
+  _ -> failN $ errImpossibleCase "ope case t"
+  )
+  where
+    isOpe (Identifier (OperatorId _)) = True
+    isOpe _ = False
 
 types :: Bool -> Parser Type -- this doesnt handle structure
 types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
@@ -369,7 +380,7 @@ toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 
 subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
-  group <- someTill getGroup (tok SemiColon) <|> failN errEmptyExpr
+  group <- someTill (getGroup <|> failN errSemiColon) (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
   validateMount ctx locVar mount
   toSubexpr mount
@@ -404,9 +415,34 @@ function ctx = do
   body <- getFnBody (shellFn : ctx) args retT
   return $ Function name args retT body
 
+getOpeName :: [String] -> Parser String
+getOpeName names = tok OperatorKw *> ope >>= notTaken names id
+
+getOpePrec :: Parser Int
+getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
+  where
+    precValue = satisfy (\case
+      Parser.Token.Literal (IntLit _) -> True
+      _ -> False) >>= (\case
+          (Parser.Token.Literal (IntLit x)) -> pure x
+          _ -> failN $ errImpossibleCase "getOpePrec precValue")
+
+validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
+validArgNumber _ _ args@[_, _] = pure args
+validArgNumber start name args = do
+  offset <- subtract (start - 1) <$> getOffset
+  failI start $ errOpArgs offset (length args) name
+
 operator :: Ctx -> Parser Ast
-operator _ = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
--- temporary
+operator ctx = do
+  name <- getOpeName (getNames ctx)
+  prcd <- getOpePrec
+  offset <- (+1) <$> getOffset
+  args <- getFnArgs (name : getNames ctx) >>= validArgNumber offset name
+  retT <- getFnRetType
+  let shellOp = Operator name prcd retT (head args) (args !! 1) []
+  body <- getFnBody (shellOp : ctx) args retT
+  return $ Operator name prcd retT (head args) (args !! 1) body
 
 structure :: Parser Ast
 structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
