@@ -168,15 +168,7 @@ exprReturn ctx locVar retT = do
           | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
           | otherwise -> failI offset $ errRetType (show retT) (show t)
         Nothing -> failN $ errImpossibleCase "exprReturn variable call"
-    (FunctionCall {fnName = name}) -> case
-      find
-      (\case
-        (Operator {..}) -> opName == name
-        (Function {..}) -> fnName == name
-        _ -> False
-      )
-      ctx
-      of
+    (FunctionCall {fnName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
         Just (Operator {..})
           | opRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
@@ -184,7 +176,10 @@ exprReturn ctx locVar retT = do
           | fnRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
         _ -> failN $ errImpossibleCase "exprReturn function call"      
-    _ -> failN $ errTodo "return (u did only variable call and function call)"
+    (Ast.Ast.Literal x)
+      | lType x == retT -> return $ Return subexpr
+      | otherwise -> failI offset $ errRetType (show retT) (show $ lType x)
+    (Builtin {}) -> failN $ errImpossibleCase "exprReturn Builtin"
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
