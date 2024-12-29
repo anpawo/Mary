@@ -17,6 +17,7 @@
 
 module Bytecode.Compiler
   (
+    -- testCompiler,
     --main
     compiler,
     Instruction(..),
@@ -82,6 +83,7 @@ compileParams params = concatMap compileParam (reverse params)
 
 astToEnvVar :: Ast -> Either String EnvVar
 astToEnvVar (Function fnName fnArgs _ fnBody) = Right $ EnvVar fnName (compileParams fnArgs ++ compileExpressions fnBody)
+astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right $ EnvVar opName (compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody)
 astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
 
 findMainFunc :: [EnvVar] -> Bool
@@ -97,35 +99,36 @@ compiler asts =
 
 -- testCompiler :: IO ()
 -- testCompiler = do
---   let asts = [Function {
---       fnName = "add_mul",
---       fnArgs = [
---           (IntType, "a"),
---           (IntType, "b"),
---           (IntType, "c")
---       ],
---       fnRetType = IntType,
---       fnBody = [
---         Return {
---           retValue = FunctionCall {
---               fnName = "+",
---               fnArgs = [
---                   VariableCall {varName = "a"},
---                   FunctionCall {
---                       fnName = "*",
---                       fnArgs = [ VariableCall {varName = "b"}, VariableCall {varName = "c"} ]
---                   }
---               ]
---           }
---         }
---       ]
---     }, Function {
---       fnName = "main",
---       fnArgs = [],
---       fnRetType = IntType,
---       fnBody = [
---         SubExpression FunctionCall { fnName = "add_mul", fnArgs = [Literal (IntLit 1), Literal (IntLit 2), Literal (IntLit 3)]},
---         Return {retValue = Literal (IntLit 0)}
---       ]
---     }]
+--   -- let asts = [Function {
+--   --     fnName = "add_mul",
+--   --     fnArgs = [
+--   --         (IntType, "a"),
+--   --         (IntType, "b"),
+--   --         (IntType, "c")
+--   --     ],
+--   --     fnRetType = IntType,
+--   --     fnBody = [
+--   --       Return {
+--   --         retValue = FunctionCall {
+--   --             fnName = "+",
+--   --             fnArgs = [
+--   --                 VariableCall {varName = "a"},
+--   --                 FunctionCall {
+--   --                     fnName = "*",
+--   --                     fnArgs = [ VariableCall {varName = "b"}, VariableCall {varName = "c"} ]
+--   --                 }
+--   --             ]
+--   --         }
+--   --       }
+--   --     ]
+--   --   }, Function {
+--   --     fnName = "main",
+--   --     fnArgs = [],
+--   --     fnRetType = IntType,
+--   --     fnBody = [
+--   --       SubExpression FunctionCall { fnName = "add_mul", fnArgs = [Literal (IntLit 1), Literal (IntLit 2), Literal (IntLit 3)]},
+--   --       Return {retValue = Literal (IntLit 0)}
+--   --     ]
+--   --   }]
+--   let asts = [Operator {opName = "**", opPrecedence = 8, opRetType = IntType, opArgLeft = (IntType,"n"), opArgRight = (IntType,"power"), opBody = [Return {retValue = FunctionCall {fnName = "**", fnArgs = [VariableCall {varName = "n"},FunctionCall {fnName = "-", fnArgs = [VariableCall {varName = "power"},Literal (IntLit 1)]}]}}]},Function {fnName = "test", fnArgs = [], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnName = "**", fnArgs = [Literal (IntLit 2),Literal (IntLit 3)]}}]}]
 --   print $ compiler asts
