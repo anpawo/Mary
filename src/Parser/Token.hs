@@ -34,7 +34,7 @@ data Literal
   | BoolLit Bool --           \| true | false
   | IntLit Int --             \| 2
   | FloatLit Double --        \| 1.5
-  | StrLit String --       \| "yo"   -> may be a list of char
+  | StringLit String --       \| "yo"   -> may be a list of char
   | ArrLit Type [Literal] --  \| [1, 2, 3]
   deriving (Eq, Ord)
 
@@ -44,7 +44,7 @@ instance Show Literal where
   show (BoolLit False) = "false"
   show (IntLit x) = show x
   show (FloatLit x) = show x
-  show (StrLit x) = show x
+  show (StringLit x) = show x
   show (ArrLit _ x) = printf "[%s]" $ intercalate "," $ map show x
 
 data Identifier

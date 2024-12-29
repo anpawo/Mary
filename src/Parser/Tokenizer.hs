@@ -202,7 +202,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         boolLit = BoolLit <$> (try (string "true" $> True) <|> try (string "false" $> False))
         fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
         intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
-        strLit = StrLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
+        strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
         curlyOpenSym = char '{' $> CurlyOpen
