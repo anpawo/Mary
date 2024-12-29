@@ -71,7 +71,7 @@ tokenizerLiteralSpec = describe "tokenize literals" $ do
   it "4.2" $
     run tokenize "4.2" ==> [Literal $ FloatLit 4.2]
   it "\"yo\"" $
-    run tokenize "\"yo\"" ==> [Literal $ StrLit "yo"]
+    run tokenize "\"yo\"" ==> [Literal $ StringLit "yo"]
   it "\"yo" $
     run tokenize "\"yo" === isLeft
 

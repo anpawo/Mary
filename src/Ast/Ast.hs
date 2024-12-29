@@ -305,7 +305,7 @@ isType CharType (CharLit _) = True
 isType IntType (IntLit _) = True
 isType BoolType (BoolLit _) = True
 isType FloatType (FloatLit _) = True
-isType StrType (StrLit _) = True
+isType StrType (StringLit _) = True
 isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
 isType _ _ = False
 
@@ -314,7 +314,7 @@ lType (CharLit _) = CharType
 lType (IntLit _) = IntType
 lType (BoolLit _) = BoolType
 lType (FloatLit _) = FloatType
-lType (StrLit _) = StrType
+lType (StringLit _) = StrType
 lType (ArrLit t _) = ArrType t
 
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
