@@ -1,5 +1,5 @@
-function add_mul(int a, int b, int c) -> int {
-    return a + b * "lol";
+function add_mul(int a, int b, arr[int] c) -> int {
+    return a + b * 4;
 }
 
 /*
