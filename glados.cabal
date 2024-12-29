@@ -30,6 +30,7 @@ library
       Bytecode.Compiler
       Parser.Token
       Parser.Tokenizer
+      Utils.Lib
   other-modules:
       Paths_glados
   autogen-modules:

@@ -7,6 +7,9 @@
 
 module Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..)) where
 
+import Text.Printf (printf)
+import Data.List (intercalate)
+
 data Type
   = CharType --             \| char
   | VoidType --             \| void
@@ -14,7 +17,7 @@ data Type
   | IntType --              \| int
   | FloatType --            \| float
   | StrType --              \| str
-  | ArrType --              \| arr
+  | ArrType Type --         \| arr
   deriving (Eq, Ord)
 
 instance Show Type where
@@ -24,14 +27,15 @@ instance Show Type where
   show IntType = "int"
   show FloatType = "float"
   show StrType = "str"
-  show ArrType = "arr"
+  show (ArrType t) = printf "arr[%s]" $ show t
 
 data Literal
-  = CharLit Char --      \| 'c'   -> may be a list of char
-  | BoolLit Bool --      \| true | false
-  | IntLit Int --        \| 2
-  | FloatLit Double --   \| 1.5
-  | StringLit String --  \| "yo"   -> may be a list of char
+  = CharLit Char --           \| 'c'   -> may be a list of char
+  | BoolLit Bool --           \| true | false
+  | IntLit Int --             \| 2
+  | FloatLit Double --        \| 1.5
+  | StrLit String --       \| "yo"   -> may be a list of char
+  | ArrLit Type [Literal] --  \| [1, 2, 3]
   deriving (Eq, Ord)
 
 instance Show Literal where
@@ -40,7 +44,8 @@ instance Show Literal where
   show (BoolLit False) = "false"
   show (IntLit x) = show x
   show (FloatLit x) = show x
-  show (StringLit x) = show x
+  show (StrLit x) = show x
+  show (ArrLit _ x) = printf "[%s]" $ intercalate "," $ map show x
 
 data Identifier
   = SymbolId String --   \| factorial, add_2, x
@@ -102,13 +107,14 @@ instance Show MyToken where
   show CurlyClose = "}"
   show ParenOpen = "("
   show ParenClose = ")"
-  show BracketOpen = "{"
-  show BracketClose = "}"
+  show BracketOpen = "["
+  show BracketClose = "]"
   show Assign = "="
   show Arrow = "->"
   show Scope = "."
   show SemiColon = ";"
   show Comma = ","
+
   show (Type t) = show t
   show (Literal l) = show l
   show (Identifier i) = show i

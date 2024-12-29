@@ -14,6 +14,7 @@ import Data.Either (isLeft)
 
 import Parser.Tokenizer
 import Parser.Token
+import Utils.Lib
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -70,7 +71,7 @@ tokenizerLiteralSpec = describe "tokenize literals" $ do
   it "4.2" $
     run tokenize "4.2" ==> [Literal $ FloatLit 4.2]
   it "\"yo\"" $
-    run tokenize "\"yo\"" ==> [Literal $ StringLit "yo"]
+    run tokenize "\"yo\"" ==> [Literal $ StrLit "yo"]
   it "\"yo" $
     run tokenize "\"yo" === isLeft
 
@@ -139,7 +140,7 @@ tokenizerTypeSpec = describe "tokenize types" $ do
   it "str" $
     run tokenize "str" ==> [Type StrType]
   it "arr" $
-    run tokenize "arr" ==> [Type ArrType]
+    run tokenize "arr[int]" ==> [Type $ ArrType IntType]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do

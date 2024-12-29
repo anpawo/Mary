@@ -10,10 +10,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# HLINT ignore "Use isNothing" #-}
--- to prevent warnings
-{-# HLINT ignore "Redundant return" #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Ast.Ast
   (
@@ -28,15 +24,19 @@ module Ast.Ast
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+
 import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
-import Control.Applicative ((<|>))
+import Data.Foldable (traverse_)
+
+import Control.Applicative ((<|>), Alternative(..))
 import Control.Monad (void)
 
 import Parser.Token (MyToken(..), Identifier(..), Literal(..), Type(..))
 import Ast.Error
+import Utils.Lib (choicetry)
 
 type Parser = Parsec Void [MyToken]
 
@@ -62,7 +62,7 @@ data Ast
 
 type Ctx = [Ast]
 
-builtin :: [Ast]
+builtin :: Ctx
 builtin =
     [ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
     , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "*"]}
@@ -87,8 +87,8 @@ sym = satisfy isSym >>= (\case
     isSym (Identifier (SymbolId _)) = True
     isSym _ = False
 
-types :: Bool -> Parser Type
-types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
+types :: Bool -> Parser Type -- this doesnt handle structure
+types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
   where
     t =
       [ tok (Type CharType) $> CharType
@@ -96,11 +96,17 @@ types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , tok (Type IntType) $> IntType
       , tok (Type FloatType) $> FloatType
       , tok (Type StrType) $> StrType
-      , tok (Type ArrType) $> ArrType
+      , try $ satisfy isArrayType >>= (\case
+        (Type (ArrType t')) -> pure (ArrType t')
+        _ -> failN $ errImpossibleCase "types arr")
       ]
+
     vt
       | canBeVoid = [tok (Type VoidType) $> VoidType]
       | otherwise = []
+
+    isArrayType (Type (ArrType _)) = True
+    isArrayType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
@@ -142,11 +148,12 @@ type LocalVariable = [(Type, String)]
 type RetType = Type
 
 expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
-expression ctx locVar retT =
-      exprReturn ctx locVar retT
-  <|> exprIf ctx locVar retT -- jean garice
-  <|> exprVariable ctx locVar retT
-  <|> exprSubexpr ctx locVar retT
+expression ctx locVar retT = choice
+  [ exprReturn ctx locVar retT
+  , exprIf ctx locVar retT -- jean garice
+  , exprVariable ctx locVar retT
+  , exprSubexpr ctx locVar retT
+  ]
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf _ _ _ = failN $ errTodo "if expression"
@@ -155,16 +162,26 @@ exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
 exprReturn ctx locVar retT = do
   void (tok ReturnKw)
+  offset <- getOffset
   subexpr <- subexpression ctx locVar
   case subexpr of
-    (VariableCall x) -> let v = find (\(_, n) -> n == x) locVar in
-      case v of
+    (VariableCall x) -> case find (\(_, n) -> n == x) locVar of
         Just (t, _)
-          | t == retT -> return $ Return subexpr
-          | otherwise -> failN $ errRetType (show retT) (show t)
-        Nothing -> failN $ errImpossibleCase "exprReturn case v"
-    (FunctionCall {}) -> return $ Return subexpr
-    _ -> failN $ errTodo "return (u did only variable call and function call)"
+          | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
+          | otherwise -> failI offset $ errRetType (show retT) (show t)
+        Nothing -> failN $ errImpossibleCase "exprReturn variable call"
+    (FunctionCall {fnName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
+        Just (Operator {..})
+          | opRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
+        Just (Function {..})
+          | fnRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
+        _ -> failN $ errImpossibleCase "exprReturn function call"      
+    (Ast.Ast.Literal x)
+      | lType x == retT -> return $ Return subexpr
+      | otherwise -> failI offset $ errRetType (show retT) (show $ lType x)
+    (Builtin {}) -> failN $ errImpossibleCase "exprReturn Builtin"
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
@@ -187,13 +204,13 @@ data Group
 getGroup :: Parser Group
 getGroup = do
   offset <- (+1) <$> getOffset
-  choice
+  choicetry
     [ eof *> fail errEndSubexpr
-    , try $ GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
-    , try $ GLit offset <$> glit
-    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
-    , try $ GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-    , try $ GOp offset <$> gop <*> pure []
+    , GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
+    , GLit offset <$> glit
+    , GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
+    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , GOp offset <$> gop <*> pure []
     ]
   where
     glit = satisfy (\case
@@ -283,8 +300,65 @@ getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
 getOpIdx _ = error "error: the token isn't an operator"
 
-validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
-validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
+isType :: Type -> Literal -> Bool
+isType CharType (CharLit _) = True
+isType IntType (IntLit _) = True
+isType BoolType (BoolLit _) = True
+isType FloatType (FloatLit _) = True
+isType StrType (StrLit _) = True
+isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
+isType _ _ = False
+
+lType :: Literal -> Type
+lType (CharLit _) = CharType
+lType (IntLit _) = IntType
+lType (BoolLit _) = BoolType
+lType (FloatLit _) = FloatType
+lType (StrLit _) = StrType
+lType (ArrLit t _) = ArrType t
+
+getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
+getGrType ctx _ (GOp index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GOp")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidOpType name (show expected) (show t)) . opRetType)
+  (find (opNameIs name) ctx)
+getGrType ctx _ (GFn index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GFn")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidFnType name (show expected) (show t)) . fnRetType)
+  (find (fnNameIs name) ctx)
+getGrType _ locVar (GVar index name) expected = maybe
+  (error $ errImpossibleCase "getGrType GVar")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
+  (find ((== name) . snd) locVar)
+getGrType _ _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType lit)
+getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
+
+validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
+validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
+validateMount _ locVar (GVar index name) = maybe (failI index $ errVariableNotBound name) (const $ pure ()) (find ((== name) . snd) locVar)
+validateMount _ _ (GLit {}) = pure ()
+validateMount ctx locVar (GFn index name args) = case find (fnNameIs name) ctx of
+  Nothing -> failI index $ errFunctionNotBound name
+  Just (Function _ args' _ _)
+    | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
+    | otherwise -> mapM_ (\((t, _), g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
+    where
+      expected = length args'
+      found = length args
+  Just _ -> failI index $ errImpossibleCase "validateMount GFn"
+validateMount ctx locVar (GOp index name [l, r]) = case find (opNameIs name) ctx of
+  Nothing -> failI index $ errOperatorNotBound name
+  Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
+  Just _ -> failI index $ errImpossibleCase "validateMount GOp"
+validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
+
+opNameIs :: String -> Ast -> Bool
+opNameIs name' (Operator {..}) = name' == opName
+opNameIs _ _ = False
+
+fnNameIs :: String -> Ast -> Bool
+fnNameIs name' (Function {..}) = name' == fnName
+fnNameIs _ _ = False
 
 toSubexpr :: Group -> Parser SubExpression
 toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
@@ -297,9 +371,8 @@ subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
   group <- someTill getGroup (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
-  subex <- toSubexpr mount
-  -- trace (show subex) (validateSubexpr ctx locVar subex)
-  return subex
+  validateMount ctx locVar mount
+  toSubexpr mount
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getFnBody ctx locVar retT = do

@@ -8,13 +8,11 @@
 module Parser.Tokenizer
     (
     -- main
-    run,
     Parser,
     comment,
     macro,
     namespace,
     tokenize,
-    (&>),
 
     -- test
     dbg,
@@ -30,32 +28,19 @@ import Data.Functor (($>))
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
-import Text.Megaparsec (Parsec, ParseErrorBundle, many, manyTill, anySingle, eof, parseTest, manyTill_, runParser, (<?>), oneOf, setInput, choice, notFollowedBy, try, someTill)
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill)
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
 
 import Parser.Token
+import Utils.Lib (choicetry, (~>))
 
 type Parser = Parsec Void String
 
--- Parsec err input = ParsecT err input Identity
--- ParsecT supports I/O
--- Parsec has Identity for monad so no I/O
-
-
 -- utils
-run :: Parsec Void input output -> input -> Either (ParseErrorBundle input Void) output
-run parser = runParser parser ""
-
 skipString :: Parser String
 skipString = (\s -> '"' : s ++ "\"" ) <$> (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
-
--- escaped :: Parser Char
--- escaped = escape *> choice [quote, escape]
-
--- escape :: Parser Char
--- escape = char '\\'
 
 quote :: Parser Char
 quote = char '"'
@@ -83,14 +68,6 @@ spaces = many $ oneOf " \n\t"
 
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
-
--- combine p1 and p2 while updating the input, p2 needs a from (p1 => (a, b))
-(~>) :: Parser (a, String) -> (a -> Parser b) -> Parser b
-(~>) p1 p2 = p1 >>= (\(out, input) -> setInput input >> p2 out)
-
--- combine p1 and p2 while updating the input
-(&>) :: Parser String -> Parser a -> Parser a
-(&>) p1 p2 = p1 >>= (\s -> setInput s >> p2)
 -- utils
 
 -- comments
@@ -176,7 +153,7 @@ namespace = getImport ~> applyNamespace
 tokenize :: Parser [MyToken]
 tokenize = spaces *> manyTill (tokens <* spaces) eof
     where
-        tokens = choice
+        tokens = choicetry
             [
               -- Literal
               Literal <$> charLit
@@ -212,13 +189,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , returnKw
 
             -- Type
-            , Type <$> charT
-            , Type <$> voidT
-            , Type <$> boolT
-            , Type <$> intT
-            , Type <$> floatT
-            , Type <$> strT
-            , Type <$> arrT
+            , Type <$> parseType
 
             -- Identifier
             , Identifier <$> symbolId
@@ -231,7 +202,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         boolLit = BoolLit <$> (try (string "true" $> True) <|> try (string "false" $> False))
         fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
         intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
-        strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
+        strLit = StrLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
 
         -- Symbol
         curlyOpenSym = char '{' $> CurlyOpen
@@ -259,14 +230,20 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         elseKw = try $ keyword "else" $> ElseKw
         returnKw = try $ keyword "return" $> ReturnKw
 
-        -- Type
-        charT = try $ keyword "char" $> CharType
-        voidT = try $ keyword "void" $> VoidType
-        boolT = try $ keyword "bool" $> BoolType
-        intT = try $ keyword "int" $> IntType
-        floatT = try $ keyword "float" $> FloatType
-        strT = try $ keyword "str" $> StrType
-        arrT = try $ keyword "arr" $> ArrType
+        parseType = choicetry [
+            -- Type
+              keyword "char" $> CharType
+            , keyword "void" $> VoidType
+            , keyword "bool" $> BoolType
+            , keyword "int" $> IntType
+            , keyword "float" $> FloatType
+            , keyword "str" $> StrType
+            , keyword "arr" *> do
+                void $ spaces *> char '[' 
+                t <- spaces *> parseType
+                void $ spaces *> char ']'
+                return $ ArrType t
+            ]
 
         -- Identifier
         symbolId = SymbolId <$> some prefixIdentifierChar -- thought i prevented numbers as starting names
