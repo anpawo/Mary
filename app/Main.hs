@@ -12,7 +12,8 @@ import Control.Exception (IOException, catch)
 
 import Text.Megaparsec (errorBundlePretty)
 
-import Parser.Tokenizer (run, tokenize, (&>), comment)
+import Utils.Lib ((&>), run)
+import Parser.Tokenizer (tokenize, comment)
 import Ast.Ast (tokenToAst)
 import Ast.Error
 
