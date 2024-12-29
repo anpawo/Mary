@@ -22,16 +22,19 @@ module Ast.Ast
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+
 import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
 import Data.Foldable (traverse_)
-import Control.Applicative ((<|>))
+
+import Control.Applicative ((<|>), Alternative(..))
 import Control.Monad (void)
 
 import Parser.Token (MyToken(..), Identifier(..), Literal(..), Type(..))
 import Ast.Error
+import Utils.Lib (choicetry)
 
 type Parser = Parsec Void [MyToken]
 
@@ -57,7 +60,7 @@ data Ast
 
 type Ctx = [Ast]
 
-builtin :: [Ast]
+builtin :: Ctx
 builtin =
     [ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
     , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "*"]}
@@ -82,8 +85,8 @@ sym = satisfy isSym >>= (\case
     isSym (Identifier (SymbolId _)) = True
     isSym _ = False
 
-types :: Bool -> Parser Type
-types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
+types :: Bool -> Parser Type -- this doesnt handle structure
+types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
   where
     t =
       [ tok (Type CharType) $> CharType
@@ -91,11 +94,17 @@ types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , tok (Type IntType) $> IntType
       , tok (Type FloatType) $> FloatType
       , tok (Type StrType) $> StrType
-      , tok (Type ArrType) $> ArrType
+      , try $ satisfy isArrayType >>= (\case
+        (Type (ArrType t')) -> pure (ArrType t')
+        _ -> failN $ errImpossibleCase "types arr")
       ]
+
     vt
       | canBeVoid = [tok (Type VoidType) $> VoidType]
       | otherwise = []
+
+    isArrayType (Type (ArrType _)) = True
+    isArrayType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
@@ -137,11 +146,12 @@ type LocalVariable = [(Type, String)]
 type RetType = Type
 
 expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
-expression ctx locVar retT =
-      exprReturn ctx locVar retT
-  <|> exprIf ctx locVar retT -- jean garice
-  <|> exprVariable ctx locVar retT
-  <|> exprSubexpr ctx locVar retT
+expression ctx locVar retT = choice
+  [ exprReturn ctx locVar retT
+  , exprIf ctx locVar retT -- jean garice
+  , exprVariable ctx locVar retT
+  , exprSubexpr ctx locVar retT
+  ]
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf _ _ _ = failN $ errTodo "if expression"
@@ -150,15 +160,30 @@ exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
 exprReturn ctx locVar retT = do
   void (tok ReturnKw)
+  offset <- getOffset
   subexpr <- subexpression ctx locVar
   case subexpr of
-    (VariableCall x) -> let v = find (\(_, n) -> n == x) locVar in
-      case v of
+    (VariableCall x) -> case find (\(_, n) -> n == x) locVar of
         Just (t, _)
-          | t == retT -> return $ Return subexpr
-          | otherwise -> failN $ errRetType (show retT) (show t)
-        Nothing -> failN $ errImpossibleCase "exprReturn case v"
-    (FunctionCall {}) -> return $ Return subexpr
+          | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
+          | otherwise -> failI offset $ errRetType (show retT) (show t)
+        Nothing -> failN $ errImpossibleCase "exprReturn variable call"
+    (FunctionCall {fnName = name}) -> case
+      find
+      (\case
+        (Operator {..}) -> opName == name
+        (Function {..}) -> fnName == name
+        _ -> False
+      )
+      ctx
+      of
+        Just (Operator {..})
+          | opRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
+        Just (Function {..})
+          | fnRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
+        _ -> failN $ errImpossibleCase "exprReturn function call"      
     _ -> failN $ errTodo "return (u did only variable call and function call)"
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
@@ -182,13 +207,13 @@ data Group
 getGroup :: Parser Group
 getGroup = do
   offset <- (+1) <$> getOffset
-  choice
+  choicetry
     [ eof *> fail errEndSubexpr
-    , try $ GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
-    , try $ GLit offset <$> glit
-    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
-    , try $ GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-    , try $ GOp offset <$> gop <*> pure []
+    , GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
+    , GLit offset <$> glit
+    , GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
+    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , GOp offset <$> gop <*> pure []
     ]
   where
     glit = satisfy (\case
@@ -283,8 +308,8 @@ isType CharType (CharLit _) = True
 isType IntType (IntLit _) = True
 isType BoolType (BoolLit _) = True
 isType FloatType (FloatLit _) = True
-isType StrType (StringLit _) = True
-isType ArrType _ = error $ errTodo "isType arr"
+isType StrType (StrLit _) = True
+isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
 isType _ _ = False
 
 lType :: Literal -> Type
@@ -292,7 +317,8 @@ lType (CharLit _) = CharType
 lType (IntLit _) = IntType
 lType (BoolLit _) = BoolType
 lType (FloatLit _) = FloatType
-lType (StringLit _) = StrType
+lType (StrLit _) = StrType
+lType (ArrLit t _) = ArrType t
 
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = maybe
