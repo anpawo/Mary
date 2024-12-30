@@ -22,9 +22,11 @@ module Parser.Tokenizer
 
 -- import Debug.Trace (trace)
 
+import qualified Data.Map as Map
 import Data.Void (Void)
 import Data.List (singleton)
 import Data.Functor (($>))
+
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
@@ -49,16 +51,16 @@ singlequote :: Parser Char
 singlequote = char '\''
 
 keyword :: String -> Parser String
-keyword s = string s <* notFollowedBy prefixIdentifierChar
+keyword s = string s <* notFollowedBy symbolIdentifierChar
 
 symbol :: String -> Parser String
-symbol s = string s <* notFollowedBy infixIdentifierChar
+symbol s = string s <* notFollowedBy operatorIdentifierChar
 
-prefixIdentifierChar :: Parser Char
-prefixIdentifierChar = alphaNumChar <|> underscore
+symbolIdentifierChar :: Parser Char
+symbolIdentifierChar = alphaNumChar <|> underscore
 
-infixIdentifierChar :: Parser Char
-infixIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$']
+operatorIdentifierChar :: Parser Char
+operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -68,6 +70,16 @@ spaces = many $ oneOf " \n\t"
 
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
+
+getargs :: Parser start -> Parser value -> Parser end -> Parser [value]
+getargs start p end  = start *> (end $> [] <|> getargs')
+    where
+        getargs' = do
+            v <- p
+            endFound <- (end $> Left Nothing) <|> (char ',' $> Right Nothing)
+            case endFound of
+                Left _ -> pure [v]
+                Right _ -> (v :) <$> getargs'
 -- utils
 
 -- comments
@@ -156,11 +168,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         tokens = choicetry
             [
               -- Literal
-              Literal <$> charLit
-            , Literal <$> boolLit
-            , Literal <$> fltLit
-            , Literal <$> intLit
-            , Literal <$> strLit
+              Literal <$> parseLit
 
             -- Symbol
             ,  curlyOpenSym
@@ -173,7 +181,6 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  arrowSym
             ,  semicolonSym
             ,  commaSym
-            ,  scopeSym -- not sure if needed
 
             -- Keyword
             , functionKw
@@ -192,17 +199,21 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , Type <$> parseType
 
             -- Identifier
-            , Identifier <$> symbolId
-            , Identifier <$> operatorId
+            , symbolId
+            , operatorId
 
             ]
 
         -- Literal
-        charLit = CharLit <$> try (singlequote *> asciiChar <* (singlequote <?> "closing singlequote `\'` of the char."))
-        boolLit = BoolLit <$> (try (string "true" $> True) <|> try (string "false" $> False))
-        fltLit = FloatLit <$> (try ((0 -) <$> (char '-' *> float)) <|> try float)
-        intLit = IntLit <$> (try ((0 -) <$> (char '-' *> decimal)) <|> try decimal)
-        strLit = StringLit <$> try (quote *> manyTill anySingle (quote <?> "closing quote `\"` of the string."))
+        parseLit = choicetry [
+              CharLit <$> (singlequote *> asciiChar <* singlequote)
+            , BoolLit <$> ((string "true" $> True) <|> (string "false" $> False))
+            , FloatLit <$> (((0 -) <$> (char '-' *> float)) <|> float)
+            , IntLit <$> (((0 -) <$> (char '-' *> decimal)) <|> decimal)
+            , StringLit <$> (quote *> manyTill anySingle quote)
+            , ArrLit AnyType <$> getargs (char '[') parseLit (char ']')
+            , StructLit <$> some symbolIdentifierChar <* spaces <*> (Map.fromList <$> getargs (char '{') ((,) <$> some symbolIdentifierChar <*> parseLit) (char '}'))
+            ]
 
         -- Symbol
         curlyOpenSym = char '{' $> CurlyOpen
@@ -213,7 +224,6 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         bracketCloseSym = char ']' $> BracketClose
         assignSym = char '=' $> Assign
         arrowSym = try $ symbol "->" $> Arrow
-        scopeSym = char '.' $> Scope
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
 
@@ -230,8 +240,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         elseKw = try $ keyword "else" $> ElseKw
         returnKw = try $ keyword "return" $> ReturnKw
 
+        -- Type
         parseType = choicetry [
-            -- Type
               keyword "char" $> CharType
             , keyword "void" $> VoidType
             , keyword "bool" $> BoolType
@@ -239,13 +249,13 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "float" $> FloatType
             , keyword "str" $> StrType
             , keyword "arr" *> do
-                void $ spaces *> char '[' 
+                void $ spaces *> char '['
                 t <- spaces *> parseType
                 void $ spaces *> char ']'
                 return $ ArrType t
             ]
 
         -- Identifier
-        symbolId = SymbolId <$> some prefixIdentifierChar -- thought i prevented numbers as starting names
-        operatorId = OperatorId <$> some infixIdentifierChar
+        symbolId = Identifier . SymbolId <$> some symbolIdentifierChar -- thought i prevented numbers as starting names
+        operatorId = Identifier . OperatorId <$> some operatorIdentifierChar
 -- TokenType
