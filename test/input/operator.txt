@@ -1,4 +1,6 @@
 operator ** precedence 8 (int n, int power) -> int {
     1;
+    xd { lol = "lol" , haha = "haha" };
+    1 ** 2;
     return n ** (power - 1);
 }
