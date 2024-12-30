@@ -26,7 +26,7 @@ glados content = case run (comment &> tokenize) content of
   Right tokens -> case run tokenToAst tokens of
     Left err' -> putStrLn $ prettyPrintError tokens err'
     Right res' -> case compiler res' of
-        Right (instr, env) -> print env
+        Right (_instr, env) -> print env
         Left errBytecode -> print errBytecode
 
 
