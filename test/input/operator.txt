@@ -1,3 +1,4 @@
 operator ** precedence 8 (int n, int power) -> int {
+    1;
     return n ** (power - 1);
 }
