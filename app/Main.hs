@@ -16,6 +16,7 @@ import Utils.Lib ((&>), run)
 import Parser.Tokenizer (tokenize, comment)
 import Ast.Ast (tokenToAst)
 import Ast.Error
+import Bytecode.Compiler (compiler)
 
 type ArgInfo = String
 
@@ -24,7 +25,9 @@ glados content = case run (comment &> tokenize) content of
   Left err -> putStrLn $ errorBundlePretty err
   Right tokens -> case run tokenToAst tokens of
     Left err' -> putStrLn $ prettyPrintError tokens err'
-    Right res' -> print res'
+    Right res' -> case compiler res' of
+        Right (_instr, env) -> print env
+        Left errBytecode -> print errBytecode
 
 
 helper :: String

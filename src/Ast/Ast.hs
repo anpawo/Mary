@@ -16,6 +16,8 @@ module Ast.Ast
     -- main
     Ast(..),
     tokenToAst,
+    Expression(..),
+    SubExpression(..),
 
     -- test
     runParser,
@@ -42,14 +44,14 @@ data SubExpression
   = VariableCall { varName :: String }
   | FunctionCall { fnName :: String, fnArgs :: [SubExpression]}
   | Literal Literal
-  | Builtin { builtinName :: String } -- operator + - * / -- this should only be set my default at the start of the parsing and handled by the vm
   deriving (Show, Eq)
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation inside a function
+  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation and modification inside a function
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
+  | While { whileCond :: SubExpression, whileExpr :: [Expression] }
   deriving (Show, Eq)
 
 data Ast
@@ -62,11 +64,22 @@ type Ctx = [Ast]
 
 builtin :: Ctx
 builtin =
-    [ Operator {opName = "-", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "-"]}
-    , Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
-    , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "*"]}
-    , Function {fnName = "print", fnArgs = [], fnRetType = VoidType, fnBody = [SubExpression $ Builtin "print"]} -- todo: im not really sure about this one (maybe we need the any type)
-    ] -- at 
+    [ 
+      Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
+    , Operator {opName = "/", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "-", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "<", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "<=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = ">", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "exit", fnArgs = [(IntType, "returncode")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
+    , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
+    ] -- at | !!
       -- len (needs any type to work on any array)
 
 tokenToAst :: Parser Ctx
@@ -188,9 +201,8 @@ exprReturn ctx locVar retT = do
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
         _ -> failN $ errImpossibleCase "exprReturn function call"      
     (Ast.Ast.Literal x)
-      | lType x == retT -> return $ Return subexpr
-      | otherwise -> failI offset $ errRetType (show retT) (show $ lType x)
-    (Builtin {}) -> failN $ errImpossibleCase "exprReturn Builtin"
+      | lType ctx x == retT -> return $ Return subexpr
+      | otherwise -> failI offset $ errRetType (show retT) (show $ lType ctx x)
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
@@ -318,13 +330,14 @@ isType StrType (StringLit _) = True
 isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
 isType _ _ = False
 
-lType :: Literal -> Type
-lType (CharLit _) = CharType
-lType (IntLit _) = IntType
-lType (BoolLit _) = BoolType
-lType (FloatLit _) = FloatType
-lType (StringLit _) = StrType
-lType (ArrLit t _) = ArrType t
+lType :: Ctx -> Literal -> Type
+lType _ (CharLit _) = CharType
+lType _ (IntLit _) = IntType
+lType _ (BoolLit _) = BoolType
+lType _ (FloatLit _) = FloatType
+lType _ (StringLit _) = StrType
+lType _ (ArrLit t _) = t
+lType _ (StructLit _ _) = StructAnyType -- deduce type from context or maybe do it somewhere else
 
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = maybe
@@ -339,7 +352,7 @@ getGrType _ locVar (GVar index name) expected = maybe
   (error $ errImpossibleCase "getGrType GVar")
   ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
   (find ((== name) . snd) locVar)
-getGrType _ _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType lit)
+getGrType ctx _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType ctx lit)
 getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
 
 validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
@@ -402,6 +415,7 @@ getFnBody ctx locVar retT = do
             x@(Return {}) -> pure [x]
             x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
             x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
+            x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
 
 function :: Ctx -> Parser Ast
@@ -443,5 +457,5 @@ operator ctx = do
   return $ Operator name prcd retT (head args) (args !! 1) body
 
 structure :: Parser Ast
-structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
+structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
 -- tu peux delete ce qui est au dessus c juste pour pouvoir compiler

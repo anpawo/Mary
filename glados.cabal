@@ -27,6 +27,7 @@ library
   exposed-modules:
       Ast.Ast
       Ast.Error
+      Bytecode.Compiler
       Parser.Token
       Parser.Tokenizer
       Utils.Lib
@@ -63,6 +64,7 @@ test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      CompilerSpec
       TokenizerSpec
       Paths_glados
   autogen-modules:
