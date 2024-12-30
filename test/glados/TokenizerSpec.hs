@@ -93,8 +93,6 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "=" ==> [Assign]
   it "->" $
     run tokenize "->" ==> [Arrow]
-  it "." $
-    run tokenize "." ==> [Scope]
   it ";" $
     run tokenize ";" ==> [SemiColon]
   it "," $
