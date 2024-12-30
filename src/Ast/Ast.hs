@@ -78,9 +78,9 @@ builtin =
     , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "exit", fnArgs = [(IntType, "returncode")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
+    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr")], fnRetType = AnyType, fnBody = []}
     , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
-    ] -- at | !!
-      -- len (needs any type to work on any array)
+    ]
 
 tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
@@ -172,13 +172,17 @@ type RetType = Type
 expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
 expression ctx locVar retT = choice
   [ exprReturn ctx locVar retT
-  , exprIf ctx locVar retT -- jean garice
-  , exprVariable ctx locVar retT
   , exprSubexpr ctx locVar retT
+  , exprVariable ctx locVar retT
+  , exprIf ctx locVar retT -- garice
+  , exprWhile ctx locVar retT -- garice
   ]
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf _ _ _ = failN $ errTodo "if expression"
+
+exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprWhile _ _ _ = failN $ errTodo "while expression"
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
@@ -208,7 +212,7 @@ exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
 
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprSubexpr _ _ _ = failN $ errTodo "sub expression"
+exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar
 
 type Idx = Int
 type Prec = Int
@@ -457,5 +461,4 @@ operator ctx = do
   return $ Operator name prcd retT (head args) (args !! 1) body
 
 structure :: Parser Ast
-structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
--- tu peux delete ce qui est au dessus c juste pour pouvoir compiler
+structure = failN $ errTodo "structure" -- garice

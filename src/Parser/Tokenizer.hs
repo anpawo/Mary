@@ -75,7 +75,9 @@ getargs :: Parser start -> Parser value -> Parser end -> Parser [value]
 getargs start p end  = start *> (end $> [] <|> getargs')
     where
         getargs' = do
+            void spaces
             v <- p
+            void spaces
             endFound <- (end $> Left Nothing) <|> (char ',' $> Right Nothing)
             case endFound of
                 Left _ -> pure [v]
@@ -212,7 +214,11 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , IntLit <$> (((0 -) <$> (char '-' *> decimal)) <|> decimal)
             , StringLit <$> (quote *> manyTill anySingle quote)
             , ArrLit AnyType <$> getargs (char '[') parseLit (char ']')
-            , StructLit <$> some symbolIdentifierChar <* spaces <*> (Map.fromList <$> getargs (char '{') ((,) <$> some symbolIdentifierChar <*> parseLit) (char '}'))
+            , do
+                structName <- some symbolIdentifierChar
+                void spaces
+                args <- Map.fromList <$> getargs (char '{') ((,) <$> some symbolIdentifierChar <* spaces <* char '=' <* spaces <*> parseLit) (char '}')
+                return $ StructLit structName args
             ]
 
         -- Symbol
