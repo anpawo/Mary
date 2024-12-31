@@ -1,5 +1,5 @@
-function add_mul(int a, int b, int c) -> int {
-    return a + b * c ;
+function add_mul(int a, int b, arr[int] c) -> int {
+    return a + b * 4;
 }
 
 /*
@@ -22,5 +22,10 @@ function add_mul(int a, int b, int c) -> int {
     return ();
 - more than one expression
     return a b;
+
+- empty body if return type is different from void
+    //return a + b * "lol";
+- invalid type in operator and functions
+    return a + "lol";
 
 */

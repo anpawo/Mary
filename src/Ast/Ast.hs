@@ -10,31 +10,33 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# HLINT ignore "Use isNothing" #-}
--- to prevent warnings
-{-# HLINT ignore "Redundant return" #-}
-{-# OPTIONS_GHC -Wno-unused-matches #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Ast.Ast
   (
     -- main
     Ast(..),
     tokenToAst,
+    Expression(..),
+    SubExpression(..),
 
     -- test
     runParser,
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+
 import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
-import Control.Applicative ((<|>))
+import Data.Foldable (traverse_)
+
+import Control.Applicative ((<|>), Alternative(..))
 import Control.Monad (void)
 
 import Parser.Token (MyToken(..), Identifier(..), Literal(..), Type(..))
 import Ast.Error
+import Utils.Lib (choicetry)
 
 type Parser = Parsec Void [MyToken]
 
@@ -42,14 +44,14 @@ data SubExpression
   = VariableCall { varName :: String }
   | FunctionCall { fnName :: String, fnArgs :: [SubExpression]}
   | Literal Literal
-  | Builtin { builtinName :: String } -- operator + - * / -- this should only be set my default at the start of the parsing and handled by the vm
   deriving (Show, Eq)
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation inside a function
+  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation and modification inside a function
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
+  | While { whileCond :: SubExpression, whileExpr :: [Expression] }
   deriving (Show, Eq)
 
 data Ast
@@ -60,18 +62,31 @@ data Ast
 
 type Ctx = [Ast]
 
-builtin :: [Ast]
+builtin :: Ctx
 builtin =
-    [ Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
-    , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "*"]}
-    , Function {fnName = "print", fnArgs = [], fnRetType = VoidType, fnBody = [SubExpression $ Builtin "print"]} -- todo: im not really sure about this one (maybe we need the any type)
+    [ 
+      Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
+    , Operator {opName = "/", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "-", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "<", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "<=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = ">", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "exit", fnArgs = [(IntType, "returncode")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
+    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr")], fnRetType = AnyType, fnBody = []}
+    , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
     ]
 
 tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
 
 ast :: Ctx -> Parser Ctx
-ast ctx = (eof $> ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (x : ctx)))
+ast ctx = (eof $> drop (length builtin) ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (ctx ++ [x])))
 
 tok :: MyToken -> Parser MyToken
 tok = single
@@ -85,8 +100,17 @@ sym = satisfy isSym >>= (\case
     isSym (Identifier (SymbolId _)) = True
     isSym _ = False
 
-types :: Bool -> Parser Type
-types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
+ope :: Parser String
+ope = satisfy isOpe >>= (\case
+  Identifier (OperatorId name) -> pure name
+  _ -> failN $ errImpossibleCase "ope case t"
+  )
+  where
+    isOpe (Identifier (OperatorId _)) = True
+    isOpe _ = False
+
+types :: Bool -> Parser Type -- this doesnt handle structure
+types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
   where
     t =
       [ tok (Type CharType) $> CharType
@@ -94,11 +118,17 @@ types canBeVoid = choice (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , tok (Type IntType) $> IntType
       , tok (Type FloatType) $> FloatType
       , tok (Type StrType) $> StrType
-      , tok (Type ArrType) $> ArrType
+      , try $ satisfy isArrayType >>= (\case
+        (Type (ArrType t')) -> pure (ArrType t')
+        _ -> failN $ errImpossibleCase "types arr")
       ]
+
     vt
       | canBeVoid = [tok (Type VoidType) $> VoidType]
       | otherwise = []
+
+    isArrayType (Type (ArrType _)) = True
+    isArrayType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
@@ -140,35 +170,49 @@ type LocalVariable = [(Type, String)]
 type RetType = Type
 
 expression :: Ctx -> LocalVariable -> RetType -> Parser Expression
-expression ctx locVar retT =
-      exprReturn ctx locVar retT
-  <|> exprIf ctx locVar retT -- jean garice
-  <|> exprVariable ctx locVar retT
-  <|> exprSubexpr ctx locVar retT
+expression ctx locVar retT = choice
+  [ exprReturn ctx locVar retT
+  , exprSubexpr ctx locVar retT
+  , exprVariable ctx locVar retT
+  , exprIf ctx locVar retT -- garice
+  , exprWhile ctx locVar retT -- garice
+  ]
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf _ _ _ = failN $ errTodo "if expression"
+
+exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
+exprWhile _ _ _ = failN $ errTodo "while expression"
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
 exprReturn ctx locVar retT = do
   void (tok ReturnKw)
+  offset <- getOffset
   subexpr <- subexpression ctx locVar
   case subexpr of
-    (VariableCall x) -> let v = find (\(_, n) -> n == x) locVar in
-      case v of
+    (VariableCall x) -> case find (\(_, n) -> n == x) locVar of
         Just (t, _)
-          | t == retT -> return $ Return subexpr
-          | otherwise -> failN $ errRetType (show retT) (show t)
-        Nothing -> failN $ errImpossibleCase "exprReturn case v"
-    (FunctionCall {}) -> return $ Return subexpr
-    _ -> failN $ errTodo "return (u did only variable call and function call)"
+          | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
+          | otherwise -> failI offset $ errRetType (show retT) (show t)
+        Nothing -> failN $ errImpossibleCase "exprReturn variable call"
+    (FunctionCall {fnName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
+        Just (Operator {..})
+          | opRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
+        Just (Function {..})
+          | fnRetType == retT -> return $ Return subexpr
+          | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
+        _ -> failN $ errImpossibleCase "exprReturn function call"      
+    (Ast.Ast.Literal x)
+      | lType ctx x == retT -> return $ Return subexpr
+      | otherwise -> failI offset $ errRetType (show retT) (show $ lType ctx x)
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
 
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprSubexpr _ _ _ = failN $ errTodo "sub expression"
+exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar
 
 type Idx = Int
 type Prec = Int
@@ -185,13 +229,13 @@ data Group
 getGroup :: Parser Group
 getGroup = do
   offset <- (+1) <$> getOffset
-  choice
+  choicetry
     [ eof *> fail errEndSubexpr
-    , try $ GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
-    , try $ GLit offset <$> glit
-    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
-    , try $ GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-    , try $ GOp offset <$> gop <*> pure []
+    , GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
+    , GLit offset <$> glit
+    , GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
+    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , GOp offset <$> gop <*> pure []
     ]
   where
     glit = satisfy (\case
@@ -281,8 +325,66 @@ getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
 getOpIdx _ = error "error: the token isn't an operator"
 
-validateSubexpr :: Ctx -> LocalVariable -> SubExpression -> Parser ()
-validateSubexpr ctx locVar subex = failN $ errTodo "validate subexpr"
+isType :: Type -> Literal -> Bool
+isType CharType (CharLit _) = True
+isType IntType (IntLit _) = True
+isType BoolType (BoolLit _) = True
+isType FloatType (FloatLit _) = True
+isType StrType (StringLit _) = True
+isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
+isType _ _ = False
+
+lType :: Ctx -> Literal -> Type
+lType _ (CharLit _) = CharType
+lType _ (IntLit _) = IntType
+lType _ (BoolLit _) = BoolType
+lType _ (FloatLit _) = FloatType
+lType _ (StringLit _) = StrType
+lType _ (ArrLit t _) = t
+lType _ (StructLit _ _) = StructAnyType -- deduce type from context or maybe do it somewhere else
+
+getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
+getGrType ctx _ (GOp index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GOp")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidOpType name (show expected) (show t)) . opRetType)
+  (find (opNameIs name) ctx)
+getGrType ctx _ (GFn index name _) expected = maybe
+  (error $ errImpossibleCase "getGrType GFn")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidFnType name (show expected) (show t)) . fnRetType)
+  (find (fnNameIs name) ctx)
+getGrType _ locVar (GVar index name) expected = maybe
+  (error $ errImpossibleCase "getGrType GVar")
+  ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
+  (find ((== name) . snd) locVar)
+getGrType ctx _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType ctx lit)
+getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
+
+validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
+validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
+validateMount _ locVar (GVar index name) = maybe (failI index $ errVariableNotBound name) (const $ pure ()) (find ((== name) . snd) locVar)
+validateMount _ _ (GLit {}) = pure ()
+validateMount ctx locVar (GFn index name args) = case find (fnNameIs name) ctx of
+  Nothing -> failI index $ errFunctionNotBound name
+  Just (Function _ args' _ _)
+    | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
+    | otherwise -> mapM_ (\((t, _), g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
+    where
+      expected = length args'
+      found = length args
+  Just _ -> failI index $ errImpossibleCase "validateMount GFn"
+validateMount ctx locVar (GOp index name [l, r]) = case find (opNameIs name) ctx of
+  Nothing -> failI index $ errOperatorNotBound name
+  Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
+  Just _ -> failI index $ errImpossibleCase "validateMount GOp"
+validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
+
+opNameIs :: String -> Ast -> Bool
+opNameIs name' (Operator {..}) = name' == opName
+opNameIs _ _ = False
+
+fnNameIs :: String -> Ast -> Bool
+fnNameIs name' (Function {..}) = name' == fnName
+fnNameIs _ _ = False
 
 toSubexpr :: Group -> Parser SubExpression
 toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
@@ -293,11 +395,10 @@ toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 
 subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
-  group <- someTill getGroup (tok SemiColon) <|> failN errEmptyExpr
+  group <- someTill (getGroup <|> failN errSemiColon) (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
-  subex <- toSubexpr mount
-  -- trace (show subex) (validateSubexpr ctx locVar subex)
-  return subex
+  validateMount ctx locVar mount
+  toSubexpr mount
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getFnBody ctx locVar retT = do
@@ -318,6 +419,7 @@ getFnBody ctx locVar retT = do
             x@(Return {}) -> pure [x]
             x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
             x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
+            x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
 
 function :: Ctx -> Parser Ast
@@ -329,10 +431,34 @@ function ctx = do
   body <- getFnBody (shellFn : ctx) args retT
   return $ Function name args retT body
 
+getOpeName :: [String] -> Parser String
+getOpeName names = tok OperatorKw *> ope >>= notTaken names id
+
+getOpePrec :: Parser Int
+getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
+  where
+    precValue = satisfy (\case
+      Parser.Token.Literal (IntLit _) -> True
+      _ -> False) >>= (\case
+          (Parser.Token.Literal (IntLit x)) -> pure x
+          _ -> failN $ errImpossibleCase "getOpePrec precValue")
+
+validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
+validArgNumber _ _ args@[_, _] = pure args
+validArgNumber start name args = do
+  offset <- subtract (start - 1) <$> getOffset
+  failI start $ errOpArgs offset (length args) name
+
 operator :: Ctx -> Parser Ast
-operator _ = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
--- temporary
+operator ctx = do
+  name <- getOpeName (getNames ctx)
+  prcd <- getOpePrec
+  offset <- (+1) <$> getOffset
+  args <- getFnArgs (name : getNames ctx) >>= validArgNumber offset name
+  retT <- getFnRetType
+  let shellOp = Operator name prcd retT (head args) (args !! 1) []
+  body <- getFnBody (shellOp : ctx) args retT
+  return $ Operator name prcd retT (head args) (args !! 1) body
 
 structure :: Parser Ast
-structure = tok (Type CharType) $> Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = [SubExpression $ Builtin "+"]}
--- tu peux delete ce qui est au dessus c juste pour pouvoir compiler
+structure = failN $ errTodo "structure" -- garice

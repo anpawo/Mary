@@ -4,17 +4,26 @@
 -- File description:
 -- MyToken
 -}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 module Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..)) where
 
+import Text.Printf (printf)
+import Data.List (intercalate)
+import qualified Data.Map as Map
+
 data Type
-  = CharType --             \| char
-  | VoidType --             \| void
-  | BoolType --             \| bool
-  | IntType --              \| int
-  | FloatType --            \| float
-  | StrType --              \| str
-  | ArrType --              \| arr
+  = CharType --                     \| char
+  | VoidType --                     \| void
+  | BoolType --                     \| bool
+  | IntType --                      \| int
+  | FloatType --                    \| float
+  | StrType --                      \| str -- todo: arr [ char ]
+  | ArrType Type --                 \| arr [ <type> ]
+  | StructType String --            \| struct <name> (the real parsing of the structure is done in the Ast)
+  | AnyType --                      \| any (only for builtins)
+  | StructAnyType --                \| struct any (only for builtins)
+  | ConstraintType String [Type] -- \| int | float (only for builtins)
   deriving (Eq, Ord)
 
 instance Show Type where
@@ -24,14 +33,20 @@ instance Show Type where
   show IntType = "int"
   show FloatType = "float"
   show StrType = "str"
-  show ArrType = "arr"
+  show (ArrType t) = printf "arr[%s]" $ show t
+  show (StructType n) = printf "struct %s" $ show n
+  show AnyType = "any"
+  show StructAnyType = "struct any"
+  show (ConstraintType n t) = printf "%s = %s" n $ intercalate " | " $ map show t
 
 data Literal
-  = CharLit Char --      \| 'c'   -> may be a list of char
-  | BoolLit Bool --      \| true | false
-  | IntLit Int --        \| 2
-  | FloatLit Double --   \| 1.5
-  | StringLit String --  \| "yo"   -> may be a list of char
+  = CharLit Char --                             \| 'c'   -> may be a list of char
+  | BoolLit Bool --                             \| true | false
+  | IntLit Int --                               \| 2
+  | FloatLit Double --                          \| 1.5
+  | StringLit String --                         \| "yo"   -> may be a list of char
+  | ArrLit Type [Literal] --                    \| [1, 2, 3]
+  | StructLit String (Map.Map String Literal) --  \| {name: "marius", age: 19}
   deriving (Eq, Ord)
 
 instance Show Literal where
@@ -41,6 +56,8 @@ instance Show Literal where
   show (IntLit x) = show x
   show (FloatLit x) = show x
   show (StringLit x) = show x
+  show (ArrLit _ x) = printf "[%s]" $ intercalate ", " $ map show x
+  show (StructLit n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(k, v) -> printf "%s: %s" k (show v)) (Map.toList x)
 
 data Identifier
   = SymbolId String --   \| factorial, add_2, x
@@ -74,7 +91,6 @@ data MyToken
   | BracketClose --      \|  ]   -> array end
   | Assign --            \|  =   -> assign expression to a name (can be a func or a var)
   | Arrow --             \|  ->  -> return type of functions
-  | Scope --             \|  .   -> used to import a module (std.print, math.facto, ...)
   | SemiColon --         \|  ;   -> end of statement
   | Comma --             \|  ,   -> separate arguments in function call/creation
   -- Type
@@ -102,13 +118,13 @@ instance Show MyToken where
   show CurlyClose = "}"
   show ParenOpen = "("
   show ParenClose = ")"
-  show BracketOpen = "{"
-  show BracketClose = "}"
+  show BracketOpen = "["
+  show BracketClose = "]"
   show Assign = "="
   show Arrow = "->"
-  show Scope = "."
   show SemiColon = ";"
   show Comma = ","
+
   show (Type t) = show t
   show (Literal l) = show l
   show (Identifier i) = show i
