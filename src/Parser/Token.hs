@@ -96,6 +96,7 @@ instance Show MyToken where
   show AsKw = "as"
   show AtKw = "at"
   show IfKw = "if"
+  show ThenKw = "then"
   show ElseKw = "else"
   show ReturnKw = "return"
 
