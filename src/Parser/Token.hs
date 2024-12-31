@@ -63,6 +63,7 @@ data MyToken
   | AsKw --              \| as           -> for imports (bonus)
   | AtKw --              \| at           -> get elem from array
   | IfKw --              \| if           -> if
+  | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
   | ReturnKw --          \| return       -> return
   -- Symbol
