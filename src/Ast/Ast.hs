@@ -26,7 +26,7 @@ module Ast.Ast
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill)
+import Text.Megaparsec (Parsec, single, eof, satisfy, choice, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, token, many)
 import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
@@ -49,7 +49,7 @@ data Expression
   = SubExpression SubExpression
   | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation inside a function
   | Return { retValue :: SubExpression }
-  | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
+  | IfThenElse { ifCond :: SubExpression, thenExpr :: [Expression], elseExpr :: [Expression] }
   deriving (Show, Eq)
 
 data Ast
@@ -146,14 +146,25 @@ expression ctx locVar retT =
   <|> exprVariable ctx locVar retT
   <|> exprSubexpr ctx locVar retT
 
+parseBraces :: Parser a -> Parser a
+parseBraces p = do
+  _ <- token (\t -> if t == CurlyOpen then Just () else Nothing) mempty
+  result <- p
+  _ <- token (\t -> if t == CurlyClose then Just () else Nothing) mempty
+  return result
+
+getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
+getBlock ctx locVar retT =
+  parseBraces (many (expression ctx locVar retT))
+
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
   cond <- subexpression ctx locVar
   void (tok ThenKw)
-  thenExpr <- expression ctx locVar retT
+  thenExpr <- getBlock ctx locVar retT
   void (tok ElseKw)
-  elseExpr <- expression ctx locVar retT
+  elseExpr <- getBlock ctx locVar retT
   return $ IfThenElse cond thenExpr elseExpr
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
