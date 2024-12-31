@@ -74,9 +74,9 @@ tokenizerEdgeCases = describe "tokenizer edge cases" $ do
   --      SemiColon, CurlyClose]
   it "handles if-then-else expression" $
     run tokenize "if condition then { return 42; } else { return 84; }" ==>
-      [Identifier $ SymbolId "if", Identifier $ SymbolId "condition", Identifier $ SymbolId "then", CurlyOpen,
-       Identifier $ SymbolId "return", Literal (IntLit 42), SemiColon, CurlyClose,
-       Identifier $ SymbolId "else", CurlyOpen, Identifier $ SymbolId "return", Literal (IntLit 84), SemiColon, CurlyClose]
+      [IfKw, Identifier $ SymbolId "condition", ThenKw, CurlyOpen,
+      ReturnKw, Literal (IntLit 42), SemiColon, CurlyClose,
+      ElseKw, CurlyOpen, ReturnKw, Literal (IntLit 84), SemiColon, CurlyClose]
 
 -- exprIfThenElse :: SpecWith ()
 -- exprIfThenElse = describe "exprIf parser" $ do
