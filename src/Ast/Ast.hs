@@ -147,7 +147,14 @@ expression ctx locVar retT =
   <|> exprSubexpr ctx locVar retT
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprIf _ _ _ = failN $ errTodo "if expression"
+exprIf ctx locVar retT = do
+  void (tok IfKw)
+  cond <- subexpression ctx locVar
+  void (tok ThenKw)
+  thenExpr <- expression ctx locVar retT
+  void (tok ElseKw)
+  elseExpr <- expression ctx locVar retT
+  return $ IfThenElse cond thenExpr elseExpr
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
