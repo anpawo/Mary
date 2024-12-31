@@ -80,6 +80,7 @@ data MyToken
   | AsKw --              \| as           -> for imports (bonus)
   | AtKw --              \| at           -> get elem from array
   | IfKw --              \| if           -> if
+  | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
   | ReturnKw --          \| return       -> return
   -- Symbol
@@ -111,6 +112,7 @@ instance Show MyToken where
   show AsKw = "as"
   show AtKw = "at"
   show IfKw = "if"
+  show ThenKw = "then"
   show ElseKw = "else"
   show ReturnKw = "return"
 

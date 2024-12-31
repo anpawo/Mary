@@ -24,7 +24,7 @@ module Ast.Ast
     function
   ) where
 
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, token, many, choice)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -50,7 +50,7 @@ data Expression
   = SubExpression SubExpression
   | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation and modification inside a function
   | Return { retValue :: SubExpression }
-  | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
+  | IfThenElse { ifCond :: SubExpression, thenExpr :: [Expression], elseExpr :: [Expression] }
   | While { whileCond :: SubExpression, whileExpr :: [Expression] }
   deriving (Show, Eq)
 
@@ -178,8 +178,29 @@ expression ctx locVar retT = choice
   , exprWhile ctx locVar retT -- garice
   ]
 
+parseBraces :: Parser a -> Parser a
+parseBraces p = do
+  _ <- token (\t -> if t == CurlyOpen then Just () else Nothing) mempty
+  result <- p
+  _ <- token (\t -> if t == CurlyClose then Just () else Nothing) mempty
+  return result
+
+getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
+getBlock ctx locVar retT =
+  parseBraces (Text.Megaparsec.many (expression ctx locVar retT))
+
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprIf _ _ _ = failN $ errTodo "if expression"
+exprIf ctx locVar retT = do
+  void (tok IfKw)
+  cond <- subexpression ctx locVar
+  void (tok ThenKw)
+  thenExpr <- getBlock ctx locVar retT
+  maybeElseExpr <- optional $ do
+    void (tok ElseKw)
+    getBlock ctx locVar retT
+  return $ case maybeElseExpr of
+    Just elseExpr -> IfThenElse cond thenExpr elseExpr
+    Nothing -> IfThenElse cond thenExpr []
 
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile _ _ _ = failN $ errTodo "while expression"
@@ -203,7 +224,7 @@ exprReturn ctx locVar retT = do
         Just (Function {..})
           | fnRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
-        _ -> failN $ errImpossibleCase "exprReturn function call"      
+        _ -> failN $ errImpossibleCase "exprReturn function call"
     (Ast.Ast.Literal x)
       | lType ctx x == retT -> return $ Return subexpr
       | otherwise -> failI offset $ errRetType (show retT) (show $ lType ctx x)

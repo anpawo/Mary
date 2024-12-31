@@ -112,7 +112,7 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | otherwise = ""
                 tokLeft = let tc = take 10 (drop pos tokens) in unwords $ show <$> tc
                 pointer = replicate (length tokCons + 2) ' ' ++ replicate (length tokErr - 2) '^'
-                
+
                 tokErr2 n = (\s -> " " ++ s ++ " ") <$> unwords $ show <$> take n (drop (pos - 1) tokens)
                 tokLeft2 n = let tc = take 10 (drop (pos + n - 1) tokens) in unwords $ show <$> tc
                 pointer2 n = replicate (length tokCons + 2) ' ' ++ replicate (length (tokErr2 n) - 2) '^'
