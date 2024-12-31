@@ -7,13 +7,19 @@
 
 module TokenizerSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation, SpecWith)
 import Test.Hspec.Runner (SpecWith)
 
 import Data.Either (isLeft)
 
 import Parser.Tokenizer
-import Parser.Token
+import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
+import Control.Applicative ((<|>), many, some, empty)
+import Text.Megaparsec (Parsec, runParser, choice, try, eof, oneOf)
+import Text.Megaparsec.Char (alphaNumChar, asciiChar, string, char)
+import Data.Void (Void)
+import Control.Monad (void)
+
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -32,6 +38,57 @@ spec = do
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
   tokenizerUtils
+  -- exprIfThenElse
+  tokenizerEdgeCases
+
+tokenizerEdgeCases :: SpecWith ()
+tokenizerEdgeCases = describe "tokenizer edge cases" $ do
+  it "handles empty input" $
+    run tokenize "" ==> []
+  it "handles spaces only input" $
+    run tokenize "   " ==> []
+  it "handles input with multiple spaces" $
+    run tokenize "   int  float   " ==> [Type IntType, Type FloatType]
+  -- it "handles input with mixed spaces and comments" $
+  --   run comment "x = 5 // comment \n y = 6" ==> "x = 5\ny = 6"
+  -- it "fails on unmatched parentheses" $
+  --   run tokenize "(" === isLeft
+  -- it "fails on unmatched braces" $
+  --   run tokenize "{" === isLeft
+  it "fails on malformed string" $
+    run tokenize "\"string" === isLeft
+  -- it "handles string with escape character" $
+  --   run tokenize "\"escaped\\\"quote\"" ==> [Literal $ StringLit "escaped\"quote"]
+  it "handles valid identifier with underscores" $
+    run tokenize "valid_identifier" ==> [Identifier $ SymbolId "valid_identifier"]
+  -- it "handles input with multiple operators" $
+  --   run tokenize "a + b - c * d / e" ==>
+  --     [Identifier $ SymbolId "a", OperatorKw, Identifier $ OperatorId "+", Identifier $ SymbolId "b", OperatorKw, Identifier $ OperatorId "-", 
+  --      Identifier $ SymbolId "c", OperatorKw, Identifier $ OperatorId "*", Identifier $ SymbolId "d", OperatorKw, Identifier $ OperatorId "/", 
+  --      Identifier $ SymbolId "e"]
+  -- it "handles long input with different token types" $
+  --   run tokenize "add(int a, int b) { return a + b; }" ==>
+  --     [Identifier $ SymbolId "add", ParenOpen, Type IntType, Identifier $ SymbolId "a", Comma, Type IntType, Identifier $ SymbolId "b", ParenClose, 
+  --      CurlyOpen, Identifier $ SymbolId "return", Identifier $ SymbolId "a", OperatorKw, Identifier $ OperatorId "+", Identifier $ SymbolId "b", 
+  --      SemiColon, CurlyClose]
+  it "handles if-then-else expression" $
+    run tokenize "if condition then { return 42; } else { return 84; }" ==>
+      [Identifier $ SymbolId "if", Identifier $ SymbolId "condition", Identifier $ SymbolId "then", CurlyOpen,
+       Identifier $ SymbolId "return", Literal (IntLit 42), SemiColon, CurlyClose,
+       Identifier $ SymbolId "else", CurlyOpen, Identifier $ SymbolId "return", Literal (IntLit 84), SemiColon, CurlyClose]
+
+-- exprIfThenElse :: SpecWith ()
+-- exprIfThenElse = describe "exprIf parser" $ do
+--     it "parses if-then-else expressions" $
+--       run parseIf "if condition then { return 42; } else { return 84; }" ==>
+--         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] [Return (Literal (IntLit 84))]]
+
+--     it "parses if-then expressions without else" $
+--       run parseIf "if condition then { return 42; }" ==>
+--         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] []]
+
+--     it "fails on incomplete if statements" $
+--       run parseIf "if condition then" === isLeft
 
 tokenizerUtils :: SpecWith ()
 tokenizerUtils = describe "utils" $ do
@@ -110,7 +167,7 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
   it "struct" $
     run tokenize "struct" ==> [StructKw]
   it "is" $
-    run tokenize "is" ==> [IsKw]  
+    run tokenize "is" ==> [IsKw]
   it "import" $
     run tokenize "import" ==> [ImportKw]
   it "as" $
