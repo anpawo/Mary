@@ -163,9 +163,12 @@ exprIf ctx locVar retT = do
   cond <- subexpression ctx locVar
   void (tok ThenKw)
   thenExpr <- getBlock ctx locVar retT
-  void (tok ElseKw)
-  elseExpr <- getBlock ctx locVar retT
-  return $ IfThenElse cond thenExpr elseExpr
+  maybeElseExpr <- optional $ do
+    void (tok ElseKw)
+    getBlock ctx locVar retT
+  return $ case maybeElseExpr of
+    Just elseExpr -> IfThenElse cond thenExpr elseExpr
+    Nothing -> IfThenElse cond thenExpr []
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
