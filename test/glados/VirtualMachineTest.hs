@@ -65,3 +65,12 @@ errorProgram =
   , Call Add  -- not enough arguments
   , Ret
   ]
+
+runTests :: IO ()
+runTests = do
+  putStrLn "Running tests..."
+
+  -- 1: basics
+  case exec (resolveEnv []) [] basicMathProgram [] of
+    Right (IntVal result) -> putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
+    Left err              -> putStrLn $ "Test 1 Failed: " ++ err
