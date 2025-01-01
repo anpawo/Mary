@@ -4,3 +4,6 @@ sujet_bootstrap.pdf
 test_Sexpr.txt
 /src/Ryan/
 /*.temp
+*.hi
+*.o
+vm-test
