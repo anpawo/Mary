@@ -99,25 +99,35 @@ exec env args (Call : is) (v : stack) =
         Right result -> exec env args is (result : stack)
         Left err     -> Left err
     _ -> Left "Call expects an operator or a function on top of the stack"
-exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
-exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
-exec _   _    (JumpIfFalse _ : _) (x : _)
-  | not (isBoolVal x) = Left "JumpIfFalse expects a boolean on the stack"
-  where isBoolVal (BoolVal _) = True
-        isBoolVal _           = False
+
+-- jump if the value on top of the stack is false
+exec env args (JumpIfFalse n : is) (BoolVal False : stack) =
+  exec env args (drop n is) stack
+
+-- jump if the value on top of the stack is true
+exec env args (JumpIfFalse _ : is) (BoolVal True : stack) =
+  exec env args is stack
+
+-- error cases
+exec _ _ (JumpIfFalse _ : _) (_ : _) =
+  Left "JumpIfFalse expects a boolean on the stack" 
+
 exec _ _ _ _ = Left "Invalid program"
 
+
+-- compile an AST to a program
 compile :: AST -> Program
 compile (ASTValue v) =
   [ Push v ]
 
+-- compile a binary operation
 compile (ASTBinOp op left right) =
   compile left
   ++ compile right
   ++ [ Push (OpVal op)
      , Call
      ]
-
+-- compile an if statement
 compile (ASTIf cond thenBranch elseBranch) =
   let condCode = compile cond
       thenCode = compile thenBranch
@@ -129,6 +139,7 @@ compile (ASTIf cond thenBranch elseBranch) =
     ++ [ JumpIfFalse (length elseCode) ]
     ++ elseCode
 
+-- compile a function call
 compile (ASTCall name args) =
   concatMap compile args
   ++ [ PushEnv name
