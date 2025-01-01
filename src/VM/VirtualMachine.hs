@@ -48,10 +48,13 @@ exec env args (PushArg i : is) stack
 exec env args (PushEnv i : is) stack
   | i < length env = exec env args is ((snd $ env !! i) : stack)
   | otherwise = Left $ "Variable " ++ show i ++ " not found"
-exec env args (Call _ : is) (FuncVal body : stack) =
-  case exec env [] body stack of
-    Right result -> exec env args is (result : stack)
-    Left err     -> Left err
+exec env args (Call op : is) stack = case op of
+  Add  -> exec env args (Call Add : is) stack
+  Sub  -> exec env args (Call Sub : is) stack
+  Mul  -> exec env args (Call Mul : is) stack
+  Div  -> exec env args (Call Div : is) stack
+  Eq   -> exec env args (Call Eq : is) stack
+  Less -> exec env args (Call Less : is) stack
 exec env args (Call _ : is) (IntVal i : stack)
   | i < length env = case snd (env !! i) of
       FuncVal body -> case exec env [] body stack of
