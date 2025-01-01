@@ -47,8 +47,10 @@ type Env = [(String, Value)]
 exec :: Env -> Args -> Program -> Stack -> Either String Value
 
 -- return the value on top of the stack
-exec _    _    [Ret] (x:_) =
+exec _ _ (Ret : _) (x : _) =
   Right x
+exec _ _ (Ret : _) [] =
+  Left "Ret expects at least one value on the stack"
 
 -- push the value on the stack
 exec env args (Push v : is) stack =
@@ -117,8 +119,8 @@ exec _ _ (JumpIfFalse _ : _) (_ : _) =
   Left "JumpIfFalse expects a boolean on the stack" 
 
 exec _ _ [] (x : _) = Right x
-exec _ _ [] [] = Left "No value in stack at end of program"
-exec _ _ _ _ = Left "Invalid program"
+exec _ _ [] []      = Left "No value in stack at end of program"
+exec _ _ _ _        = Left "Invalid program"
 
 -- compile an AST to a program
 compile :: AST -> Program
