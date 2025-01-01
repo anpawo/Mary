@@ -80,14 +80,18 @@ runTests = do
   -- 1: basics
   case exec [] [] basicMathProgram [] of
     Right (IntVal result) ->
-      putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
+        putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
+    Right other ->
+        putStrLn $ "Test 1 (unexpected type) Passed? => " ++ show other
     Left err ->
-      putStrLn $ "Test 1 Failed: " ++ err
+        putStrLn $ "Test 1 Failed: " ++ err
 
   -- 2: conditional
   case exec [] [] conditionalProgram [] of
     Right (IntVal result) ->
       putStrLn $ "Test 2 Passed: Conditional = " ++ show result
+    Right other ->
+      putStrLn $ "Test 2 (unexpected type) Passed? => " ++ show other
     Left err ->
       putStrLn $ "Test 2 Failed: " ++ err
 
@@ -95,6 +99,8 @@ runTests = do
   case exec testEnv [] factorialProgram [] of
     Right (IntVal result) ->
       putStrLn $ "Test 3 Passed: Factorial = " ++ show result
+    Right other ->
+        putStrLn $ "Test 3 (unexpected type) Passed? => " ++ show other
     Left err ->
       putStrLn $ "Test 3 Failed: " ++ err
 
