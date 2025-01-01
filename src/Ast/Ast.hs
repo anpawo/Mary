@@ -223,7 +223,7 @@ type Name = String
 
 data Group
   = GGr Idx [Group]
-  | GLit Idx Parser.Token.Literal
+  | GLit Idx Literal
   | GFn Idx String [Group]
   | GVar Idx String
   | GOp Idx String [Group]
@@ -242,9 +242,9 @@ getGroup ctx locVar = do
     ]
   where
     glit = satisfy (\case
-      Parser.Token.Literal _ -> True
+      Literal _ -> True
       _ -> False) >>= (\case
-          (Parser.Token.Literal x) -> validLit ctx locVar x
+          (Literal x) -> validLit ctx locVar x
           _ -> failN $ errImpossibleCase "getGroup case glit")
     gsym = satisfy (\case
       Parser.Token.Identifier (SymbolId _) -> True
@@ -328,7 +328,7 @@ getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
 getOpIdx _ = error "error: the token isn't an operator"
 
-validLit :: Ctx -> LocalVariable -> Parser.Token.Literal -> Parser Parser.Token.Literal
+validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
 validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
   where
     tosub (n, v) = case (,) n <$> run (subexpression2 ctx locVar) v of
@@ -501,9 +501,9 @@ getOpePrec :: Parser Int
 getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
   where
     precValue = satisfy (\case
-      Parser.Token.Literal (IntLit _) -> True
+      Literal (IntLit _) -> True
       _ -> False) >>= (\case
-          (Parser.Token.Literal (IntLit x)) -> pure x
+          (Literal (IntLit x)) -> pure x
           _ -> failN $ errImpossibleCase "getOpePrec precValue")
 
 validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
