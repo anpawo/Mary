@@ -34,6 +34,7 @@ data Type
 instance Eq Type where
   StructAnyType == (StructType _) = True
   (StructType _) == StructAnyType = True
+  (StructType n) == (StructType n') = n == n'
   (ArrType t) == (ArrType t') = t == t'
   AnyType == _ = True
   _ == AnyType = True
