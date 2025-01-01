@@ -91,4 +91,4 @@ compile (ASTIf cond thenBranch elseBranch) =
       elseCode = compile elseBranch
   in condCode ++ [JumpIfFalse (length thenCode + 1)] ++ thenCode ++ [JumpIfFalse (length elseCode)] ++ elseCode
 compile (ASTCall name args) =
-  concatMap compile args ++ [PushEnv name, Call]
+  concatMap compile args ++ [PushEnv name, Call name]
