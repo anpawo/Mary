@@ -94,10 +94,14 @@ exec env args (Call : is) (v : stack) =
       (IntVal a : IntVal b : rest) ->
         exec env args is (BoolVal (b < a) : rest)
       _ -> Left "Less expects two IntVal on the stack"
-    FuncVal body ->
-      case exec env [] body stack of
-        Right result -> exec env args is (result : stack)
-        Left err     -> Left err
+    FuncVal body -> case stack of
+      (arg : rest) ->
+        case exec env [arg] body [] of
+          Right result -> exec env args is (result : rest)
+          Left err     -> Left err
+      [] ->
+         Left "Function expects 1 argument, but stack is empty!"
+
     _ -> Left "Call expects an operator or a function on top of the stack"
 
 -- jump if the value on top of the stack is false
@@ -108,12 +112,13 @@ exec env args (JumpIfFalse n : is) (BoolVal False : stack) =
 exec env args (JumpIfFalse _ : is) (BoolVal True : stack) =
   exec env args is stack
 
--- error cases
+-- error case
 exec _ _ (JumpIfFalse _ : _) (_ : _) =
   Left "JumpIfFalse expects a boolean on the stack" 
 
+exec _ _ [] (x : _) = Right x
+exec _ _ [] [] = Left "No value in stack at end of program"
 exec _ _ _ _ = Left "Invalid program"
-
 
 -- compile an AST to a program
 compile :: AST -> Program
