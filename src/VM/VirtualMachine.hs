@@ -14,6 +14,12 @@ data Value = IntVal Int | BoolVal Bool | FuncVal [Instruction]
 data Operator = Add | Sub | Mul | Div | Eq | Less
   deriving (Show, Eq)
 
+data AST
+  = ASTValue Value
+  | ASTBinOp Operator AST AST
+  | ASTIf AST AST AST
+  | ASTCall String [AST]
+
 data Instruction
   = Push Value
   | Call Operator
