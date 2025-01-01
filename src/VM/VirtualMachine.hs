@@ -7,10 +7,20 @@
 
 module VM.VirtualMachine where
 
-data Value = IntVal Int | BoolVal Bool | FuncVal [Instruction]
+data Value
+  = IntVal Int
+  | BoolVal Bool
+  | OpVal Operator
+  | FuncVal [Instruction]
   deriving (Show, Eq)
 
-data Operator = Add | Sub | Mul | Div | Eq | Less
+data Operator
+  = Add
+  | Sub
+  | Mul
+  | Div
+  | Eq
+  | Less
   deriving (Show, Eq)
 
 data AST
@@ -18,10 +28,11 @@ data AST
   | ASTBinOp Operator AST AST
   | ASTIf AST AST AST
   | ASTCall String [AST]
+  deriving (Show, Eq)
 
 data Instruction
   = Push Value
-  | Call Operator
+  | Call
   | Ret
   | JumpIfFalse Int
   | PushArg Int
@@ -29,50 +40,65 @@ data Instruction
   deriving (Show, Eq)
 
 type Stack = [Value]
-
 type Program = [Instruction]
-
 type Args = [Value]
-
 type Env = [(String, Value)]
 
--- not mandatory, but can be useful
--- type ResolvedEnv = [(Int, Value)]
--- resolveEnv :: Env -> ResolvedEnv
--- resolveEnv env = zip [0..] (map snd env)
-
 exec :: Env -> Args -> Program -> Stack -> Either String Value
-exec env args [Ret] (x:_) = Right x
-exec env args (Push v : is) stack = exec env args is (v : stack)
+
+-- return the value on top of the stack
+exec _    _    [Ret] (x:_) =
+  Right x
+
+-- push the value on the stack
+exec env args (Push v : is) stack =
+  exec env args is (v : stack)
+
+-- push the argument value on the stack
 exec env args (PushArg i : is) stack
   | i < length args = exec env args is (args !! i : stack)
-  | otherwise = Left "Invalid argument index"
+  | otherwise       = Left "Invalid argument index"
+
+-- push the variable value on the stack
 exec env args (PushEnv name : is) stack =
   case lookup name env of
     Just v  -> exec env args is (v : stack)
-    Nothing -> Left $ "Variable " ++ name ++ " not found"
-exec env args (Call op : is) stack = case op of
-  Add  -> exec env args (Call Add : is) stack
-  Sub  -> exec env args (Call Sub : is) stack
-  Mul  -> exec env args (Call Mul : is) stack
-  Div  -> exec env args (Call Div : is) stack
-  Eq   -> exec env args (Call Eq : is) stack
-  Less -> exec env args (Call Less : is) stack
-exec env args (Call _ : is) (IntVal i : stack)
-  | i < length env = case snd (env !! i) of
-      FuncVal body -> case exec env [] body stack of
+    Nothing -> Left ("Variable " ++ name ++ " not found")
+
+-- call pop the function from the stack and execute it
+exec env args (Call : is) (v : stack) =
+  case v of
+    OpVal Add  -> case stack of
+      (IntVal a : IntVal b : rest) ->
+         exec env args is (IntVal (b + a) : rest)
+      _ -> Left "Add expects two IntVal on the stack"
+    OpVal Sub  -> case stack of
+      (IntVal a : IntVal b : rest) ->
+         exec env args is (IntVal (b - a) : rest)
+      _ -> Left "Sub expects two IntVal on the stack"
+    OpVal Mul  -> case stack of
+      (IntVal a : IntVal b : rest) ->
+         exec env args is (IntVal (b * a) : rest)
+      _ -> Left "Mul expects two IntVal on the stack"
+    OpVal Div  -> case stack of
+      (IntVal a : IntVal b : rest) ->
+        if a == 0
+          then Left "Division by zero"
+          else exec env args is (IntVal (b `div` a) : rest)
+      _ -> Left "Div expects two IntVal on the stack"
+    OpVal Eq   -> case stack of
+      (IntVal a : IntVal b : rest) ->
+        exec env args is (BoolVal (b == a) : rest)
+      _ -> Left "Eq expects two IntVal on the stack"
+    OpVal Less -> case stack of
+      (IntVal a : IntVal b : rest) ->
+        exec env args is (BoolVal (b < a) : rest)
+      _ -> Left "Less expects two IntVal on the stack"
+    FuncVal body ->
+      case exec env [] body stack of
         Right result -> exec env args is (result : stack)
         Left err     -> Left err
-      _ -> Left $ "Value at index " ++ show i ++ " is not a function"
-  | otherwise = Left $ "Invalid function index: " ++ show i
-exec env args (Call Add : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b + a) : stack)
-exec env args (Call Sub : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b - a) : stack)
-exec env args (Call Mul : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b * a) : stack)
-exec env args (Call Div : is) (IntVal a : IntVal b : stack)
-  | a /= 0    = exec env args is (IntVal (b `div` a) : stack)
-  | otherwise = Left "Division by zero"
-exec env args (Call Eq : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (a == b) : stack)
-exec env args (Call Less : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (b < a) : stack)
+    _ -> Left "Call expects an operator or a function on top of the stack"
 exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
 exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
 exec env args (JumpIfFalse _ : _) (x : _)
@@ -82,13 +108,29 @@ exec env args (JumpIfFalse _ : _) (x : _)
 exec _ _ _ _ = Left "Invalid program"
 
 compile :: AST -> Program
-compile (ASTValue v) = [Push v]
+compile (ASTValue v) =
+  [ Push v ]
+
 compile (ASTBinOp op left right) =
-  compile left ++ compile right ++ [Call op]
+  compile left
+  ++ compile right
+  ++ [ Push (OpVal op)
+     , Call
+     ]
+
 compile (ASTIf cond thenBranch elseBranch) =
   let condCode = compile cond
       thenCode = compile thenBranch
       elseCode = compile elseBranch
-  in condCode ++ [JumpIfFalse (length thenCode + 1)] ++ thenCode ++ [JumpIfFalse (length elseCode)] ++ elseCode
+  in
+    condCode
+    ++ [ JumpIfFalse (length thenCode + 1) ]
+    ++ thenCode
+    ++ [ JumpIfFalse (length elseCode) ]
+    ++ elseCode
+
 compile (ASTCall name args) =
-  concatMap compile args ++ [PushEnv name, Call name]
+  concatMap compile args
+  ++ [ PushEnv name
+     , Call
+     ]

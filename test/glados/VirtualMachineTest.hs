@@ -4,38 +4,42 @@
 -- File description:
 -- Virtual machine tests
 -}
-
 module Main where
 
 import VM.VirtualMachine
 
--- env
+-- stock environment for testing
 testEnv :: Env
 testEnv =
   [ ("fact", FuncVal
       [ PushArg 0
       , Push (IntVal 1)
-      , Call Eq
+      , Push (OpVal Eq)
+      , Call
       , JumpIfFalse 2
       , Push (IntVal 1)
       , Ret
+
       , PushArg 0
       , Push (IntVal 1)
-      , Call Sub
+      , Push (OpVal Sub)
+      , Call
       , PushEnv "fact"
       , Call
       , PushArg 0
-      , Call Mul
+      , Push (OpVal Mul)
+      , Call
       , Ret
       ])
   ]
 
--- programs
+-- basic tests
 basicMathProgram :: Program
 basicMathProgram =
   [ Push (IntVal 10)
   , Push (IntVal 5)
-  , Call Add
+  , Push (OpVal Add)
+  , Call
   , Ret
   ]
 
@@ -43,7 +47,8 @@ conditionalProgram :: Program
 conditionalProgram =
   [ Push (IntVal 10)
   , Push (IntVal 5)
-  , Call Less
+  , Push (OpVal Less)
+  , Call
   , JumpIfFalse 2
   , Push (IntVal 42)
   , Ret
@@ -62,36 +67,45 @@ factorialProgram =
 errorProgram :: Program
 errorProgram =
   [ Push (IntVal 42)
-  , Call Add  -- not enough arguments
+  , Push (OpVal Add)  -- stack underflow 
+  , Call
   , Ret
   ]
 
+-- run tests
 runTests :: IO ()
 runTests = do
   putStrLn "Running tests..."
 
   -- 1: basics
   case exec [] [] basicMathProgram [] of
-    Right (IntVal result) -> putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
-    Left err              -> putStrLn $ "Test 1 Failed: " ++ err
+    Right (IntVal result) ->
+      putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
+    Left err ->
+      putStrLn $ "Test 1 Failed: " ++ err
 
   -- 2: conditional
   case exec [] [] conditionalProgram [] of
-    Right (IntVal result) -> putStrLn $ "Test 2 Passed: Conditional = " ++ show result
-    Left err              -> putStrLn $ "Test 2 Failed: " ++ err
+    Right (IntVal result) ->
+      putStrLn $ "Test 2 Passed: Conditional = " ++ show result
+    Left err ->
+      putStrLn $ "Test 2 Failed: " ++ err
 
   -- 3: factorial
-  case exec [] [] factorialProgram [] of
-    Right (IntVal result) -> putStrLn $ "Test 3 Passed: Factorial = " ++ show result
-    Left err              -> putStrLn $ "Test 3 Failed: " ++ err
+  case exec testEnv [] factorialProgram [] of
+    Right (IntVal result) ->
+      putStrLn $ "Test 3 Passed: Factorial = " ++ show result
+    Left err ->
+      putStrLn $ "Test 3 Failed: " ++ err
 
   -- 4: error handling
   case exec [] [] errorProgram [] of
-    Right _               -> putStrLn "Test 4 Failed: Error not caught"
-    Left err              -> putStrLn $ "Test 4 Passed: Caught error: " ++ err
+    Right _ ->
+      putStrLn "Test 4 Failed: Error not caught"
+    Left err ->
+      putStrLn $ "Test 4 Passed: Caught error: " ++ err
 
   putStrLn "All tests completed."
 
--- Main
 main :: IO ()
 main = runTests
