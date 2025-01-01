@@ -29,6 +29,7 @@ exec [Ret] (x:_) = x
 exec (Push v : is) stack = exec is (v : stack)
 exec (Call Add : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b + a) : stack)
 exec (Call Sub : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b - a) : stack)
+exec (Call Mul : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b * a) : stack)
   | a /= 0    = exec is (IntVal (b `div` a) : stack)
   | otherwise = error "Division by zero"
 exec _ _ = error "Invalid program"
