@@ -4,3 +4,6 @@
 -- File description:
 -- Virtual machine
 -}
+
+data Value = IntVal Int
+  deriving (Show, Eq)
