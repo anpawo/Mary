@@ -79,7 +79,7 @@ instance Show Literal where
   show (IntLit x) = show x
   show (FloatLit x) = show x
   show (StringLit x) = show x
-  show (ArrLitPre n x) = printf "%s { %s }" (show n) (show x)
+  show (ArrLitPre n x) = printf "%s [%s]" (show n) (show x)
   show (ArrLit t x) = printf "%s [%s]" (show t) $ intercalate ", " $ map show x
   show (StructLitPre n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(n', v) -> printf "%s = %s" n' (unwords $ map show v)) x
   show (StructLit n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(k, v) -> printf "%s = %s" k (show v)) x
@@ -98,11 +98,9 @@ data MyToken
   -- Keyword
     FunctionKw --        \| function     -> declare a function
   | OperatorKw --        \| operator     -> declare an operator
+  | ConstraintKw --      \| constraint   -> declare a constraint
   | PrecedenceKw --      \| precedence   -> declare an operator precedence
-  | IsKw --              \| is           -> compare types
   | ImportKw --          \| import       -> for imports (bonus)
-  | AsKw --              \| as           -> for imports (bonus)
-  | AtKw --              \| at           -> get elem from array
   | IfKw --              \| if           -> if
   | ElseKw --            \| else         -> else
   | ReturnKw --          \| return       -> return
@@ -128,11 +126,9 @@ data MyToken
 instance Show MyToken where
   show FunctionKw = "function"
   show OperatorKw = "operator"
+  show ConstraintKw = "constraint"
   show PrecedenceKw = "precedence"
-  show IsKw = "is"
   show ImportKw = "import"
-  show AsKw = "as"
-  show AtKw = "at"
   show IfKw = "if"
   show ElseKw = "else"
   show ReturnKw = "return"

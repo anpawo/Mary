@@ -77,10 +77,10 @@ getargs start p end  = start *> (end $> [] <|> getargs')
             void spaces
             v <- p
             void spaces
-            endFound <- (end $> Left Nothing) <|> (char ',' $> Right Nothing)
-            case endFound of
-                Left _ -> pure [v]
-                Right _ -> (v :) <$> getargs'
+            endFound <- (end $> True) <|> (char ',' $> False)
+            if endFound
+                then pure [v]
+                else (v :) <$> getargs'
 -- utils
 
 -- comments
@@ -187,10 +187,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , functionKw
             , operatorKw
             , precedenceKw
-            , isKw
             , importKw
-            , asKw
-            , atKw
             , ifKw
             , elseKw
             , returnKw
@@ -239,10 +236,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         functionKw = try $ keyword "function" $> FunctionKw
         operatorKw = try $ keyword "operator" $> OperatorKw
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
-        isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw
-        asKw = try $ keyword "as" $> AsKw
-        atKw = try $ keyword "at" $> AtKw
         ifKw = try $ keyword "if" $> IfKw
         elseKw = try $ keyword "else" $> ElseKw
         returnKw = try $ keyword "return" $> ReturnKw
