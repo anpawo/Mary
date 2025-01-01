@@ -79,3 +79,8 @@ runTests = do
   case exec (resolveEnv []) [] conditionalProgram [] of
     Right (IntVal result) -> putStrLn $ "Test 2 Passed: Conditional = " ++ show result
     Left err              -> putStrLn $ "Test 2 Failed: " ++ err
+
+  -- 3: factorial
+  case exec (resolveEnv testEnv) [] factorialProgram [] of
+    Right (IntVal result) -> putStrLn $ "Test 3 Passed: Factorial = " ++ show result
+    Left err              -> putStrLn $ "Test 3 Failed: " ++ err
