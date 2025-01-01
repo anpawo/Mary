@@ -7,3 +7,4 @@ test_Sexpr.txt
 *.hi
 *.o
 vm-test
+dist-newstyle
