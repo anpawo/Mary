@@ -47,9 +47,10 @@ exec env args (Push v : is) stack = exec env args is (v : stack)
 exec env args (PushArg i : is) stack
   | i < length args = exec env args is (args !! i : stack)
   | otherwise = Left "Invalid argument index"
-exec env args (PushEnv i : is) stack
-  | i < length env = exec env args is ((snd $ env !! i) : stack)
-  | otherwise = Left $ "Variable " ++ show i ++ " not found"
+exec env args (PushEnv name : is) stack =
+  case lookup name env of
+    Just v  -> exec env args is (v : stack)
+    Nothing -> Left $ "Variable " ++ name ++ " not found"
 exec env args (Call op : is) stack = case op of
   Add  -> exec env args (Call Add : is) stack
   Sub  -> exec env args (Call Sub : is) stack
