@@ -5,7 +5,21 @@
 -- Virtual machine
 -}
 
-module VM.VirtualMachine where
+module VM.VirtualMachine
+  (
+    Value(..)
+  , Operator(..)
+  , AST(..)
+  , Instruction(..)
+
+  , Stack
+  , Program
+  , Args
+  , Env
+
+  , exec
+  , compile
+  ) where
 
 data Value
   = IntVal Int
