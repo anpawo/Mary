@@ -25,4 +25,6 @@ type Stack = [Value]
 type Program = [Instruction]
 
 exec :: Program -> Stack -> Value
-exec _ _ = error "Not implemented yet"
+exec [] (x:_) = x
+exec (Push v : is) stack = exec is (v : stack)
+exec _ _ = error "Invalid program"
