@@ -23,3 +23,6 @@ data Instruction
 type Stack = [Value]
 
 type Program = [Instruction]
+
+exec :: Program -> Stack -> Value
+exec _ _ = error "Not implemented yet"
