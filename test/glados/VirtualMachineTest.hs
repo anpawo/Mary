@@ -58,3 +58,10 @@ factorialProgram =
   , Call
   , Ret
   ]
+
+errorProgram :: Program
+errorProgram =
+  [ Push (IntVal 42)
+  , Call Add  -- not enough arguments
+  , Ret
+  ]
