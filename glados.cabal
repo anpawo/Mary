@@ -31,6 +31,7 @@ library
       Parser.Token
       Parser.Tokenizer
       Utils.Lib
+      VM.VirtualMachine
   other-modules:
       Paths_glados
   autogen-modules:
