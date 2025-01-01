@@ -25,6 +25,6 @@ type Stack = [Value]
 type Program = [Instruction]
 
 exec :: Program -> Stack -> Value
-exec [] (x:_) = x
+exec [Ret] (x:_) = x
 exec (Push v : is) stack = exec is (v : stack)
 exec _ _ = error "Invalid program"
