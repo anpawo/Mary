@@ -29,3 +29,12 @@ testEnv =
       , Ret
       ])
   ]
+
+-- programs
+basicMathProgram :: Program
+basicMathProgram =
+  [ Push (IntVal 10)
+  , Push (IntVal 5)
+  , Call Add
+  , Ret
+  ]
