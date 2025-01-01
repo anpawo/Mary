@@ -33,6 +33,9 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+- -fprof-auto
+- -fprof-cafs
+- -O2
 
 library:
   source-dirs: src
@@ -61,6 +64,9 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -fprof-auto
+    - -fprof-cafs
+    - -O2
     dependencies:
     - glados
     - HUnit
