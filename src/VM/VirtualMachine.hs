@@ -36,12 +36,12 @@ type Args = [Value]
 
 type Env = [(String, Value)]
 
-type ResolvedEnv = [(Int, Value)]
+-- not mandatory, but can be useful
+-- type ResolvedEnv = [(Int, Value)]
+-- resolveEnv :: Env -> ResolvedEnv
+-- resolveEnv env = zip [0..] (map snd env)
 
-resolveEnv :: Env -> ResolvedEnv
-resolveEnv env = zip [0..] (map snd env)
-
-exec :: ResolvedEnv -> Args -> Program -> Stack -> Either String Value
+exec :: Env -> Args -> Program -> Stack -> Either String Value
 exec env args [Ret] (x:_) = Right x
 exec env args (Push v : is) stack = exec env args is (v : stack)
 exec env args (PushArg i : is) stack

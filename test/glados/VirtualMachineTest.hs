@@ -71,22 +71,22 @@ runTests = do
   putStrLn "Running tests..."
 
   -- 1: basics
-  case exec (resolveEnv []) [] basicMathProgram [] of
+  case exec [] [] basicMathProgram [] of
     Right (IntVal result) -> putStrLn $ "Test 1 Passed: Basic Math = " ++ show result
     Left err              -> putStrLn $ "Test 1 Failed: " ++ err
 
   -- 2: conditional
-  case exec (resolveEnv []) [] conditionalProgram [] of
+  case exec [] [] conditionalProgram [] of
     Right (IntVal result) -> putStrLn $ "Test 2 Passed: Conditional = " ++ show result
     Left err              -> putStrLn $ "Test 2 Failed: " ++ err
 
   -- 3: factorial
-  case exec (resolveEnv testEnv) [] factorialProgram [] of
+  case exec [] [] factorialProgram [] of
     Right (IntVal result) -> putStrLn $ "Test 3 Passed: Factorial = " ++ show result
     Left err              -> putStrLn $ "Test 3 Failed: " ++ err
 
   -- 4: error handling
-  case exec (resolveEnv []) [] errorProgram [] of
+  case exec [] [] errorProgram [] of
     Right _               -> putStrLn "Test 4 Failed: Error not caught"
     Left err              -> putStrLn $ "Test 4 Passed: Caught error: " ++ err
 
