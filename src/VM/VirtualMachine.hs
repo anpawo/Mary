@@ -69,6 +69,10 @@ exec env args (Call Eq : is) (IntVal a : IntVal b : stack) = exec env args is (B
 exec env args (Call Less : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (b < a) : stack)
 exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
 exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
+exec env args (JumpIfFalse _ : _) (x : _)
+  | not (isBoolVal x) = Left "JumpIfFalse expects a boolean on the stack"
+  where isBoolVal (BoolVal _) = True
+        isBoolVal _           = False
 exec _ _ _ _ = Left "Invalid program"
 
 compile :: AST -> Program
