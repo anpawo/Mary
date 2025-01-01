@@ -27,11 +27,11 @@ data Depth = Token | Ast | ByteCode deriving (Eq)
 
 glados :: (Maybe Depth, String) -> IO ()
 glados (d, content) = case run (comment &> tokenize) content of
-  Left err -> putStrLn $ errorBundlePretty err
+  Left tokErr -> putStrLn $ errorBundlePretty tokErr
   Right tokens
     | d == Just Token -> print tokens
     | otherwise -> case run tokenToAst tokens of
-    Left err' -> putStrLn $ prettyPrintError tokens err'
+    Left astErr -> putStrLn $ prettyPrintError tokens astErr
     Right ast
         | d == Just Ast -> print ast
         | otherwise -> case compiler ast of
@@ -51,21 +51,19 @@ helper =
 
 
 handleArgs :: [String] -> IO (Either Error (Maybe Depth, String))
-handleArgs ["--token", file] = do
-    x <- handleArgs [file]
-    pure ((,) (Just Token) . snd <$> x)
-handleArgs ["--ast", file] = do
-    x <- handleArgs [file]
-    pure ((,) (Just Ast) . snd <$> x)
-handleArgs ["--bytecode", file] = do
-    x <- handleArgs [file]
-    pure ((,) (Just ByteCode) . snd <$> x)
-handleArgs [file] = catch (Right . (,) Nothing <$> readFile file) invalidFile
+handleArgs x = do
+    case x of
+        ["--token",    file] -> getFile file $ Just Token
+        ["--ast",      file] -> getFile file $ Just Ast
+        ["--bytecode", file] -> getFile file $ Just ByteCode
+        [file]               -> getFile file   Nothing
+        _ -> return $ Left helper
     where
+        getFile file depth = catch (Right . (,) depth <$> readFile file) invalidFile
+
         invalidFile :: IOException -> IO (Either Error (Maybe Depth, String))
         invalidFile _ = return $ Left "Invalid file."
-handleArgs _ = return $ Left helper
 
 
 main :: IO ()
-main = getArgs >>= handleArgs >>= either (\err -> putStrLn err >> exitWith (ExitFailure 84)) glados
+main = getArgs >>= handleArgs >>= either (\err -> putStrLn err >> exitWith (ExitFailure 1)) glados
