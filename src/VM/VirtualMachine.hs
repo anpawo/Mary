@@ -31,20 +31,24 @@ type Args = [Value]
 
 type Env = [(String, Value)]
 
-exec :: Args -> Program -> Stack -> Either String Value
-exec args [Ret] (x:_) = Right x
-exec args (Push v : is) stack = exec args is (v : stack)
-exec args (PushArg i : is) stack
-  | i < length args = exec args is (args !! i : stack)
+exec :: Env -> Args -> Program -> Stack -> Either String Value
+exec env args [Ret] (x:_) = Right x
+exec env args (Push v : is) stack = exec env args is (v : stack)
+exec env args (PushArg i : is) stack
+  | i < length args = exec env args is (args !! i : stack)
   | otherwise = Left "Invalid argument index"
-exec args (Call Add : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b + a) : stack)
-exec args (Call Sub : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b - a) : stack)
-exec args (Call Mul : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b * a) : stack)
-exec args (Call Div : is) (IntVal a : IntVal b : stack)
-  | a /= 0    = exec args is (IntVal (b `div` a) : stack)
+exec env args (PushEnv name : is) stack =
+  case lookup name env of
+    Just v  -> exec env args is (v : stack)
+    Nothing -> Left $ "Variable " ++ name ++ " not found"
+exec env args (Call Add : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b + a) : stack)
+exec env args (Call Sub : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b - a) : stack)
+exec env args (Call Mul : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b * a) : stack)
+exec env args (Call Div : is) (IntVal a : IntVal b : stack)
+  | a /= 0    = exec env args is (IntVal (b `div` a) : stack)
   | otherwise = Left "Division by zero"
-exec args (Call Eq : is) (IntVal a : IntVal b : stack) = exec args is (BoolVal (a == b) : stack)
-exec args (Call Less : is) (IntVal a : IntVal b : stack) = exec args is (BoolVal (b < a) : stack)
-exec args (JumpIfFalse n : is) (BoolVal False : stack) = exec args (drop n is) stack
-exec args (JumpIfFalse _ : is) (_ : stack) = exec args is stack
-exec _ _ _ = Left "Invalid program"
+exec env args (Call Eq : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (a == b) : stack)
+exec env args (Call Less : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (b < a) : stack)
+exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
+exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
+exec _ _ _ _ = Left "Invalid program"
