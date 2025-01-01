@@ -10,3 +10,6 @@ data Value = IntVal Int
 
 data Value = IntVal Int | BoolVal Bool
   deriving (Show, Eq)
+
+data Operator = Add | Sub | Mul | Div
+  deriving (Show, Eq)
