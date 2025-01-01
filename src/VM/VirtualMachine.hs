@@ -28,17 +28,20 @@ type Program = [Instruction]
 
 type Args = [Value]
 
-exec :: Program -> Stack -> Either String Value
-exec [Ret] (x:_) = Right x
-exec (Push v : is) stack = exec is (v : stack)
-exec (Call Add : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b + a) : stack)
-exec (Call Sub : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b - a) : stack)
-exec (Call Mul : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b * a) : stack)
-exec (Call Div : is) (IntVal a : IntVal b : stack)
-  | a /= 0    = exec is (IntVal (b `div` a) : stack)
+exec :: Args -> Program -> Stack -> Either String Value
+exec args [Ret] (x:_) = Right x
+exec args (Push v : is) stack = exec args is (v : stack)
+exec args (PushArg i : is) stack
+  | i < length args = exec args is (args !! i : stack)
+  | otherwise = Left "Invalid argument index"
+exec args (Call Add : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b + a) : stack)
+exec args (Call Sub : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b - a) : stack)
+exec args (Call Mul : is) (IntVal a : IntVal b : stack) = exec args is (IntVal (b * a) : stack)
+exec args (Call Div : is) (IntVal a : IntVal b : stack)
+  | a /= 0    = exec args is (IntVal (b `div` a) : stack)
   | otherwise = Left "Division by zero"
-exec (Call Eq : is) (IntVal a : IntVal b : stack) = exec is (BoolVal (a == b) : stack)
-exec (Call Less : is) (IntVal a : IntVal b : stack) = exec is (BoolVal (b < a) : stack)
-exec (JumpIfFalse n : is) (BoolVal False : stack) = exec (drop n is) stack
-exec (JumpIfFalse _ : is) (_ : stack) = exec is stack
-exec _ _ = Left "Invalid program"
+exec args (Call Eq : is) (IntVal a : IntVal b : stack) = exec args is (BoolVal (a == b) : stack)
+exec args (Call Less : is) (IntVal a : IntVal b : stack) = exec args is (BoolVal (b < a) : stack)
+exec args (JumpIfFalse n : is) (BoolVal False : stack) = exec args (drop n is) stack
+exec args (JumpIfFalse _ : is) (_ : stack) = exec args is stack
+exec _ _ _ = Left "Invalid program"
