@@ -4,3 +4,7 @@
 -- File description:
 -- Virtual machine tests
 -}
+
+module Main where
+
+import VM.VirtualMachine
