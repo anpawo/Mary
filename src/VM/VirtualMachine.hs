@@ -5,6 +5,8 @@
 -- Virtual machine
 -}
 
+module VM.VirtualMachine where
+
 data Value = IntVal Int | BoolVal Bool | FuncVal [Instruction]
   deriving (Show, Eq)
 
