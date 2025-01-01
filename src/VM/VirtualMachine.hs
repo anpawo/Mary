@@ -8,7 +8,7 @@
 data Value = IntVal Int
   deriving (Show, Eq)
 
-data Value = IntVal Int | BoolVal Bool
+data Value = IntVal Int | BoolVal Bool | FuncVal [Instruction]
   deriving (Show, Eq)
 
 data Operator = Add | Sub | Mul | Div | Eq | Less
