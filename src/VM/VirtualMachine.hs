@@ -11,7 +11,7 @@ data Value = IntVal Int
 data Value = IntVal Int | BoolVal Bool
   deriving (Show, Eq)
 
-data Operator = Add | Sub | Mul | Div
+data Operator = Add | Sub | Mul | Div | Eq
   deriving (Show, Eq)
 
 data Instruction
@@ -33,4 +33,5 @@ exec (Call Mul : is) (IntVal a : IntVal b : stack) = exec is (IntVal (b * a) : s
 exec (Call Div : is) (IntVal a : IntVal b : stack)
   | a /= 0    = exec is (IntVal (b `div` a) : stack)
   | otherwise = Left "Division by zero"
+exec (Call Eq : is) (IntVal a : IntVal b : stack) = exec is (BoolVal (a == b) : stack)
 exec _ _ = Left "Invalid program"
