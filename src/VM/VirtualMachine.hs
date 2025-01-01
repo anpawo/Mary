@@ -20,6 +20,7 @@ data Instruction
   | Ret
   | JumpIfFalse Int
   | PushArg Int
+  | PushEnv String
   deriving (Show, Eq)
 
 type Stack = [Value]
