@@ -50,3 +50,11 @@ conditionalProgram =
   , Push (IntVal 0)
   , Ret
   ]
+
+factorialProgram :: Program
+factorialProgram =
+  [ Push (IntVal 5)
+  , PushEnv "fact"
+  , Call
+  , Ret
+  ]
