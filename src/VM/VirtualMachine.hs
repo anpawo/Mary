@@ -21,3 +21,5 @@ data Instruction
   deriving (Show, Eq)
 
 type Stack = [Value]
+
+type Program = [Instruction]
