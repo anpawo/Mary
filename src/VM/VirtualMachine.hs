@@ -29,18 +29,20 @@ type Program = [Instruction]
 
 type Args = [Value]
 
-type Env = [(String, Value)]
+type ResolvedEnv = [(Int, Value)]
 
-exec :: Env -> Args -> Program -> Stack -> Either String Value
+resolveEnv :: Env -> ResolvedEnv
+resolveEnv env = zip [0..] (map snd env)
+
+exec :: ResolvedEnv -> Args -> Program -> Stack -> Either String Value
 exec env args [Ret] (x:_) = Right x
 exec env args (Push v : is) stack = exec env args is (v : stack)
 exec env args (PushArg i : is) stack
   | i < length args = exec env args is (args !! i : stack)
   | otherwise = Left "Invalid argument index"
-exec env args (PushEnv name : is) stack =
-  case lookup name env of
-    Just v  -> exec env args is (v : stack)
-    Nothing -> Left $ "Variable " ++ name ++ " not found"
+exec env args (PushEnv i : is) stack
+  | i < length env = exec env args is ((snd $ env !! i) : stack)
+  | otherwise = Left $ "Variable " ++ show i ++ " not found"
 exec env args (Call _ : is) (FuncVal body : stack) =
   case exec env [] body stack of
     Right result -> exec env args is (result : stack)
