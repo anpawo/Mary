@@ -28,6 +28,8 @@ type Program = [Instruction]
 
 type Args = [Value]
 
+type Env = [(String, Value)]
+
 exec :: Args -> Program -> Stack -> Either String Value
 exec args [Ret] (x:_) = Right x
 exec args (Push v : is) stack = exec args is (v : stack)
