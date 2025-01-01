@@ -118,6 +118,9 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , try $ satisfy isArrayType >>= (\case
         (Type (ArrType t')) -> pure (ArrType t')
         _ -> failN $ errImpossibleCase "types arr")
+      , try $ satisfy isStructType >>= (\case
+        (Type (StructType t')) -> pure (StructType t')
+        _ -> failN $ errImpossibleCase "types struct")
       ]
 
     vt
@@ -126,6 +129,9 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
 
     isArrayType (Type (ArrType _)) = True
     isArrayType _ = False
+
+    isStructType (Type (StructType _)) = True
+    isStructType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err

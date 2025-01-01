@@ -29,7 +29,22 @@ data Type
   | AnyType --                      \| any (only for builtins)
   | StructAnyType --                \| struct any (only for builtins)
   | ConstraintType String [Type] -- \| int | float (only for builtins)
-  deriving (Eq, Ord)
+  deriving (Ord)
+
+instance Eq Type where
+  StructAnyType == (StructType _) = True
+  (StructType _) == StructAnyType = True
+  (ArrType t) == (ArrType t') = t == t'
+  AnyType == _ = True
+  _ == AnyType = True
+  (ConstraintType {}) == (ConstraintType {}) = False -- todo
+  CharType == CharType = True
+  VoidType == VoidType = True
+  BoolType == BoolType = True
+  IntType == IntType = True
+  FloatType == FloatType = True
+  StrType == StrType = True
+  _ == _ = False
 
 instance Show Type where
   show CharType = "char"
