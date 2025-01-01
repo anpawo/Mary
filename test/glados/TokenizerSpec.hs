@@ -8,17 +8,17 @@
 module TokenizerSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation, SpecWith)
-import Test.Hspec.Runner (SpecWith)
+import Test.Hspec.Runner()
 
 import Data.Either (isLeft)
 
 import Parser.Tokenizer
 import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
-import Control.Applicative ((<|>), many, some, empty)
-import Text.Megaparsec (Parsec, runParser, choice, try, eof, oneOf)
-import Text.Megaparsec.Char (alphaNumChar, asciiChar, string, char)
-import Data.Void (Void)
-import Control.Monad (void)
+import Control.Applicative ()
+import Text.Megaparsec ()
+import Text.Megaparsec.Char ()
+import Data.Void ()
+import Control.Monad ()
 
 import Utils.Lib
 
