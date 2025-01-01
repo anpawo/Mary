@@ -70,3 +70,15 @@ exec env args (Call Less : is) (IntVal a : IntVal b : stack) = exec env args is 
 exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
 exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
 exec _ _ _ _ = Left "Invalid program"
+
+compile :: AST -> Program
+compile (ASTValue v) = [Push v]
+compile (ASTBinOp op left right) =
+  compile left ++ compile right ++ [Call op]
+compile (ASTIf cond thenBranch elseBranch) =
+  let condCode = compile cond
+      thenCode = compile thenBranch
+      elseCode = compile elseBranch
+  in condCode ++ [JumpIfFalse (length thenCode + 1)] ++ thenCode ++ [JumpIfFalse (length elseCode)] ++ elseCode
+compile (ASTCall name args) =
+  concatMap compile args ++ [PushEnv name, Call]
