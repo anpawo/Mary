@@ -32,6 +32,8 @@ type Program = [Instruction]
 
 type Args = [Value]
 
+type Env = [(String, Value)]
+
 type ResolvedEnv = [(Int, Value)]
 
 resolveEnv :: Env -> ResolvedEnv
