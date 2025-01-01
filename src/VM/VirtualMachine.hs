@@ -49,6 +49,10 @@ exec env args (Call Div : is) (IntVal a : IntVal b : stack)
   | otherwise = Left "Division by zero"
 exec env args (Call Eq : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (a == b) : stack)
 exec env args (Call Less : is) (IntVal a : IntVal b : stack) = exec env args is (BoolVal (b < a) : stack)
+exec env args (Call _ : is) (FuncVal body : stack) =
+  case exec env [] body stack of
+    Right result -> exec env args is (result : stack)
+    Left err     -> Left err
 exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
 exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
 exec _ _ _ _ = Left "Invalid program"
