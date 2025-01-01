@@ -13,3 +13,9 @@ data Value = IntVal Int | BoolVal Bool
 
 data Operator = Add | Sub | Mul | Div
   deriving (Show, Eq)
+
+data Instruction
+  = Push Value
+  | Call Operator
+  | Ret
+  deriving (Show, Eq)
