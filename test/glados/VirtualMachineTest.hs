@@ -38,3 +38,15 @@ basicMathProgram =
   , Call Add
   , Ret
   ]
+
+conditionalProgram :: Program
+conditionalProgram =
+  [ Push (IntVal 10)
+  , Push (IntVal 5)
+  , Call Less
+  , JumpIfFalse 2
+  , Push (IntVal 42)
+  , Ret
+  , Push (IntVal 0)
+  , Ret
+  ]
