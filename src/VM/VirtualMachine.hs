@@ -52,12 +52,13 @@ exec env args (Call _ : is) (FuncVal body : stack) =
   case exec env [] body stack of
     Right result -> exec env args is (result : stack)
     Left err     -> Left err
-exec env args (Call _ : is) (IntVal a : stack) =
-  case lookup (show a) env of
-    Just (FuncVal body) -> case exec env [] body stack of
-      Right result -> exec env args is (result : stack)
-      Left err     -> Left err
-    _ -> Left $ "Function " ++ show a ++ " not found"
+exec env args (Call _ : is) (IntVal i : stack)
+  | i < length env = case snd (env !! i) of
+      FuncVal body -> case exec env [] body stack of
+        Right result -> exec env args is (result : stack)
+        Left err     -> Left err
+      _ -> Left $ "Value at index " ++ show i ++ " is not a function"
+  | otherwise = Left $ "Invalid function index: " ++ show i
 exec env args (Call Add : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b + a) : stack)
 exec env args (Call Sub : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b - a) : stack)
 exec env args (Call Mul : is) (IntVal a : IntVal b : stack) = exec env args is (IntVal (b * a) : stack)
