@@ -16,8 +16,6 @@ import VM.VirtualMachine
   , Instruction(..)
   , Program
   , Env
-  , IntVal
-  , compile
   )
 
 -- env
@@ -87,18 +85,18 @@ errorProgram =
 spec :: Spec
 spec = describe "Virtual Machine Tests" $ do
 
-  it "1) executes basicMathProgram and returns 15" $ do
+  it "executes basicMathProgram and returns 15" $ do
     let result = exec [] [] basicMathProgram []
     result `shouldBe` Right (IntVal 15)
 
-  it "2) executes conditionalProgram and returns 0" $ do
+  it "executes conditionalProgram and returns 0" $ do
     let result = exec [] [] conditionalProgram []
     result `shouldBe` Right (IntVal 0)
 
-  it "3) executes factorialProgram and returns 120" $ do
+  it "executes factorialProgram and returns 120" $ do
     let result = exec testEnv [] factorialProgram []
     result `shouldBe` Right (IntVal 120)
 
-  it "4) executes errorProgram and fails with error message" $ do
+  it "executes errorProgram and fails with error message" $ do
     let result = exec [] [] errorProgram []
     result `shouldBe` Left "Add expects two IntVal on the stack"
