@@ -91,3 +91,7 @@ runTests = do
     Left err              -> putStrLn $ "Test 4 Passed: Caught error: " ++ err
 
   putStrLn "All tests completed."
+
+-- Main
+main :: IO ()
+main = runTests
