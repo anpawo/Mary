@@ -19,3 +19,5 @@ data Instruction
   | Call Operator
   | Ret
   deriving (Show, Eq)
+
+type Stack = [Value]
