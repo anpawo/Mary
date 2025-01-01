@@ -70,9 +70,10 @@ builtin =
     , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
     , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
     , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
-    , Function {fnName = "exit", fnArgs = [(IntType, "returncode")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "exit", fnArgs = [(IntType, "status")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
-    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr")], fnRetType = AnyType, fnBody = []}
+    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr"), (IntType, "index")], fnRetType = AnyType, fnBody = []}
+    , Function {fnName = "is", fnArgs = [(AnyType, "x"), (StrType, "type")], fnRetType = BoolType, fnBody = []}
     , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
     -- tests
     , Structure {structName = "age", structMember = [("y", IntType), ("m", IntType), ("d", IntType)]}
