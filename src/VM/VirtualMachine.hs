@@ -101,7 +101,7 @@ exec env args (Call : is) (v : stack) =
     _ -> Left "Call expects an operator or a function on top of the stack"
 exec env args (JumpIfFalse n : is) (BoolVal False : stack) = exec env args (drop n is) stack
 exec env args (JumpIfFalse _ : is) (_ : stack) = exec env args is stack
-exec env args (JumpIfFalse _ : _) (x : _)
+exec _   _    (JumpIfFalse _ : _) (x : _)
   | not (isBoolVal x) = Left "JumpIfFalse expects a boolean on the stack"
   where isBoolVal (BoolVal _) = True
         isBoolVal _           = False
