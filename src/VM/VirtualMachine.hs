@@ -18,6 +18,7 @@ data Instruction
   = Push Value
   | Call Operator
   | Ret
+  | JumpIfFalse Int
   deriving (Show, Eq)
 
 type Stack = [Value]
@@ -35,4 +36,6 @@ exec (Call Div : is) (IntVal a : IntVal b : stack)
   | otherwise = Left "Division by zero"
 exec (Call Eq : is) (IntVal a : IntVal b : stack) = exec is (BoolVal (a == b) : stack)
 exec (Call Less : is) (IntVal a : IntVal b : stack) = exec is (BoolVal (b < a) : stack)
+exec (JumpIfFalse n : is) (BoolVal False : stack) = exec (drop n is) stack
+exec (JumpIfFalse _ : is) (_ : stack) = exec is stack
 exec _ _ = Left "Invalid program"
