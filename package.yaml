@@ -56,7 +56,7 @@ executables:
 tests:
   glados-test:
     main:                Spec.hs
-    source-dirs:         test/glados
+    source-dirs:         test/unit-test
     ghc-options:
     - -threaded
     - -rtsopts

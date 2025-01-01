@@ -70,7 +70,7 @@ test-suite glados-test
   autogen-modules:
       Paths_glados
   hs-source-dirs:
-      test/glados
+      test/unit-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HUnit

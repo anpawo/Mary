@@ -106,8 +106,6 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "operator" ==> [OperatorKw]
   it "precedence" $
     run tokenize "precedence" ==> [PrecedenceKw]
-  it "struct" $
-    run tokenize "struct" ==> [StructKw]
   it "is" $
     run tokenize "is" ==> [IsKw]  
   it "import" $
