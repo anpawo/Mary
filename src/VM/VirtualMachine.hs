@@ -19,11 +19,14 @@ data Instruction
   | Call Operator
   | Ret
   | JumpIfFalse Int
+  | PushArg Int
   deriving (Show, Eq)
 
 type Stack = [Value]
 
 type Program = [Instruction]
+
+type Args = [Value]
 
 exec :: Program -> Stack -> Either String Value
 exec [Ret] (x:_) = Right x
