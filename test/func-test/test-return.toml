@@ -1,0 +1,9 @@
+[test.return_int_literal]
+cmd = "../../glados --ast input/return/success/return_int_literal.txt"
+stdout = """[Function {fnName = "one", fnArgs = [], fnRetType = int, fnBody = [Return {retValue = Lit 1}]}]
+"""
+
+[test.return_param_1]
+cmd = "../../glados --ast input/return/success/return_param_1.txt"
+stdout = """[Function {fnName = "const", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [Return {retValue = VariableCall {varName = "a"}}]}]
+"""

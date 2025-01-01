@@ -1,0 +1,5 @@
+[test.structure_person_access_field_name]
+cmd = "../../glados --ast input/struct/success/struct_person_name.txt"
+stdout = """
+[Function {fnName = "getname", fnArgs = [(struct person,"p")], fnRetType = str, fnBody = [Return {retValue = FunctionCall {fnName = ".", fnArgs = [VariableCall {varName = "p"},Lit "name"]}}]}]
+"""

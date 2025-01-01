@@ -29,7 +29,7 @@ tests_run:
 
 .PHONY: functionnal-tests
 functionnal-tests:
-	vangelis ./test/tests.toml --diff
+	@ vangelis ./test/func-test/*.toml --diff
 
 .PHONY: unit-tests
 unit-tests:
