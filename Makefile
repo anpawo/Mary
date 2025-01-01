@@ -28,7 +28,7 @@ tests_run:
 	stack test
 
 .PHONY: functionnal-tests
-functionnal-tests:
+functionnal-tests: all
 	@ vangelis ./test/func-test/*.toml --diff
 
 .PHONY: unit-tests
