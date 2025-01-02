@@ -10,6 +10,7 @@ module Main (main) where
 import System.Exit (exitWith, ExitCode (ExitFailure))
 import System.Environment (getArgs)
 import Control.Exception (IOException, catch)
+import Data.List (intercalate)
 
 import Text.Megaparsec (errorBundlePretty)
 
@@ -17,7 +18,7 @@ import Utils.Lib ((&>), run)
 import Parser.Tokenizer (tokenize, comment)
 
 import Ast.Ast (tokenToAst)
-import Ast.Error (prettyPrintError)
+import Ast.Error (prettyPrintError, bggray)
 
 import Bytecode.Compiler (compiler)
 
@@ -29,7 +30,7 @@ glados :: (Maybe Depth, String) -> IO ()
 glados (d, content) = case run (comment &> tokenize) content of
   Left tokErr -> putStrLn $ errorBundlePretty tokErr
   Right tokens
-    | d == Just Token -> print tokens
+    | d == Just Token -> putStrLn $ intercalate "  " (map (bggray . show) tokens)
     | otherwise -> case run tokenToAst tokens of
     Left astErr -> putStrLn $ prettyPrintError tokens astErr
     Right ast
