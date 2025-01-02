@@ -59,7 +59,7 @@ symbolIdentifierChar :: Parser Char
 symbolIdentifierChar = alphaNumChar <|> underscore
 
 operatorIdentifierChar :: Parser Char
-operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.']
+operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -178,7 +178,6 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  parenCloseSym
             ,  bracketOpenSym
             ,  bracketCloseSym
-            ,  assignSym
             ,  arrowSym
             ,  semicolonSym
             ,  commaSym
@@ -228,7 +227,6 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         parenCloseSym = char ')' $> ParenClose
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
-        assignSym = char '=' $> Assign
         arrowSym = try $ symbol "->" $> Arrow
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma

@@ -113,7 +113,6 @@ data MyToken
   | ParenClose --        \|  )   -> resolve expressions
   | BracketOpen --       \|  [   -> array start
   | BracketClose --      \|  ]   -> array end
-  | Assign --            \|  =   -> assign expression to a name (can be a func or a var)
   | Arrow --             \|  ->  -> return type of functions
   | SemiColon --         \|  ;   -> end of statement
   | Comma --             \|  ,   -> separate arguments in function call/creation
@@ -142,7 +141,6 @@ instance Show MyToken where
   show ParenClose = ")"
   show BracketOpen = "["
   show BracketClose = "]"
-  show Assign = "="
   show Arrow = "->"
   show SemiColon = ";"
   show Comma = ","
