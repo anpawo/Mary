@@ -44,7 +44,7 @@ type Parser = Parsec Void [MyToken]
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varMeta :: (Type, String), fnValue :: SubExpression } -- variable creation and modification inside a function
+  | Variable { varMeta :: (Type, String), varValue :: SubExpression } -- variable creation and modification inside a function
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: Expression, elseExpr :: Expression }
   | While { whileCond :: SubExpression, whileExpr :: [Expression] }
@@ -85,13 +85,15 @@ builtin =
     , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (AnyType, "l"), opArgRight = (AnyType, "r"), opBody = []}
     -- io/struct/arr functions
     ,  Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
-    , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
-    , Function {fnName = "exit", fnArgs = [(IntType, "status")], fnRetType = VoidType, fnBody = []}
-    , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
-    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr"), (IntType, "index")], fnRetType = AnyType, fnBody = []}
-    , Function {fnName = "is", fnArgs = [(AnyType, "x"), (StrType, "type")], fnRetType = BoolType, fnBody = []}
-    , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
-    
+    , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []} -- display something on stdout
+    , Function {fnName = "eprint", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []} -- display something on stderr
+    , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []} -- get a string from stdin
+    , Function {fnName = "exit", fnArgs = [(IntType, "status")], fnRetType = VoidType, fnBody = []} -- stops the program with a return type
+    , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []} -- return the length of an array
+    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr"), (IntType, "index")], fnRetType = AnyType, fnBody = []} -- get the element at a certain index
+    , Function {fnName = "is", fnArgs = [(AnyType, "x"), (StrType, "type")], fnRetType = BoolType, fnBody = []} -- compare the type of 2 variable
+    -- re-assign a value to a variable
+    ,  Operator {opName = "=", opPrecedence = 0, opRetType = VoidType, opArgLeft = (StrType, "var"), opArgRight = (AnyType, "value"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
     -- std lib
     , Function {fnName = "not", fnArgs = [(BoolType, "cond")], fnRetType = BoolType, fnBody = []}
     , Operator {opName = ">", opPrecedence = 5, opRetType = BoolType, opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
@@ -274,7 +276,17 @@ exprReturn ctx locVar retT = do
       | otherwise -> failI offset $ errRetType (show retT) (show $ getLitType x)
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprVariable _ _ _ = failN $ errTodo "variable creation expression"
+exprVariable ctx locVar _ = do
+  t <- types ctx False
+  name <- satisfy (\case
+    (Identifier (SymbolId {})) -> True
+    _ -> False) >>= (\case
+    (Identifier (SymbolId name)) -> pure name
+    _ -> fail $ errImpossibleCase "exprVariable"
+      )
+  void equalSym
+  subexpr <- subexpression ctx locVar
+  return $ Variable (t, name) subexpr
 
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar
@@ -542,16 +554,16 @@ getFnBody ctx locVar retT = do
           expr <- expression c l r
           case expr of
             x@(Variable metadata _) -> (:) x <$> getExprAndUpdateCtx c (metadata : l) r
-            x@(Return {}) -> pure [x]
+            x@(Return {}) -> pure [x] -- todo: should check if it's the last expression
             x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
-            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
-            x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
+            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- todo: should check if both ways return so we end it there
+            x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r
 
 getOpeName :: [String] -> Parser String
 getOpeName names = tok OperatorKw *> ope >>= notTaken names
 
 getOpePrec :: Parser Int
-getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
+getOpePrec = (tok PrecedenceKw *> precValue) <|> pure 0
   where
     precValue = satisfy (\case
       Literal (IntLit _) -> True
@@ -572,6 +584,11 @@ getConstrTypes ctx = do
   if endFound
     then pure [t]
     else (:) t <$> getConstrTypes ctx
+
+equalSym :: Parser MyToken
+equalSym = satisfy (\case
+    (Identifier (OperatorId "=")) -> True
+    _ -> False)
 
 function :: Ctx -> Parser Ast
 function ctx = do
@@ -600,7 +617,7 @@ constraint ctx = do
     _ -> False) >>= (\case
       (Type (ConstraintType n _)) -> pure n
       _ -> failN $ errImpossibleCase "constraint") >>= notTaken (getNames ctx)
-  void (tok Assign)
+  void equalSym
   ts <- getConstrTypes ctx
   return $ Constraint name ts
 
