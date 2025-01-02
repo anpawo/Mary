@@ -1,0 +1,5 @@
+constraint number = int | float;
+
+function test(number a, person b, constraint number c, struct person d) -> person {
+    return b;
+}
