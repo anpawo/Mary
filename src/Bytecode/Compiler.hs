@@ -44,6 +44,7 @@ data Instruction
   | Store String
   | Load String
   | PushEnv String
+  | JumpIfFalse Int
   deriving (Show, Eq)
 
 data Value
@@ -72,6 +73,12 @@ compileExpression :: Expression -> [Instruction]
 compileExpression (SubExpression subExpr) = compileSubExpression subExpr
 compileExpression (Variable (_, name) value) = compileSubExpression value ++ [Store name]
 compileExpression (Return value) = compileSubExpression value ++ [Ret]
+compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse nbInstructionsTrue] ++ instructionsTrue ++ instructionsFalse
+  where
+      instructionsTrue = compileExpressions true
+      instructionsFalse = compileExpressions false
+      instructionsCond = compileSubExpression cond
+      nbInstructionsTrue = length instructionsTrue
 
 compileExpressions :: [Expression] -> [Instruction]
 compileExpressions = concatMap compileExpression
