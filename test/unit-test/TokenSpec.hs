@@ -43,7 +43,6 @@ tokenSpec = describe "token" $ do
       it ")" $ show ParenClose ==> ")"
       it "[" $ show BracketOpen ==> "["
       it "]" $ show BracketClose ==> "]"
-      it "=" $ show Assign ==> "="
       it "->" $ show Arrow ==> "->"
       it ";" $ show SemiColon ==> ";"
       it "," $ show Comma ==> ","

@@ -1,0 +1,5 @@
+[test.number2_creation]
+cmd = "../../glados --ast input/constraint/creation.txt"
+stdout = """
+[Constraint {constrName = "number2", constrType = [int,float]},Function {fnName = "test", fnArgs = [(constraint number2,"a"),(constraint number2,"b")], fnRetType = constraint number2, fnBody = [Return {retValue = VariableCall {varName = "a"}}]}]
+"""

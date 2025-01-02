@@ -1,0 +1,3 @@
+operator ** precedence 8 (int n, int power) -> int {
+    return n ** (power - 1);
+}

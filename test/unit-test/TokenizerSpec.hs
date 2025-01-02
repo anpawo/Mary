@@ -95,14 +95,14 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "[" ==> [BracketOpen]
   it "]" $
     run tokenize "]" ==> [BracketClose]
-  it "=" $
-    run tokenize "=" ==> [Assign]
   it "->" $
     run tokenize "->" ==> [Arrow]
   it ";" $
     run tokenize ";" ==> [SemiColon]
   it "," $
     run tokenize "," ==> [Comma]
+  it "|" $
+    run tokenize "|" ==> [Pipe]
 
 tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
