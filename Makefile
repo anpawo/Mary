@@ -39,7 +39,6 @@ unit-tests:
 coverage:
 	stack test glados:glados-test --coverage
 
-test: re
 test: unit-tests
 test: functionnal-tests
 

@@ -202,20 +202,19 @@ failI :: (MonadParsec e s m, MonadFail m) => Int -> String -> m a
 failI idx err = setOffset idx *> fail err
 
 -- The function exists to be able to return the value expected
-notTaken :: [String] -> (a -> String) -> a -> Parser a
-notTaken names f x
+notTaken :: [String] -> String -> Parser String
+notTaken names name
   | name `elem` names = fail $ errNameTaken name
-  | otherwise = pure x
-  where name = f x
+  | otherwise = pure name
 
 getFnName :: [String] -> Parser String
-getFnName names = tok FunctionKw *> sym >>= notTaken names id
+getFnName names = tok FunctionKw *> sym >>= notTaken names
 
 getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
 getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
   where
     getAllArgs names' = do
-      arg <- (,) <$> types ctx False <*> (sym >>= notTaken names' id)
+      arg <- (,) <$> types ctx False <*> (sym >>= notTaken names')
       endFound <- tok ParenClose <|> tok Comma
       case endFound of
         ParenClose -> pure [arg]
@@ -549,7 +548,7 @@ getFnBody ctx locVar retT = do
             x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
 getOpeName :: [String] -> Parser String
-getOpeName names = tok OperatorKw *> ope >>= notTaken names id
+getOpeName names = tok OperatorKw *> ope >>= notTaken names
 
 getOpePrec :: Parser Int
 getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
@@ -600,7 +599,7 @@ constraint ctx = do
     (Type ConstraintType {}) -> True
     _ -> False) >>= (\case
       (Type (ConstraintType n _)) -> pure n
-      _ -> failN $ errImpossibleCase "constraint")
+      _ -> failN $ errImpossibleCase "constraint") >>= notTaken (getNames ctx)
   void (tok Assign)
   ts <- getConstrTypes ctx
   return $ Constraint name ts
