@@ -20,11 +20,13 @@ module Ast.Ast
     SubExpression(..),
 
     -- test
+    isType,
     runParser,
     function
   ) where
 
 import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+import Text.Printf (printf)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -50,31 +52,53 @@ data Expression
 
 data Ast
   = Structure { structName :: String, structMember :: [(String, Type)] }
+  | Constraint { constrName :: String, constrType :: [Type] }
   | Function { fnName :: String, fnArgs :: [(Type, String)], fnRetType :: Type, fnBody :: [Expression] }
   | Operator { opName :: String, opPrecedence :: Int, opRetType :: Type, opArgLeft :: (Type, String), opArgRight :: (Type, String), opBody :: [Expression] }
   deriving (Show, Eq)
 
 type Ctx = [Ast]
 
+builtinType :: String -> Type
+builtinType name = case find ((== name) . fst) ts of
+  Nothing -> error $ printf "error: this function should only be called in builtins, '%s' not found " name
+  Just (_, t) -> ConstraintType name t
+  where
+    ts = [
+      ("number", [IntType, FloatType])
+      ]
+
 builtin :: Ctx
 builtin =
     [
-      Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
-    , Operator {opName = "/", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "-", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "+", opPrecedence = 6, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "<", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "<=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = ">", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
-    , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
+    -- types for better readability
+      Constraint { constrName = "number", constrType = [IntType, FloatType] }
+    -- numerical operations
+    , Operator {opName = "/", opPrecedence = 7, opRetType = builtinType "number", opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "*", opPrecedence = 7, opRetType = builtinType "number", opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "-", opPrecedence = 6, opRetType = builtinType "number", opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "+", opPrecedence = 6, opRetType = builtinType "number", opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    -- comparison
+    , Operator {opName = "<", opPrecedence = 5, opRetType = BoolType, opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "<=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (AnyType, "l"), opArgRight = (AnyType, "r"), opBody = []}
+    -- io/struct/arr functions
+    ,  Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
     , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "exit", fnArgs = [(IntType, "status")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
     , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr"), (IntType, "index")], fnRetType = AnyType, fnBody = []}
     , Function {fnName = "is", fnArgs = [(AnyType, "x"), (StrType, "type")], fnRetType = BoolType, fnBody = []}
     , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
+    
+    -- std lib
+    , Function {fnName = "not", fnArgs = [(BoolType, "cond")], fnRetType = BoolType, fnBody = []}
+    , Operator {opName = ">", opPrecedence = 5, opRetType = BoolType, opArgLeft = (builtinType "number", "l"), opArgRight = (builtinType "number", "r"), opBody = []}
+    , Operator {opName = "!=", opPrecedence = 4, opRetType = BoolType, opArgLeft = (AnyType, "l"), opArgRight = (AnyType, "r"), opBody = []}
+    , Operator {opName = "||", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
+    , Operator {opName = "&&", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
+    
     -- tests
     , Structure {structName = "age", structMember = [("y", IntType), ("m", IntType), ("d", IntType)]}
     , Structure {structName = "person", structMember = [("name", StrType), ("age", StructType "age")]}
@@ -84,7 +108,7 @@ tokenToAst :: Parser Ctx
 tokenToAst = ast builtin
 
 ast :: Ctx -> Parser Ctx
-ast ctx = (eof $> drop (length builtin) ctx) <|> ((function ctx <|> operator ctx <|> structure <|> failN errTopLevelDef) >>= (\x -> ast (ctx ++ [x])))
+ast ctx = (eof $> drop (length builtin) ctx) <|> ((function ctx <|> operator ctx <|> structure ctx <|> constraint ctx <|> failN errTopLevelDef) >>= (\x -> ast (ctx ++ [x])))
 
 tok :: MyToken -> Parser MyToken
 tok = single
@@ -107,8 +131,8 @@ ope = satisfy isOpe >>= (\case
     isOpe (Identifier (OperatorId _)) = True
     isOpe _ = False
 
-types :: Bool -> Parser Type -- this doesnt handle structure
-types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
+types :: Ctx -> Bool -> Parser Type -- todo: enhance it to not need the keyword struct and constraint
+types ctx canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
   where
     t =
       [ tok (Type CharType) $> CharType
@@ -116,11 +140,22 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , tok (Type IntType) $> IntType
       , tok (Type FloatType) $> FloatType
       , tok (Type StrType) $> StrType
-      , try $ satisfy isArrayType >>= (\case
+      , satisfy isArrayType >>= (\case
         (Type (ArrType t')) -> pure (ArrType t')
         _ -> failN $ errImpossibleCase "types arr")
-      , try $ satisfy isStructType >>= (\case
-        (Type (StructType t')) -> pure (StructType t')
+      , satisfy isStructType >>= (\case
+        (Type (StructType n))
+          | structExists n -> pure (StructType n)
+          | otherwise -> fail $ errStructureNotBound n
+        _ -> failN $ errImpossibleCase "types struct")
+      , satisfy isConstraintType >>= (\case
+        (Type (ConstraintType n _)) -> ConstraintType n <$> getCsTypes n ctx
+        _ -> failN $ errImpossibleCase "types constraint")
+      , satisfy structInCtx >>= (\case
+        (Identifier (SymbolId name)) -> pure (StructType name)
+        _ -> failN $ errImpossibleCase "types struct")
+      , satisfy constraintInCtx >>= (\case
+        (Identifier (SymbolId name)) -> ConstraintType name <$> getCsTypes name ctx
         _ -> failN $ errImpossibleCase "types struct")
       ]
 
@@ -128,11 +163,37 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
       | canBeVoid = [tok (Type VoidType) $> VoidType]
       | otherwise = []
 
+    getCsTypes name [] = fail $ errConstraintNotBound name
+    getCsTypes name (x: xs) = if sameName x then pure (constrType x) else getCsTypes name xs
+      where
+        sameName (Constraint {..}) = name == constrName
+        sameName _ = False
+
+    structExists name = any sameName ctx
+      where
+        sameName (Structure {..}) = name == structName
+        sameName _ = False
+    
+    structInCtx (Identifier (SymbolId name)) = any sameName ctx
+      where
+        sameName (Structure {..}) = name == structName
+        sameName _ = False
+    structInCtx _ = False
+    
+    constraintInCtx (Identifier (SymbolId name)) = any sameName ctx
+      where
+        sameName (Constraint {..}) = name == constrName
+        sameName _ = False
+    constraintInCtx _ = False
+
     isArrayType (Type (ArrType _)) = True
     isArrayType _ = False
 
     isStructType (Type (StructType _)) = True
     isStructType _ = False
+
+    isConstraintType (Type (ConstraintType {})) = True
+    isConstraintType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
@@ -150,25 +211,26 @@ notTaken names f x
 getFnName :: [String] -> Parser String
 getFnName names = tok FunctionKw *> sym >>= notTaken names id
 
-getFnArgs :: [String] -> Parser [(Type, String)]
-getFnArgs names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
+getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
+getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
   where
     getAllArgs names' = do
-      arg <- (,) <$> types False <*> (sym >>= notTaken names' id)
+      arg <- (,) <$> types ctx False <*> (sym >>= notTaken names' id)
       endFound <- tok ParenClose <|> tok Comma
       case endFound of
         ParenClose -> pure [arg]
         Comma -> (arg :) <$> getAllArgs (snd arg : names')
         _ -> failN $ errImpossibleCase "getFnArgs case endFound"
 
-getFnRetType :: Parser Type
-getFnRetType = tok Arrow *> types True
+getFnRetType :: Ctx -> Parser Type
+getFnRetType ctx = tok Arrow *> types ctx True
 
 getNames :: Ctx -> [String]
 getNames [] = []
 getNames (Structure {structName = name}:rst) = name : getNames rst
 getNames (Function {fnName = name}:rst) = name : getNames rst
 getNames (Operator {opName = name}:rst) = name : getNames rst
+getNames (Constraint {constrName = name}:rst) = name : getNames rst
 
 type LocalVariable = [(Type, String)]
 type RetType = Type
@@ -486,15 +548,6 @@ getFnBody ctx locVar retT = do
             x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
             x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
-function :: Ctx -> Parser Ast
-function ctx = do
-  name <- getFnName (getNames ctx)
-  args <- getFnArgs (name : getNames ctx)
-  retT <- getFnRetType
-  let shellFn = Function name args retT []
-  body <- getFnBody (shellFn : ctx) args retT
-  return $ Function name args retT body
-
 getOpeName :: [String] -> Parser String
 getOpeName names = tok OperatorKw *> ope >>= notTaken names id
 
@@ -513,16 +566,44 @@ validArgNumber start name args = do
   offset <- subtract (start - 1) <$> getOffset
   failI start $ errOpArgs offset (length args) name
 
+getConstrTypes :: Ctx -> Parser [Type]
+getConstrTypes ctx = do
+  t <- types ctx False
+  endFound <- (tok Pipe $> False) <|> (tok SemiColon $> True)
+  if endFound
+    then pure [t]
+    else (:) t <$> getConstrTypes ctx
+
+function :: Ctx -> Parser Ast
+function ctx = do
+  name <- getFnName (getNames ctx)
+  args <- getFnArgs ctx (name : getNames ctx)
+  retT <- getFnRetType ctx
+  let shellFn = Function name args retT []
+  body <- getFnBody (shellFn : ctx) args retT
+  return $ Function name args retT body
+
 operator :: Ctx -> Parser Ast
 operator ctx = do
   name <- getOpeName (getNames ctx)
   prcd <- getOpePrec
   offset <- (+1) <$> getOffset
-  args <- getFnArgs (name : getNames ctx) >>= validArgNumber offset name
-  retT <- getFnRetType
+  args <- getFnArgs ctx (name : getNames ctx) >>= validArgNumber offset name
+  retT <- getFnRetType ctx
   let shellOp = Operator name prcd retT (head args) (args !! 1) []
   body <- getFnBody (shellOp : ctx) args retT
   return $ Operator name prcd retT (head args) (args !! 1) body
 
-structure :: Parser Ast
-structure = failN $ errTodo "structure" -- garice
+constraint :: Ctx -> Parser Ast
+constraint ctx = do
+  name <- satisfy (\case
+    (Type ConstraintType {}) -> True
+    _ -> False) >>= (\case
+      (Type (ConstraintType n _)) -> pure n
+      _ -> failN $ errImpossibleCase "constraint")
+  void (tok Assign)
+  ts <- getConstrTypes ctx
+  return $ Constraint name ts
+
+structure :: Ctx -> Parser Ast
+structure _ = failN $ errTodo "structure" -- garice
