@@ -34,17 +34,11 @@ import Data.Foldable (traverse_)
 import Control.Applicative ((<|>), Alternative(..))
 import Control.Monad (void)
 
-import Parser.Token (MyToken(..), Identifier(..), Literal(..), Type(..))
+import Parser.Token
 import Ast.Error
-import Utils.Lib (choicetry)
+import Utils.Lib (choicetry, run)
 
 type Parser = Parsec Void [MyToken]
-
-data SubExpression
-  = VariableCall { varName :: String }
-  | FunctionCall { fnName :: String, fnArgs :: [SubExpression]}
-  | Literal Literal
-  deriving (Show, Eq)
 
 data Expression
   = SubExpression SubExpression
@@ -55,7 +49,7 @@ data Expression
   deriving (Show, Eq)
 
 data Ast
-  = Structure { structName :: String, structMember :: [(Type, String)] }
+  = Structure { structName :: String, structMember :: [(String, Type)] }
   | Function { fnName :: String, fnArgs :: [(Type, String)], fnRetType :: Type, fnBody :: [Expression] }
   | Operator { opName :: String, opPrecedence :: Int, opRetType :: Type, opArgLeft :: (Type, String), opArgRight :: (Type, String), opBody :: [Expression] }
   deriving (Show, Eq)
@@ -64,7 +58,7 @@ type Ctx = [Ast]
 
 builtin :: Ctx
 builtin =
-    [ 
+    [
       Operator {opName = ".", opPrecedence = 10, opRetType = AnyType, opArgLeft = (StructAnyType, "l"), opArgRight = (StrType, "r"), opBody = []} -- access structure element (for now we would do: <person>."<name>")
     , Operator {opName = "/", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
     , Operator {opName = "*", opPrecedence = 7, opRetType = IntType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
@@ -76,10 +70,14 @@ builtin =
     , Operator {opName = ">=", opPrecedence = 5, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
     , Operator {opName = "==", opPrecedence = 4, opRetType = BoolType, opArgLeft = (IntType, "l"), opArgRight = (IntType, "r"), opBody = []}
     , Function {fnName = "print", fnArgs = [(ArrType AnyType, "args")], fnRetType = VoidType, fnBody = []}
-    , Function {fnName = "exit", fnArgs = [(IntType, "returncode")], fnRetType = VoidType, fnBody = []}
+    , Function {fnName = "exit", fnArgs = [(IntType, "status")], fnRetType = VoidType, fnBody = []}
     , Function {fnName = "length", fnArgs = [(ArrType AnyType, "arr")], fnRetType = IntType, fnBody = []}
-    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr")], fnRetType = AnyType, fnBody = []}
+    , Function {fnName = "at", fnArgs = [(ArrType AnyType, "arr"), (IntType, "index")], fnRetType = AnyType, fnBody = []}
+    , Function {fnName = "is", fnArgs = [(AnyType, "x"), (StrType, "type")], fnRetType = BoolType, fnBody = []}
     , Function {fnName = "getline", fnArgs = [], fnRetType = StrType, fnBody = []}
+    -- tests
+    , Structure {structName = "age", structMember = [("y", IntType), ("m", IntType), ("d", IntType)]}
+    , Structure {structName = "person", structMember = [("name", StrType), ("age", StructType "age")]}
     ]
 
 tokenToAst :: Parser Ctx
@@ -121,6 +119,9 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
       , try $ satisfy isArrayType >>= (\case
         (Type (ArrType t')) -> pure (ArrType t')
         _ -> failN $ errImpossibleCase "types arr")
+      , try $ satisfy isStructType >>= (\case
+        (Type (StructType t')) -> pure (StructType t')
+        _ -> failN $ errImpossibleCase "types struct")
       ]
 
     vt
@@ -129,6 +130,9 @@ types canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
 
     isArrayType (Type (ArrType _)) = True
     isArrayType _ = False
+
+    isStructType (Type (StructType _)) = True
+    isStructType _ = False
 
 failN :: (MonadParsec e s m, MonadFail m) => String -> m a
 failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
@@ -225,9 +229,9 @@ exprReturn ctx locVar retT = do
           | fnRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
         _ -> failN $ errImpossibleCase "exprReturn function call"
-    (Ast.Ast.Literal x)
-      | lType ctx x == retT -> return $ Return subexpr
-      | otherwise -> failI offset $ errRetType (show retT) (show $ lType ctx x)
+    (Lit x)
+      | getLitType x == retT -> return $ Return subexpr
+      | otherwise -> failI offset $ errRetType (show retT) (show $ getLitType x)
 
 exprVariable :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprVariable _ _ _ = failN $ errTodo "variable creation expression"
@@ -241,28 +245,28 @@ type Name = String
 
 data Group
   = GGr Idx [Group]
-  | GLit Idx Parser.Token.Literal
+  | GLit Idx Literal
   | GFn Idx String [Group]
   | GVar Idx String
   | GOp Idx String [Group]
   deriving (Show) -- should contain an index to make better errors
 
-getGroup :: Parser Group
-getGroup = do
+getGroup :: Ctx -> LocalVariable -> Parser Group
+getGroup ctx locVar = do
   offset <- (+1) <$> getOffset
-  choicetry
+  choice
     [ eof *> fail errEndSubexpr
-    , GGr offset <$> (tok ParenOpen *> (someTill getGroup (tok ParenClose) <|> fail errEmptyParen))
+    , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
     , GLit offset <$> glit
-    , GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
+    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
     , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
     , GOp offset <$> gop <*> pure []
     ]
   where
     glit = satisfy (\case
-      Parser.Token.Literal _ -> True
+      Literal _ -> True
       _ -> False) >>= (\case
-          (Parser.Token.Literal x) -> pure x
+          (Literal x) -> validLit ctx locVar x
           _ -> failN $ errImpossibleCase "getGroup case glit")
     gsym = satisfy (\case
       Parser.Token.Identifier (SymbolId _) -> True
@@ -275,7 +279,7 @@ getGroup = do
           (Parser.Token.Identifier (OperatorId x)) -> pure x
           _ -> failN $ errImpossibleCase "getGroup case gop")
     getAllArgs = do
-      arg <- getGroup
+      arg <- getGroup ctx locVar
       endFound <- tok ParenClose <|> tok Comma
       case endFound of
         ParenClose -> pure [arg]
@@ -346,23 +350,73 @@ getOpIdx :: Group -> Int
 getOpIdx (GOp index _ _) = index
 getOpIdx _ = error "error: the token isn't an operator"
 
+validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
+validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
+  where
+    tosub (n, v) = case (,) n <$> run (subexpression2 ctx locVar) v of
+      Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
+      Right suc -> pure suc
+validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
+  where
+    tosub v = case run (subexpression2 ctx locVar) v of
+      Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
+      Right suc -> pure suc
+validLit ctx locVar st@(StructLit name subexpr) =  case find (stNameIs name) ctx of
+  Nothing -> failN $ errStructureNotBound name
+  Just (Structure _ kv) -> do
+    kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr
+    if kv == kv'
+      then pure st
+      else fail $ errInvalidStructure name kv
+  Just _ -> fail $ errImpossibleCase "validLit struct"
+validLit ctx locVar arr@(ArrLit t subexp) = any (/= t) <$> mapM (getType ctx locVar) subexp $> arr
+validLit _ _ lit = pure lit
+
+getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
+getType _ locVar (VariableCall name) = case find ((== name) . snd) locVar of
+  Just (t, _) -> pure t
+  Nothing -> fail $ errVariableNotBound name
+getType ctx _ (FunctionCall name _) = case find (\x -> fnNameIs name x || opNameIs name x) ctx of
+  Just (Function {..}) -> pure fnRetType
+  Just (Operator {..}) -> pure opRetType
+  Nothing -> fail $ errFunctionNotBound name
+  Just _ -> fail $ errImpossibleCase "gettype"
+getType ctx locVar (Lit struct@(StructLit name lit)) = case find (stNameIs name) ctx of
+  Nothing -> failN $ errStructureNotBound name
+  Just (Structure _ kv) -> do
+    kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit
+    if kv == kv'
+      then pure $ getLitType struct
+      else fail $ errInvalidStructure name kv
+  Just _ -> fail $ errImpossibleCase "gettype struct"
+getType ctx locVar (Lit (ArrLit t lit)) = any (/= t) <$> mapM (getType ctx locVar) lit $> t
+getType _ _ (Lit x) = pure $ getLitType x
+
 isType :: Type -> Literal -> Bool
 isType CharType (CharLit _) = True
 isType IntType (IntLit _) = True
 isType BoolType (BoolLit _) = True
 isType FloatType (FloatLit _) = True
 isType StrType (StringLit _) = True
-isType (ArrType t) (ArrLit _ v) = not (all (isType t) v) -- may not be needed to check every element
-isType _ _ = False
+isType (ArrType AnyType) (ArrLit _ _) = True
+isType (ArrType t) (ArrLit t' _) = t == t'
+isType (StructType n) (StructLit n' _) = n == n'
+isType StructAnyType (StructLit _ _) = True
+isType (ConstraintType _ t) lit = any (`isType` lit) t
+isType VoidType _ = False
+isType AnyType _ = True
+isType _ _ = False -- any other combination
 
-lType :: Ctx -> Literal -> Type
-lType _ (CharLit _) = CharType
-lType _ (IntLit _) = IntType
-lType _ (BoolLit _) = BoolType
-lType _ (FloatLit _) = FloatType
-lType _ (StringLit _) = StrType
-lType _ (ArrLit t _) = t
-lType _ (StructLit _ _) = StructAnyType -- deduce type from context or maybe do it somewhere else
+getLitType :: Literal -> Type -- todo: remove ctx here becauser its not needed
+getLitType (CharLit _) = CharType
+getLitType (IntLit _) = IntType
+getLitType (BoolLit _) = BoolType
+getLitType (FloatLit _) = FloatType
+getLitType (StringLit _) = StrType
+getLitType (ArrLit t _) = t
+getLitType (StructLit n _) = StructType n
+getLitType (StructLitPre n _) = StructType n
+getLitType (ArrLitPre t _) = t
 
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = maybe
@@ -377,7 +431,7 @@ getGrType _ locVar (GVar index name) expected = maybe
   (error $ errImpossibleCase "getGrType GVar")
   ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
   (find ((== name) . snd) locVar)
-getGrType ctx _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ lType ctx lit)
+getGrType _ _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ getLitType lit)
 getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
 
 validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
@@ -407,16 +461,27 @@ fnNameIs :: String -> Ast -> Bool
 fnNameIs name' (Function {..}) = name' == fnName
 fnNameIs _ _ = False
 
+stNameIs :: String -> Ast -> Bool
+stNameIs name' (Structure {..}) = name' == structName
+stNameIs _ _ = False
+
 toSubexpr :: Group -> Parser SubExpression
 toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
-toSubexpr (GLit _ lit) = pure $ Ast.Ast.Literal lit
+toSubexpr (GLit _ lit) = pure $ Lit lit
 toSubexpr (GFn _ name body) = FunctionCall name <$> traverse toSubexpr body
 toSubexpr (GVar _ name) = pure $ VariableCall name
 toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 
+subexpression2 :: Ctx -> LocalVariable -> Parser SubExpression
+subexpression2 ctx locVar = do
+  group <- someTill (getGroup ctx locVar) eof <|> failN errEmptyExpr -- need some errhandling
+  mount <- mountGroup ctx group
+  validateMount ctx locVar mount
+  toSubexpr mount
+
 subexpression :: Ctx -> LocalVariable -> Parser SubExpression
 subexpression ctx locVar = do
-  group <- someTill (getGroup <|> failN errSemiColon) (tok SemiColon) <|> failN errEmptyExpr
+  group <- someTill (getGroup ctx locVar <|> failN errSemiColon) (tok SemiColon) <|> failN errEmptyExpr
   mount <- mountGroup ctx group
   validateMount ctx locVar mount
   toSubexpr mount
@@ -442,7 +507,6 @@ getFnBody ctx locVar retT = do
             x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
             x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r -- should check if both ways return so we end it there
 
-
 function :: Ctx -> Parser Ast
 function ctx = do
   name <- getFnName (getNames ctx)
@@ -459,9 +523,9 @@ getOpePrec :: Parser Int
 getOpePrec = tok PrecedenceKw *> (precValue <|> pure 0)
   where
     precValue = satisfy (\case
-      Parser.Token.Literal (IntLit _) -> True
+      Literal (IntLit _) -> True
       _ -> False) >>= (\case
-          (Parser.Token.Literal (IntLit x)) -> pure x
+          (Literal (IntLit x)) -> pure x
           _ -> failN $ errImpossibleCase "getOpePrec precValue")
 
 validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]

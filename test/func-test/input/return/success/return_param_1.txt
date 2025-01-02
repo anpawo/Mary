@@ -1,0 +1,3 @@
+function const(int a, int b) -> int {
+    return a;
+}

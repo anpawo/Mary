@@ -7,6 +7,7 @@
 
 module Main (main) where
 
+import System.Exit (exitWith, ExitCode (ExitFailure))
 import System.Environment (getArgs)
 import Control.Exception (IOException, catch)
 
@@ -14,38 +15,55 @@ import Text.Megaparsec (errorBundlePretty)
 
 import Utils.Lib ((&>), run)
 import Parser.Tokenizer (tokenize, comment)
+
 import Ast.Ast (tokenToAst)
-import Ast.Error
+import Ast.Error (prettyPrintError)
+
 import Bytecode.Compiler (compiler)
 
-type ArgInfo = String
+type Error = String
 
-glados :: String -> IO ()
-glados content = case run (comment &> tokenize) content of
-  Left err -> putStrLn $ errorBundlePretty err
-  Right tokens -> case run tokenToAst tokens of
-    Left err' -> putStrLn $ prettyPrintError tokens err'
-    -- Right res' -> print res'
-    Right res' -> case compiler res' of
-        Right (_instr, env) -> print env
-        Left errBytecode -> print errBytecode
+data Depth = Token | Ast | ByteCode deriving (Eq)
+
+glados :: (Maybe Depth, String) -> IO ()
+glados (d, content) = case run (comment &> tokenize) content of
+  Left tokErr -> putStrLn $ errorBundlePretty tokErr
+  Right tokens
+    | d == Just Token -> print tokens
+    | otherwise -> case run tokenToAst tokens of
+    Left astErr -> putStrLn $ prettyPrintError tokens astErr
+    Right ast
+        | d == Just Ast -> print ast
+        | otherwise -> case compiler ast of
+            Left errBytecode -> print errBytecode
+            Right (_instr, env)
+                | d == Just ByteCode -> print env
+                | otherwise -> print "vm todo"
 
 
 helper :: String
 helper =
     "execute the file given as argument.\n" ++
     "--help       => help.\n" ++
-    "--bytecode   => generate bytecode but do not execute it."
+    "--token      => generate the tokens.\n" ++
+    "--ast        => generate the ast.\n" ++
+    "--bytecode   => generate bytecode."
 
 
-handleArgs :: [String] -> IO (Either ArgInfo String)
-handleArgs ["--bytecode"] = return $ Left "todo bytecode"
-handleArgs [file] = catch (Right <$> readFile file) invalidFile
+handleArgs :: [String] -> IO (Either Error (Maybe Depth, String))
+handleArgs x = do
+    case x of
+        ["--token",    file] -> getFile file $ Just Token
+        ["--ast",      file] -> getFile file $ Just Ast
+        ["--bytecode", file] -> getFile file $ Just ByteCode
+        [file]               -> getFile file   Nothing
+        _ -> return $ Left helper
     where
-        invalidFile :: IOException -> IO (Either ArgInfo String)
+        getFile file depth = catch (Right . (,) depth <$> readFile file) invalidFile
+
+        invalidFile :: IOException -> IO (Either Error (Maybe Depth, String))
         invalidFile _ = return $ Left "Invalid file."
-handleArgs _ = return $ Left helper
 
 
 main :: IO ()
-main = getArgs >>= handleArgs >>= either putStrLn glados
+main = getArgs >>= handleArgs >>= either (\err -> putStrLn err >> exitWith (ExitFailure 1)) glados

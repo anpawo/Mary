@@ -66,7 +66,7 @@ convertLiteral (StringLit s) = VmString s
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
 compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [PushEnv fnName, Call]
-compileSubExpression (Literal lit) = [Push (convertLiteral lit)]
+compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 
 compileExpression :: Expression -> [Instruction]
 compileExpression (SubExpression subExpr) = compileSubExpression subExpr
