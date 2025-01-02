@@ -182,6 +182,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  arrowSym
             ,  semicolonSym
             ,  commaSym
+            ,  pipeSym
 
             -- Keyword
             , functionKw
@@ -231,6 +232,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         arrowSym = try $ symbol "->" $> Arrow
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
+        pipeSym = char '|' $> Pipe
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
@@ -243,7 +245,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
         -- Type
         parseType = choicetry [
-              keyword "char" $> CharType
+              keyword "any" $> AnyType
+            , keyword "char" $> CharType
             , keyword "void" $> VoidType
             , keyword "bool" $> BoolType
             , keyword "int" $> IntType
@@ -251,6 +254,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "str" $> StrType
             , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
             , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
+            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` [])
             ]
 
         -- Identifier

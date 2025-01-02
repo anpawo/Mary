@@ -26,9 +26,9 @@ data Type
   | StrType --                      \| str -- todo: arr [ char ]
   | ArrType Type --                 \| arr [ <type> ]
   | StructType String --            \| struct <name> (the real parsing of the structure is done in the Ast)
-  | AnyType --                      \| any (only for builtins)
+  | AnyType --                      \| any
   | StructAnyType --                \| struct any (only for builtins)
-  | ConstraintType String [Type] -- \| int | float (only for builtins)
+  | ConstraintType String [Type] -- \| int | float
   deriving (Ord)
 
 instance Eq Type where
@@ -38,7 +38,9 @@ instance Eq Type where
   (ArrType t) == (ArrType t') = t == t'
   AnyType == _ = True
   _ == AnyType = True
-  (ConstraintType {}) == (ConstraintType {}) = False -- todo
+  c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
+  (ConstraintType _ ts) == t = t `elem` ts
+  t == (ConstraintType _ ts) = t `elem` ts
   CharType == CharType = True
   VoidType == VoidType = True
   BoolType == BoolType = True
@@ -58,7 +60,7 @@ instance Show Type where
   show (StructType n) = printf "struct %s" n
   show AnyType = "any"
   show StructAnyType = "struct any"
-  show (ConstraintType n t) = printf "%s = %s" n $ intercalate " | " $ map show t
+  show (ConstraintType n _) = printf "constraint %s" n
 
 data Literal
   = CharLit Char --                                                 \| 'c'   -> may be a list of char
@@ -115,6 +117,7 @@ data MyToken
   | Arrow --             \|  ->  -> return type of functions
   | SemiColon --         \|  ;   -> end of statement
   | Comma --             \|  ,   -> separate arguments in function call/creation
+  | Pipe --              \|  |   -> separate arguments in function call/creation
   -- Type
   | Type Type
   -- Literal
@@ -143,6 +146,7 @@ instance Show MyToken where
   show Arrow = "->"
   show SemiColon = ";"
   show Comma = ","
+  show Pipe = "|"
 
   show (Type t) = show t
   show (Literal l) = show l
