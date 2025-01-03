@@ -31,6 +31,7 @@ library
       Parser.Token
       Parser.Tokenizer
       Utils.Lib
+      VM.VirtualMachine
   other-modules:
       Paths_glados
   autogen-modules:
@@ -69,6 +70,7 @@ test-suite glados-test
       AstSpec
       CompilerSpec
       TokenizerSpec
+      VirtualMachineSpec
       TokenSpec
       Paths_glados
   autogen-modules:

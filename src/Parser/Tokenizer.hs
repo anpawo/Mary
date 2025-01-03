@@ -189,6 +189,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , precedenceKw
             , importKw
             , ifKw
+            , thenKw
             , elseKw
             , returnKw
 
@@ -238,6 +239,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
         importKw =  try $ keyword "import" $> ImportKw
         ifKw = try $ keyword "if" $> IfKw
+        thenKw = try $ keyword "then" $> ThenKw
         elseKw = try $ keyword "else" $> ElseKw
         returnKw = try $ keyword "return" $> ReturnKw
 

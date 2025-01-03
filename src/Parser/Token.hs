@@ -105,6 +105,7 @@ data MyToken
   | PrecedenceKw --      \| precedence   -> declare an operator precedence
   | ImportKw --          \| import       -> for imports (bonus)
   | IfKw --              \| if           -> if
+  | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
   | ReturnKw --          \| return       -> return
   -- Symbol
@@ -133,6 +134,7 @@ instance Show MyToken where
   show PrecedenceKw = "precedence"
   show ImportKw = "import"
   show IfKw = "if"
+  show ThenKw = "then"
   show ElseKw = "else"
   show ReturnKw = "return"
 
