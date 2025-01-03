@@ -54,6 +54,7 @@ data Value
   | VmInt Int
   | VmFloat Double
   | VmString String
+  | VmArray [Instruction]
   deriving (Show, Eq)
 
 data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
@@ -64,6 +65,7 @@ convertLiteral (BoolLit b) = VmBool b
 convertLiteral (IntLit i) = VmInt i
 convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
+convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
