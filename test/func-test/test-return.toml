@@ -5,5 +5,5 @@ stdout = """[Function {fnName = "one", fnArgs = [], fnRetType = int, fnBody = [R
 
 [test.return_param]
 cmd = "../../glados --ast input/return/param.txt"
-stdout = """[Function {fnName = "const", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [Return {retValue = VariableCall {varName = "a"}}]}]
+stdout = """[Function {fnName = "const", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [Return {retValue = VariableCall {varCallName = "a"}}]}]
 """

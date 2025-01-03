@@ -1,5 +1,5 @@
 [test.variable_creation]
 cmd = "../../glados --ast input/variable/creation.txt"
 stdout = """
-[Function {fnName = "mul_add", fnArgs = [(int,"a"),(int,"b"),(int,"c")], fnRetType = int, fnBody = [Variable {varMeta = (int,"v"), varValue = FunctionCall {fnName = "*", fnArgs = [VariableCall {varName = "a"},VariableCall {varName = "b"}]}},Return {retValue = FunctionCall {fnName = "+", fnArgs = [VariableCall {varName = "v"},VariableCall {varName = "c"}]}}]}]
+[Function {fnName = "mul_add", fnArgs = [(int,"a"),(int,"b"),(int,"c")], fnRetType = int, fnBody = [Variable {varMeta = (int,"v"), varValue = FunctionCall {fnCallName = "*", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}},Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "v"},VariableCall {varCallName = "c"}]}}]}]
 """

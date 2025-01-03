@@ -1,11 +1,11 @@
 [test.operator_creation]
 cmd = "../../glados --ast input/operator/creation.txt"
 stdout = """
-[Operator {opName = "**", opPrecedence = 0, opRetType = int, opArgLeft = (int,"n"), opArgRight = (int,"power"), opBody = [Return {retValue = FunctionCall {fnName = "**", fnArgs = [VariableCall {varName = "n"},FunctionCall {fnName = "-", fnArgs = [VariableCall {varName = "power"},Lit 1]}]}}]}]
+[Operator {opName = "**", opPrecedence = 0, opRetType = int, opArgLeft = (int,"n"), opArgRight = (int,"power"), opBody = [Return {retValue = FunctionCall {fnCallName = "**", fnCallArgs = [VariableCall {varCallName = "n"},FunctionCall {fnCallName = "-", fnCallArgs = [VariableCall {varCallName = "power"},Lit 1]}]}}]}]
 """
 
 [test.operator_creation_with_precedence]
 cmd = "../../glados --ast input/operator/precedence.txt"
 stdout = """
-[Operator {opName = "**", opPrecedence = 8, opRetType = int, opArgLeft = (int,"n"), opArgRight = (int,"power"), opBody = [Return {retValue = FunctionCall {fnName = "**", fnArgs = [VariableCall {varName = "n"},FunctionCall {fnName = "-", fnArgs = [VariableCall {varName = "power"},Lit 1]}]}}]}]
+[Operator {opName = "**", opPrecedence = 8, opRetType = int, opArgLeft = (int,"n"), opArgRight = (int,"power"), opBody = [Return {retValue = FunctionCall {fnCallName = "**", fnCallArgs = [VariableCall {varCallName = "n"},FunctionCall {fnCallName = "-", fnCallArgs = [VariableCall {varCallName = "power"},Lit 1]}]}}]}]
 """
