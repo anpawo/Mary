@@ -100,7 +100,6 @@ builtin =
     , Operator {opName = "!=", opPrecedence = 4, opRetType = BoolType, opArgLeft = (AnyType, "l"), opArgRight = (AnyType, "r"), opBody = []}
     , Operator {opName = "||", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
     , Operator {opName = "&&", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
-    
     -- tests
     , Structure {structName = "age", structMember = [("y", IntType), ("m", IntType), ("d", IntType)]}
     , Structure {structName = "person", structMember = [("name", StrType), ("age", StructType "age")]}
@@ -175,13 +174,13 @@ types ctx canBeVoid = choicetry (t ++ vt) <|> failN (errExpectedType canBeVoid)
       where
         sameName (Structure {..}) = name == structName
         sameName _ = False
-    
+
     structInCtx (Identifier (SymbolId name)) = any sameName ctx
       where
         sameName (Structure {..}) = name == structName
         sameName _ = False
     structInCtx _ = False
-    
+
     constraintInCtx (Identifier (SymbolId name)) = any sameName ctx
       where
         sameName (Constraint {..}) = name == constrName
@@ -241,7 +240,7 @@ expression ctx locVar retT = choice
   [ exprReturn ctx locVar retT
   , exprSubexpr ctx locVar retT
   , exprVariable ctx locVar retT
-  , exprIf ctx locVar retT -- garice
+  , exprIf ctx locVar retT
   , exprWhile ctx locVar retT -- garice
   ]
 
@@ -270,7 +269,11 @@ exprIf ctx locVar retT = do
     Nothing -> IfThenElse cond thenExpr []
 
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprWhile _ _ _ = failN $ errTodo "while expression"
+exprWhile ctx locVar retT = do
+  void (tok WhileKw)
+  cond <- subexpression ctx locVar
+  body <- getBlock ctx locVar retT
+  return $ While cond body
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
