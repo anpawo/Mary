@@ -12,8 +12,8 @@ import Text.Printf (printf)
 import Data.List (intercalate)
 
 data SubExpression
-  = VariableCall { varName :: String }
-  | FunctionCall { fnName :: String, fnArgs :: [SubExpression]}
+  = VariableCall { varCallName :: String }
+  | FunctionCall { fnCallName :: String, fnCallArgs :: [SubExpression]}
   | Lit Literal
   deriving (Show, Eq, Ord)
 
@@ -38,6 +38,7 @@ instance Eq Type where
   (ArrType t) == (ArrType t') = t == t'
   AnyType == _ = True
   _ == AnyType = True
+  (ConstraintType n _) == (ConstraintType n' _) | n == n' = True
   c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
   (ConstraintType _ ts) == t = t `elem` ts
   t == (ConstraintType _ ts) = t `elem` ts

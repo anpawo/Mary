@@ -263,7 +263,7 @@ exprReturn ctx locVar retT = do
           | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
           | otherwise -> failI offset $ errRetType (show retT) (show t)
         Nothing -> failN $ errImpossibleCase "exprReturn variable call"
-    (FunctionCall {fnName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
+    (FunctionCall {fnCallName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
         Just (Operator {..})
           | opRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show opRetType)

@@ -11,6 +11,13 @@ packages:
       size: 878
   original:
     hackage: HUnit-1.6.2.0
+- completed:
+    hackage: raw-strings-qq-1.0.2@sha256:a4194459b5319510f95fd55e489745569f0a33fc53f754207726a6a12e9f1919,1223
+    pantry-tree:
+      sha256: c9a3c75cb95b8cf34145912af7bc0b7b9a699e43c606c957c93859eb5a67de3c
+      size: 279
+  original:
+    hackage: raw-strings-qq-1.0.2
 snapshots:
 - completed:
     sha256: 1e32b51d9082fdf6f3bd92accc9dfffd4ddaf406404427fb10bf76d2bc03cbbb
