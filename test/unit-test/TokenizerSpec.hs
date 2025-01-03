@@ -8,17 +8,17 @@
 module TokenizerSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation, SpecWith)
-import Test.Hspec.Runner (SpecWith)
+import Test.Hspec.Runner()
 
 import Data.Either (isLeft)
 
 import Parser.Tokenizer
 import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
-import Control.Applicative ((<|>), many, some, empty)
-import Text.Megaparsec (Parsec, runParser, choice, try, eof, oneOf)
-import Text.Megaparsec.Char (alphaNumChar, asciiChar, string, char)
-import Data.Void (Void)
-import Control.Monad (void)
+import Control.Applicative ()
+import Text.Megaparsec ()
+import Text.Megaparsec.Char ()
+import Data.Void ()
+import Control.Monad ()
 
 import Utils.Lib
 
@@ -117,6 +117,12 @@ tokenizerLiteralSpec = describe "tokenize literals" $ do
     run tokenize "\"yo\"" ==> [Literal $ StringLit "yo"]
   it "\"yo" $
     run tokenize "\"yo" === isLeft
+  it "person { name = \"marius\", age = 1 }" $
+    run tokenize "person { name = \"marius\", age = 1 }" ==> [Literal $ StructLitPre "person" [("name", [Literal $ StringLit "marius"]), ("age", [Literal $ IntLit 1])]]
+  it "null {}" $
+    run tokenize "null {}" ==> [Literal $ StructLitPre "null" []]
+  it "int [1, 2]" $
+    run tokenize "int [1, 2]" ==> [Literal $ ArrLitPre IntType [[Literal $ IntLit 1], [Literal $ IntLit 2]]]
 
 tokenizerSymbolSpec :: SpecWith ()
 tokenizerSymbolSpec = describe "tokenize symbols" $ do
@@ -132,14 +138,14 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "[" ==> [BracketOpen]
   it "]" $
     run tokenize "]" ==> [BracketClose]
-  it "=" $
-    run tokenize "=" ==> [Assign]
   it "->" $
     run tokenize "->" ==> [Arrow]
   it ";" $
     run tokenize ";" ==> [SemiColon]
   it "," $
     run tokenize "," ==> [Comma]
+  it "|" $
+    run tokenize "|" ==> [Pipe]
 
 tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
@@ -149,16 +155,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "operator" ==> [OperatorKw]
   it "precedence" $
     run tokenize "precedence" ==> [PrecedenceKw]
-  it "struct" $
-    run tokenize "struct" ==> [StructKw]
-  it "is" $
-    run tokenize "is" ==> [IsKw]
   it "import" $
     run tokenize "import" ==> [ImportKw]
-  it "as" $
-    run tokenize "as" ==> [AsKw]
-  it "at" $
-    run tokenize "at" ==> [AtKw]
   it "if" $
     run tokenize "if" ==> [IfKw]
   it "else" $
@@ -168,6 +166,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
+  it "any" $
+    run tokenize "any" ==> [Type AnyType]
   it "char" $
     run tokenize "char" ==> [Type CharType]
   it "void" $
@@ -182,6 +182,10 @@ tokenizerTypeSpec = describe "tokenize types" $ do
     run tokenize "str" ==> [Type StrType]
   it "arr" $
     run tokenize "arr[int]" ==> [Type $ ArrType IntType]
+  it "struct" $
+    run tokenize "struct person" ==> [Type $ StructType "person"]
+  it "constraint" $
+    run tokenize "constraint number" ==> [Type $ ConstraintType "number" []]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do

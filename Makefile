@@ -12,8 +12,8 @@ BIN_PATH 	= 	$(shell stack path --local-install-root)
 BIN_EXE		= 	/bin/glados-exe
 
 all:
-	stack build
-	cp $(BIN_PATH)$(BIN_EXE) $(NAME)
+	@ stack build
+	@ cp $(BIN_PATH)$(BIN_EXE) $(NAME)
 
 clean :
 	@ stack clean
@@ -28,8 +28,8 @@ tests_run:
 	stack test
 
 .PHONY: functionnal-tests
-functionnal-tests:
-	vangelis ./test/tests.toml --diff
+functionnal-tests: all
+	@ vangelis ./test/func-test/*.toml --diff
 
 .PHONY: unit-tests
 unit-tests:
@@ -39,7 +39,6 @@ unit-tests:
 coverage:
 	stack test glados:glados-test --coverage
 
-test: re
 test: unit-tests
 test: functionnal-tests
 

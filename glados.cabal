@@ -31,17 +31,19 @@ library
       Parser.Token
       Parser.Tokenizer
       Utils.Lib
+      VM.VirtualMachine
   other-modules:
       Paths_glados
   autogen-modules:
       Paths_glados
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fprof-auto -fprof-cafs -O2
   build-depends:
       base >=4.7 && <5
     , containers
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010
 
 executable glados-exe
@@ -52,26 +54,30 @@ executable glados-exe
       Paths_glados
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fprof-auto -fprof-cafs -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers
     , glados
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010
 
 test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AstSpec
       CompilerSpec
       TokenizerSpec
+      VirtualMachineSpec
+      TokenSpec
       Paths_glados
   autogen-modules:
       Paths_glados
   hs-source-dirs:
-      test/glados
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+      test/unit-test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -fprof-auto -fprof-cafs -O2 -threaded -rtsopts -with-rtsopts=-N -fprof-auto -fprof-cafs -O2
   build-depends:
       HUnit
     , base >=4.7 && <5
@@ -79,4 +85,5 @@ test-suite glados-test
     , glados
     , hspec
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010

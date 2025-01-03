@@ -22,15 +22,14 @@ module Parser.Tokenizer
 
 -- import Debug.Trace (trace)
 
-import qualified Data.Map as Map
 import Data.Void (Void)
 import Data.List (singleton)
-import Data.Functor (($>))
+import Data.Functor (($>), (<&>))
 
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void)
 
-import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill)
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead))
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
@@ -60,7 +59,7 @@ symbolIdentifierChar :: Parser Char
 symbolIdentifierChar = alphaNumChar <|> underscore
 
 operatorIdentifierChar :: Parser Char
-operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.']
+operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -78,10 +77,10 @@ getargs start p end  = start *> (end $> [] <|> getargs')
             void spaces
             v <- p
             void spaces
-            endFound <- (end $> Left Nothing) <|> (char ',' $> Right Nothing)
-            case endFound of
-                Left _ -> pure [v]
-                Right _ -> (v :) <$> getargs'
+            endFound <- (end $> True) <|> (char ',' $> False)
+            if endFound
+                then pure [v]
+                else (v :) <$> getargs'
 -- utils
 
 -- comments
@@ -179,20 +178,16 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  parenCloseSym
             ,  bracketOpenSym
             ,  bracketCloseSym
-            ,  assignSym
             ,  arrowSym
             ,  semicolonSym
             ,  commaSym
+            ,  pipeSym
 
             -- Keyword
             , functionKw
             , operatorKw
             , precedenceKw
-            , structKw
-            , isKw
             , importKw
-            , asKw
-            , atKw
             , ifKw
             , thenKw
             , elseKw
@@ -207,6 +202,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
             ]
 
+        -- maybe types should be parsed before literals
+
         -- Literal
         parseLit = choicetry [
               CharLit <$> (singlequote *> asciiChar <* singlequote)
@@ -214,12 +211,14 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , FloatLit <$> (((0 -) <$> (char '-' *> float)) <|> float)
             , IntLit <$> (((0 -) <$> (char '-' *> decimal)) <|> decimal)
             , StringLit <$> (quote *> manyTill anySingle quote)
-            , ArrLit AnyType <$> getargs (char '[') parseLit (char ']')
             , do
-                structName <- some symbolIdentifierChar
-                void spaces
-                args <- Map.fromList <$> getargs (char '{') ((,) <$> some symbolIdentifierChar <* spaces <* char '=' <* spaces <*> parseLit) (char '}')
-                return $ StructLit structName args
+                arrType <- parseType
+                args <- spaces *> getargs (char '[') (someTill (tokens <* spaces) (lookAhead (char ']' <|> char ','))) (char ']')
+                return $ ArrLitPre arrType args
+            , do
+                structName <- some symbolIdentifierChar <* spaces
+                args <- getargs (char '{') ((,) <$> some symbolIdentifierChar <* spaces <* char '=' <* spaces <*> someTill (tokens <* spaces) (lookAhead (char '}' <|> char ','))) (char '}')
+                return $ StructLitPre structName args
             ]
 
         -- Symbol
@@ -229,20 +228,16 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         parenCloseSym = char ')' $> ParenClose
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
-        assignSym = char '=' $> Assign
         arrowSym = try $ symbol "->" $> Arrow
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
+        pipeSym = char '|' $> Pipe
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
         operatorKw = try $ keyword "operator" $> OperatorKw
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
-        structKw = try $ keyword "struct" $> StructKw
-        isKw = try $ keyword "is" $> IsKw
         importKw =  try $ keyword "import" $> ImportKw
-        asKw = try $ keyword "as" $> AsKw
-        atKw = try $ keyword "at" $> AtKw
         ifKw = try $ keyword "if" $> IfKw
         thenKw = try $ keyword "then" $> ThenKw
         elseKw = try $ keyword "else" $> ElseKw
@@ -250,20 +245,19 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
         -- Type
         parseType = choicetry [
-              keyword "char" $> CharType
+              keyword "any" $> AnyType
+            , keyword "char" $> CharType
             , keyword "void" $> VoidType
             , keyword "bool" $> BoolType
             , keyword "int" $> IntType
             , keyword "float" $> FloatType
             , keyword "str" $> StrType
-            , keyword "arr" *> do
-                void $ spaces *> char '['
-                t <- spaces *> parseType
-                void $ spaces *> char ']'
-                return $ ArrType t
+            , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
+            , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
+            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` [])
             ]
 
         -- Identifier
-        symbolId = Identifier . SymbolId <$> some symbolIdentifierChar -- thought i prevented numbers as starting names
+        symbolId = Identifier . SymbolId <$> some symbolIdentifierChar -- names cannot start as number because they will just be parsed as int first
         operatorId = Identifier . OperatorId <$> some operatorIdentifierChar
 -- TokenType
