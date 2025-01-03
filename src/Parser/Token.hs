@@ -107,6 +107,7 @@ data MyToken
   | IfKw --              \| if           -> if
   | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
+  | WhileKw --           \| while        -> while
   | ReturnKw --          \| return       -> return
   -- Symbol
   | CurlyOpen --         \|  {   -> struct definition
@@ -136,6 +137,7 @@ instance Show MyToken where
   show IfKw = "if"
   show ThenKw = "then"
   show ElseKw = "else"
+  show WhileKw = "while"
   show ReturnKw = "return"
 
   show CurlyOpen = "{"
