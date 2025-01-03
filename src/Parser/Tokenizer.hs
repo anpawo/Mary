@@ -59,7 +59,7 @@ symbolIdentifierChar :: Parser Char
 symbolIdentifierChar = alphaNumChar <|> underscore
 
 operatorIdentifierChar :: Parser Char
-operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.']
+operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -178,10 +178,10 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  parenCloseSym
             ,  bracketOpenSym
             ,  bracketCloseSym
-            ,  assignSym
             ,  arrowSym
             ,  semicolonSym
             ,  commaSym
+            ,  pipeSym
 
             -- Keyword
             , functionKw
@@ -228,10 +228,10 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         parenCloseSym = char ')' $> ParenClose
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
-        assignSym = char '=' $> Assign
         arrowSym = try $ symbol "->" $> Arrow
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
+        pipeSym = char '|' $> Pipe
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
@@ -245,7 +245,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
 
         -- Type
         parseType = choicetry [
-              keyword "char" $> CharType
+              keyword "any" $> AnyType
+            , keyword "char" $> CharType
             , keyword "void" $> VoidType
             , keyword "bool" $> BoolType
             , keyword "int" $> IntType
@@ -253,6 +254,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "str" $> StrType
             , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
             , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
+            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` [])
             ]
 
         -- Identifier
