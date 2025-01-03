@@ -19,7 +19,6 @@ import Text.Megaparsec ()
 import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
-
 import Utils.Lib
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
@@ -76,6 +75,40 @@ tokenizerEdgeCases = describe "tokenizer edge cases" $ do
       [IfKw, Identifier $ SymbolId "condition", ThenKw, CurlyOpen,
       ReturnKw, Literal (IntLit 42), SemiColon, CurlyClose,
       ElseKw, CurlyOpen, ReturnKw, Literal (IntLit 84), SemiColon, CurlyClose]
+  it "parses a while loop with a simple condition" $
+    run tokenize "while x < 10 { x = x + 1; }" ==>
+      [WhileKw, Identifier $ SymbolId "x", Identifier $ OperatorId "<", Literal $ IntLit 10,
+       CurlyOpen,
+       Identifier $ SymbolId "x", Identifier $ OperatorId "=", Identifier $ SymbolId "x",
+       Identifier $ OperatorId "+", Literal $ IntLit 1, SemiColon,
+       CurlyClose]
+  it "parses a while loop with a complex condition" $
+      run tokenize "while (x < 10 && y > 5) { x = x + y; }" ==>
+        [WhileKw, ParenOpen,
+        Identifier $ SymbolId "x", Identifier $ OperatorId "<", Literal $ IntLit 10,
+        Identifier $ OperatorId "&&",
+        Identifier $ SymbolId "y", Identifier $ OperatorId ">", Literal $ IntLit 5,
+        ParenClose,
+        CurlyOpen,
+        Identifier $ SymbolId "x", Identifier $ OperatorId "=",
+        Identifier $ SymbolId "x", Identifier $ OperatorId "+", Identifier $ SymbolId "y",
+        SemiColon, CurlyClose]
+  it "handles a nested while loop" $
+      run tokenize "while x < 10 { while y > 5 { y = y - 1; } x = x + 1; }" ==>
+        [WhileKw, Identifier $ SymbolId "x", Identifier $ OperatorId "<", Literal $ IntLit 10,
+        CurlyOpen,
+        WhileKw, Identifier $ SymbolId "y", Identifier $ OperatorId ">", Literal $ IntLit 5,
+        CurlyOpen,
+        Identifier $ SymbolId "y", Identifier $ OperatorId "=", Identifier $ SymbolId "y",
+        Identifier $ OperatorId "-", Literal $ IntLit 1,
+        SemiColon, CurlyClose,
+        Identifier $ SymbolId "x", Identifier $ OperatorId "=", Identifier $ SymbolId "x",
+        Identifier $ OperatorId "+", Literal $ IntLit 1,
+        SemiColon, CurlyClose]
+  it "fails on an incomplete while statement" $
+    run tokenize "while x < 10" === isLeft
+  it "fails on missing braces for the while loop body" $
+    run tokenize "while x < 10 x = x + 1;" === isLeft
 
 tokenizerUtils :: SpecWith ()
 tokenizerUtils = describe "utils" $ do
