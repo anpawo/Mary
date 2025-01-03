@@ -123,6 +123,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
+  it "any" $
+    run tokenize "any" ==> [Type AnyType]
   it "char" $
     run tokenize "char" ==> [Type CharType]
   it "void" $
@@ -139,6 +141,8 @@ tokenizerTypeSpec = describe "tokenize types" $ do
     run tokenize "arr[int]" ==> [Type $ ArrType IntType]
   it "struct" $
     run tokenize "struct person" ==> [Type $ StructType "person"]
+  it "constraint" $
+    run tokenize "constraint number" ==> [Type $ ConstraintType "number" []]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do

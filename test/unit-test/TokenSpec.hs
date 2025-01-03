@@ -79,6 +79,9 @@ typeSpec = describe "type" $ do
     it "any == struct any" $ (AnyType == StructAnyType) ==> True
     it "struct any == any" $ (StructAnyType == AnyType) ==> True
     it "char == int" $ (CharType == IntType) ==> False
+    it "constraint number == constraint number" $ (ConstraintType "number" [] == ConstraintType "number" []) ==> True
+    it "constraint number == constraint integer" $ (ConstraintType "number" [IntType, FloatType] == ConstraintType "integer" [IntType, BoolType]) ==> True
+    it "int == constraint integer" $ (IntType == ConstraintType "integer" [IntType, BoolType]) ==> True
   describe "show" $ do
     it "char" $ show CharType ==> "char"
     it "void" $ show VoidType ==> "void"
@@ -94,9 +97,9 @@ typeSpec = describe "type" $ do
 
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do
-  it "varName" $
-    varName (VariableCall "test") ==> "test"
-  it "fnName" $
-    fnName (FunctionCall "test" []) ==> "test"
-  it "fnArgs" $
-    fnArgs (FunctionCall "test" []) ==> []
+  it "varCallName" $
+    varCallName (VariableCall "test") ==> "test"
+  it "fnCallName" $
+    fnCallName (FunctionCall "test" []) ==> "test"
+  it "fnCallArgs" $
+    fnCallArgs (FunctionCall "test" []) ==> []
