@@ -191,6 +191,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , ifKw
             , thenKw
             , elseKw
+            , whileKw
             , returnKw
 
             -- Type
@@ -241,6 +242,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         ifKw = try $ keyword "if" $> IfKw
         thenKw = try $ keyword "then" $> ThenKw
         elseKw = try $ keyword "else" $> ElseKw
+        whileKw = try $ keyword "while" $> WhileKw
         returnKw = try $ keyword "return" $> ReturnKw
 
         -- Type
