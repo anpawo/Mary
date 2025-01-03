@@ -1,0 +1,5 @@
+[test.function_creation]
+cmd = "../../glados --ast input/function/creation.txt"
+stdout = """
+[Function {fnName = "add_mul", fnArgs = [(int,"a"),(int,"b"),(arr[int],"c")], fnRetType = int, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "*", fnCallArgs = [VariableCall {varCallName = "b"},Lit 4]}]}}]}]
+"""

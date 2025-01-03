@@ -39,7 +39,6 @@ spec = do
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
   tokenizerUtils
-  -- exprIfThenElse
   tokenizerEdgeCases
 
 tokenizerEdgeCases :: SpecWith ()
@@ -77,19 +76,6 @@ tokenizerEdgeCases = describe "tokenizer edge cases" $ do
       [IfKw, Identifier $ SymbolId "condition", ThenKw, CurlyOpen,
       ReturnKw, Literal (IntLit 42), SemiColon, CurlyClose,
       ElseKw, CurlyOpen, ReturnKw, Literal (IntLit 84), SemiColon, CurlyClose]
-
--- exprIfThenElse :: SpecWith ()
--- exprIfThenElse = describe "exprIf parser" $ do
---     it "parses if-then-else expressions" $
---       run parseIf "if condition then { return 42; } else { return 84; }" ==>
---         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] [Return (Literal (IntLit 84))]]
-
---     it "parses if-then expressions without else" $
---       run parseIf "if condition then { return 42; }" ==>
---         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] []]
-
---     it "fails on incomplete if statements" $
---       run parseIf "if condition then" === isLeft
 
 tokenizerUtils :: SpecWith ()
 tokenizerUtils = describe "utils" $ do
@@ -152,14 +138,14 @@ tokenizerSymbolSpec = describe "tokenize symbols" $ do
     run tokenize "[" ==> [BracketOpen]
   it "]" $
     run tokenize "]" ==> [BracketClose]
-  it "=" $
-    run tokenize "=" ==> [Assign]
   it "->" $
     run tokenize "->" ==> [Arrow]
   it ";" $
     run tokenize ";" ==> [SemiColon]
   it "," $
     run tokenize "," ==> [Comma]
+  it "|" $
+    run tokenize "|" ==> [Pipe]
 
 tokenizerKeywordSpec :: SpecWith ()
 tokenizerKeywordSpec = describe "tokenize keywords" $ do
@@ -180,6 +166,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
+  it "any" $
+    run tokenize "any" ==> [Type AnyType]
   it "char" $
     run tokenize "char" ==> [Type CharType]
   it "void" $
@@ -196,6 +184,8 @@ tokenizerTypeSpec = describe "tokenize types" $ do
     run tokenize "arr[int]" ==> [Type $ ArrType IntType]
   it "struct" $
     run tokenize "struct person" ==> [Type $ StructType "person"]
+  it "constraint" $
+    run tokenize "constraint number" ==> [Type $ ConstraintType "number" []]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do

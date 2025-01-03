@@ -43,6 +43,7 @@ library
       base >=4.7 && <5
     , containers
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010
 
 executable glados-exe
@@ -59,12 +60,14 @@ executable glados-exe
     , containers
     , glados
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010
 
 test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AstSpec
       CompilerSpec
       TokenizerSpec
       VirtualMachineSpec
@@ -82,4 +85,5 @@ test-suite glados-test
     , glados
     , hspec
     , megaparsec
+    , raw-strings-qq >=1.0.0
   default-language: Haskell2010

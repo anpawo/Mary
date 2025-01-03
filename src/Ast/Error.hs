@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray) where
+module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -81,6 +81,9 @@ errFunctionNotBound = printf "function '%s' doesn't exist." . purple
 errStructureNotBound :: String -> String
 errStructureNotBound = printf "structure '%s' doesn't exist." . purple
 
+errConstraintNotBound :: String -> String
+errConstraintNotBound = printf "constraint '%s' doesn't exist." . purple
+
 errInvalidStructure :: String -> [(String, Type)] -> String
 errInvalidStructure st diff = printf "invalid structure '%s', expected:\n{\n    %s\n}" (purple st) $ intercalate ",\n    " $ map (\(n, t) -> printf "%s = %s" (purple n) (purple $ show t)) diff
 
@@ -145,3 +148,6 @@ purple s = "\ESC[95m" ++ s ++ reset
 
 reset :: String
 reset = "\ESC[0m"
+
+bggray :: String -> String
+bggray s = "\ESC[48;2;10;10;10m" ++ s ++ reset
