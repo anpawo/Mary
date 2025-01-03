@@ -45,6 +45,7 @@ data Instruction
   | Load String
   | PushEnv String
   | JumpIfFalse Int
+  | JumpBackward Int
   deriving (Show, Eq)
 
 data Value
@@ -79,6 +80,11 @@ compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFals
       instructionsFalse = compileExpressions false
       instructionsCond = compileSubExpression cond
       nbInstructionsTrue = length instructionsTrue
+compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 2] ++ [JumpBackward (nbSkipLoop + 1)]
+  where
+    instructionsCond = compileSubExpression cond
+    instructionsBody = compileExpressions body
+    nbSkipLoop = length instructionsCond + length instructionsBody
 
 compileExpressions :: [Expression] -> [Instruction]
 compileExpressions = concatMap compileExpression
