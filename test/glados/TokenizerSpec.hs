@@ -39,7 +39,6 @@ spec = do
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
   tokenizerUtils
-  -- exprIfThenElse
   tokenizerEdgeCases
 
 tokenizerEdgeCases :: SpecWith ()
@@ -77,19 +76,6 @@ tokenizerEdgeCases = describe "tokenizer edge cases" $ do
       [IfKw, Identifier $ SymbolId "condition", ThenKw, CurlyOpen,
       ReturnKw, Literal (IntLit 42), SemiColon, CurlyClose,
       ElseKw, CurlyOpen, ReturnKw, Literal (IntLit 84), SemiColon, CurlyClose]
-
--- exprIfThenElse :: SpecWith ()
--- exprIfThenElse = describe "exprIf parser" $ do
---     it "parses if-then-else expressions" $
---       run parseIf "if condition then { return 42; } else { return 84; }" ==>
---         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] [Return (Literal (IntLit 84))]]
-
---     it "parses if-then expressions without else" $
---       run parseIf "if condition then { return 42; }" ==>
---         [IfThenElse (Literal (IntLit 42)) [Return (Literal (IntLit 42))] []]
-
---     it "fails on incomplete if statements" $
---       run parseIf "if condition then" === isLeft
 
 tokenizerUtils :: SpecWith ()
 tokenizerUtils = describe "utils" $ do
