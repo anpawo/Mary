@@ -34,7 +34,7 @@ import Data.List (find)
 import Data.Foldable (traverse_)
 
 import Control.Applicative ((<|>), Alternative(..))
-import Control.Monad (void)
+import Control.Monad (void, unless)
 
 import Parser.Token
 import Ast.Error
@@ -241,7 +241,7 @@ expression ctx locVar retT = choice
   , exprSubexpr ctx locVar retT
   , exprVariable ctx locVar retT
   , exprIf ctx locVar retT
-  , exprWhile ctx locVar retT -- garice
+  , exprWhile ctx locVar retT
   ]
 
 parseBraces :: Parser a -> Parser a
@@ -255,10 +255,25 @@ getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getBlock ctx locVar retT =
   parseBraces (Text.Megaparsec.many (expression ctx locVar retT))
 
+isBooleanExpression :: SubExpression -> Bool
+isBooleanExpression expr = case expr of
+  (FunctionCall "&&" _) -> True
+  (FunctionCall "||" _) -> True
+  (FunctionCall "!" _) -> True
+  (FunctionCall "<" _) -> True
+  (FunctionCall ">" _) -> True
+  (FunctionCall "<=" _) -> True
+  (FunctionCall ">=" _) -> True
+  (FunctionCall "==" _) -> True
+  (FunctionCall "!=" _) -> True
+  _ -> False
+
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
   cond <- subexpression ctx locVar
+  unless (isBooleanExpression cond) $
+    fail "Condition in 'if' must be a boolean expression"
   void (tok ThenKw)
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
@@ -272,6 +287,8 @@ exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile ctx locVar retT = do
   void (tok WhileKw)
   cond <- subexpression ctx locVar
+  unless (isBooleanExpression cond) $
+    fail "Condition in 'if' must be a boolean expression"
   body <- getBlock ctx locVar retT
   return $ While cond body
 
