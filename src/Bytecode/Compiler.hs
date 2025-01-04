@@ -55,9 +55,14 @@ data Value
   | VmFloat Double
   | VmString String
   | VmArray [Instruction]
+  | VmStruct [(String, [Instruction])]
+  | VmNull
   deriving (Show, Eq)
 
 data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
+
+convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
+convertLitStruct (key, value) = [(key , compileSubExpression value)]
 
 convertLiteral :: Literal -> Value
 convertLiteral (CharLit c) = VmChar c
@@ -66,6 +71,9 @@ convertLiteral (IntLit i) = VmInt i
 convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
 convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
+convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
+convertLiteral (NullLit) = VmNull
+-- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
