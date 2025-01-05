@@ -91,31 +91,31 @@ exec env args (PushEnv name : is) stack =
 exec env args (Call : is) (v : stack) =
   case v of
     OpVal Add  -> case stack of
-      (IntVal a : IntVal b : rest) ->
-         exec env args is (IntVal (b + a) : rest)
-      _ -> Left "Add expects two IntVal on the stack"
+      (VmInt a : VmInt b : rest) ->
+         exec env args is (VmInt (b + a) : rest)
+      _ -> Left "Add expects two VmInt on the stack"
     OpVal Sub  -> case stack of
-      (IntVal a : IntVal b : rest) ->
-         exec env args is (IntVal (b - a) : rest)
-      _ -> Left "Sub expects two IntVal on the stack"
+      (VmInt a : VmInt b : rest) ->
+         exec env args is (VmInt (b - a) : rest)
+      _ -> Left "Sub expects two VmInt on the stack"
     OpVal Mul  -> case stack of
-      (IntVal a : IntVal b : rest) ->
-         exec env args is (IntVal (b * a) : rest)
-      _ -> Left "Mul expects two IntVal on the stack"
+      (VmInt a : VmInt b : rest) ->
+         exec env args is (VmInt (b * a) : rest)
+      _ -> Left "Mul expects two VmInt on the stack"
     OpVal Div  -> case stack of
-      (IntVal a : IntVal b : rest) ->
+      (VmInt a : VmInt b : rest) ->
         if a == 0
           then Left "Division by zero"
-          else exec env args is (IntVal (b `div` a) : rest)
-      _ -> Left "Div expects two IntVal on the stack"
+          else exec env args is (VmInt (b `div` a) : rest)
+      _ -> Left "Div expects two VmInt on the stack"
     OpVal Eq   -> case stack of
-      (IntVal a : IntVal b : rest) ->
-        exec env args is (BoolVal (b == a) : rest)
-      _ -> Left "Eq expects two IntVal on the stack"
+      (VmInt a : VmInt b : rest) ->
+        exec env args is (VmBool (b == a) : rest)
+      _ -> Left "Eq expects two VmInt on the stack"
     OpVal Less -> case stack of
-      (IntVal a : IntVal b : rest) ->
-        exec env args is (BoolVal (b < a) : rest)
-      _ -> Left "Less expects two IntVal on the stack"
+      (VmInt a : VmInt b : rest) ->
+        exec env args is (VmBool (b < a) : rest)
+      _ -> Left "Less expects two VmInt on the stack"
     FuncVal body -> case stack of
       (arg : rest) ->
         case exec env [arg] body [] of
@@ -127,11 +127,11 @@ exec env args (Call : is) (v : stack) =
     _ -> Left "Call expects an operator or a function on top of the stack"
 
 -- jump if the value on top of the stack is false
-exec env args (JumpIfFalse n : is) (BoolVal False : stack) =
+exec env args (JumpIfFalse n : is) (VmBool False : stack) =
   exec env args (drop n is) stack
 
 -- jump if the value on top of the stack is true
-exec env args (JumpIfFalse _ : is) (BoolVal True : stack) =
+exec env args (JumpIfFalse _ : is) (VmBool True : stack) =
   exec env args is stack
 
 -- error case
