@@ -8,3 +8,4 @@ test_Sexpr.txt
 *.o
 vm-test
 dist-newstyle
+glados.cabal

@@ -79,9 +79,8 @@ typeSpec = describe "type" $ do
     it "any == struct any" $ (AnyType == StructAnyType) ==> True
     it "struct any == any" $ (StructAnyType == AnyType) ==> True
     it "char == int" $ (CharType == IntType) ==> False
-    it "constraint number == constraint number" $ (ConstraintType "number" [] == ConstraintType "number" []) ==> True
-    it "constraint number == constraint integer" $ (ConstraintType "number" [IntType, FloatType] == ConstraintType "integer" [IntType, BoolType]) ==> True
-    it "int == constraint integer" $ (IntType == ConstraintType "integer" [IntType, BoolType]) ==> True
+    it "constraint number == constraint integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "int == constraint integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
   describe "show" $ do
     it "char" $ show CharType ==> "char"
     it "void" $ show VoidType ==> "void"
@@ -93,7 +92,7 @@ typeSpec = describe "type" $ do
     it "struct person" $ show (StructType "person") ==> "struct person"
     it "any" $ show AnyType ==> "any"
     it "struct any" $ show StructAnyType ==> "struct any"
-    it "constraint number = int | float" $ show (ConstraintType "number" [IntType, FloatType]) ==> "constraint number"
+    it "constraint number = int | float" $ show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
 
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do

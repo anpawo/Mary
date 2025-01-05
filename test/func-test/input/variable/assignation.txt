@@ -1,0 +1,6 @@
+function mul_add(int a, int b, int c) -> int {
+    int v = a * b;
+    v = 1;
+    a = b;
+    return v + c;
+}

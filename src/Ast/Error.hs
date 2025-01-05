@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray) where
+module Ast.Error (errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray, errStructureFieldNotBound, errMissingRetT) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -45,8 +45,11 @@ errEmptyParen = printf ":2expected an expression inside the %s." $ purple "paren
 errEmptyExpr :: String
 errEmptyExpr = "expected an expression."
 
+errMissingRetT :: String
+errMissingRetT = printf "expected return type: '%s'." (purple "-> <type>")
+
 errSemiColon :: String
-errSemiColon = printf "expected a SemiColon '%s' at the end of the expression." (purple ";")
+errSemiColon = printf "expected a '%s' at the end of the expression." (purple ";")
 
 errOpNotDefined :: String -> String
 errOpNotDefined = printf "the operator '%s' is not defined." . purple
@@ -66,6 +69,9 @@ errOpArgs lenErr nargs name = printf ":%soperators must take 2 arguments. '%s' h
 errRetType :: String -> String -> String
 errRetType expected got = printf "invalid return type, expected '%s' got '%s'." (purple expected) (purple got)
 
+errAssignType :: String -> String -> String -> String
+errAssignType name expected got = printf "invalid type for the variable '%s', expected '%s' got '%s'." (purple name) (purple expected) (purple got)
+
 errTopLevelDef :: String
 errTopLevelDef = printf "top level declaration must be either %s, %s or %s." (purple "function") (purple "operator") (purple "struct")
 
@@ -80,6 +86,9 @@ errFunctionNotBound = printf "function '%s' doesn't exist." . purple
 
 errStructureNotBound :: String -> String
 errStructureNotBound = printf "structure '%s' doesn't exist." . purple
+
+errStructureFieldNotBound :: String -> String -> String
+errStructureFieldNotBound name field = printf "structure '%s' doesn't have the field '%s'." (purple name) (purple field)
 
 errConstraintNotBound :: String -> String
 errConstraintNotBound = printf "constraint '%s' doesn't exist." . purple

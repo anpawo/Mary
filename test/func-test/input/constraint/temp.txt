@@ -1,0 +1,4 @@
+function test(number | int a, int | float b) -> int | float {
+    int | float c = b;
+    return c;
+}

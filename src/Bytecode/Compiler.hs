@@ -45,6 +45,7 @@ data Instruction
   | Load String
   | PushEnv String
   | JumpIfFalse Int
+  | JumpBackward Int
   deriving (Show, Eq)
 
 data Value
@@ -53,9 +54,15 @@ data Value
   | VmInt Int
   | VmFloat Double
   | VmString String
+  | VmArray [Instruction]
+  | VmStruct [(String, [Instruction])]
+  | VmNull
   deriving (Show, Eq)
 
 data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
+
+convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
+convertLitStruct (key, value) = [(key , compileSubExpression value)]
 
 convertLiteral :: Literal -> Value
 convertLiteral (CharLit c) = VmChar c
@@ -63,6 +70,10 @@ convertLiteral (BoolLit b) = VmBool b
 convertLiteral (IntLit i) = VmInt i
 convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
+convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
+convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
+convertLiteral NullLit = VmNull
+-- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur, edit de marius: on veut pas ça permettre ça car c'est giga raciste et inutile.
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
@@ -79,6 +90,11 @@ compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFals
       instructionsFalse = compileExpressions false
       instructionsCond = compileSubExpression cond
       nbInstructionsTrue = length instructionsTrue
+compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 2] ++ [JumpBackward (nbSkipLoop + 1)]
+  where
+    instructionsCond = compileSubExpression cond
+    instructionsBody = compileExpressions body
+    nbSkipLoop = length instructionsCond + length instructionsBody
 
 compileExpressions :: [Expression] -> [Instruction]
 compileExpressions = concatMap compileExpression
