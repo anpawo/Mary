@@ -26,7 +26,7 @@ module Ast.Ast
   ) where
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, token, many, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, some, choice)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -244,16 +244,12 @@ expression ctx locVar retT = choice
   , exprWhile ctx locVar retT
   ]
 
-parseBraces :: Parser a -> Parser a
-parseBraces p = do
-  _ <- token (\t -> if t == CurlyOpen then Just () else Nothing) mempty
-  result <- p
-  _ <- token (\t -> if t == CurlyClose then Just () else Nothing) mempty
-  return result
-
 getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
-getBlock ctx locVar retT =
-  parseBraces (Text.Megaparsec.many (expression ctx locVar retT))
+getBlock ctx locVar retT = do
+  void (tok CurlyOpen)
+  expressions <- Text.Megaparsec.some (expression ctx locVar retT)
+  void (tok CurlyClose)
+  return expressions
 
 isBooleanExpression :: SubExpression -> Bool
 isBooleanExpression expr = case expr of
@@ -290,12 +286,8 @@ exprWhile ctx locVar retT = do
   cond <- subexpression ctx locVar
   unless (isBooleanExpression cond) $
     fail "Condition in 'while' must be a boolean expression"
-  curlyOpen <- optional (tok CurlyOpen)
-  case curlyOpen of
-    Just _ -> do
-      body <- getBlock ctx locVar retT
-      return $ While cond body
-    Nothing -> fail "Expected '{' to start the body of the 'while' loop"
+  body <- getBlock ctx locVar retT
+  return $ While cond body
 
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
