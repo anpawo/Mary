@@ -64,62 +64,62 @@ type Program = [Instruction]
 type Args = [Value]
 type Env = [(String, Value)]
 
-exec :: Env -> Args -> Program -> Stack -> Either String Value
+exec :: Env -> Program -> Stack -> Either String Value
 
 -- return the value on top of the stack
-exec _ _ (Ret : _) (x : _) =
+exec _ (Ret : _) (x : _) =
   Right x
-exec _ _ (Ret : _) [] =
+exec _ (Ret : _) [] =
   Left "Ret expects at least one value on the stack"
 
 -- push the value on the stack
-exec env args (Push v : is) stack =
-  exec env args is (v : stack)
+exec env (Push v : is) stack =
+  exec env is (v : stack)
 
 -- push the argument value on the stack
--- exec env args (PushArg i : is) stack
+-- exec env (PushArg i : is) stack
 --   | i < length args = exec env args is (args !! i : stack)
 --   | otherwise       = Left "Invalid argument index"
 
 -- push the variable value on the stack
-exec env args (PushEnv name : is) stack =
+exec env (PushEnv name : is) stack =
   case lookup name env of
-    Just v  -> exec env args is (v : stack)
+    Just v  -> exec env is (v : stack)
     Nothing -> Left ("Variable " ++ name ++ " not found")
 
 -- call pop the function from the stack and execute it
-exec env args (Call : is) (v : stack) =
+exec env (Call : is) (v : stack) =
   case v of
     OpVal Add  -> case stack of
       (VmInt a : VmInt b : rest) ->
-         exec env args is (VmInt (b + a) : rest)
+         exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
     OpVal Sub  -> case stack of
       (VmInt a : VmInt b : rest) ->
-         exec env args is (VmInt (b - a) : rest)
+         exec env is (VmInt (b - a) : rest)
       _ -> Left "Sub expects two VmInt on the stack"
     OpVal Mul  -> case stack of
       (VmInt a : VmInt b : rest) ->
-         exec env args is (VmInt (b * a) : rest)
+         exec env is (VmInt (b * a) : rest)
       _ -> Left "Mul expects two VmInt on the stack"
     OpVal Div  -> case stack of
       (VmInt a : VmInt b : rest) ->
         if a == 0
           then Left "Division by zero"
-          else exec env args is (VmInt (b `div` a) : rest)
+          else exec env is (VmInt (b `div` a) : rest)
       _ -> Left "Div expects two VmInt on the stack"
     OpVal Eq   -> case stack of
       (VmInt a : VmInt b : rest) ->
-        exec env args is (VmBool (b == a) : rest)
+        exec env is (VmBool (b == a) : rest)
       _ -> Left "Eq expects two VmInt on the stack"
     OpVal Less -> case stack of
       (VmInt a : VmInt b : rest) ->
-        exec env args is (VmBool (b < a) : rest)
+        exec env is (VmBool (b < a) : rest)
       _ -> Left "Less expects two VmInt on the stack"
     FuncVal body -> case stack of
       (arg : rest) ->
         case exec env [arg] body [] of
-          Right result -> exec env args is (result : rest)
+          Right result -> exec env is (result : rest)
           Left err     -> Left err
       [] ->
          Left "Function expects 1 argument, but stack is empty!"
@@ -127,12 +127,12 @@ exec env args (Call : is) (v : stack) =
     _ -> Left "Call expects an operator or a function on top of the stack"
 
 -- jump if the value on top of the stack is false
-exec env args (JumpIfFalse n : is) (VmBool False : stack) =
-  exec env args (drop n is) stack
+exec env (JumpIfFalse n : is) (VmBool False : stack) =
+  exec env (drop n is) stack
 
 -- jump if the value on top of the stack is true
-exec env args (JumpIfFalse _ : is) (VmBool True : stack) =
-  exec env args is stack
+exec env (JumpIfFalse _ : is) (VmBool True : stack) =
+  exec env is stack
 
 -- error case
 exec _ _ (JumpIfFalse _ : _) (_ : _) =
@@ -167,8 +167,8 @@ compile (ASTIf cond thenBranch elseBranch) =
     ++ elseCode
 
 -- compile a function call
-compile (ASTCall name args) =
-  concatMap compile args
-  ++ [ PushEnv name
-     , Call
-     ]
+-- compile (ASTCall name) =
+--   concatMap compile
+--   ++ [ PushEnv name
+--      , Call
+--      ]
