@@ -22,10 +22,14 @@ module VM.VirtualMachine
   ) where
 
 data Value
-  = IntVal Int
-  | BoolVal Bool
-  | OpVal Operator
-  | FuncVal [Instruction]
+  = VmInt Int
+  | VmFloat Double
+  | VmBool Bool
+  | VmChar Char
+  | VmString String
+  | VmArray [Instruction]
+  | VmStruct [(String, [Instruction])]
+  | VmNull
   deriving (Show, Eq)
 
 data Operator
@@ -49,8 +53,10 @@ data Instruction
   | Call
   | Ret
   | JumpIfFalse Int
-  | PushArg Int
+  | Store String
+  | Load String
   | PushEnv String
+  | JumpBackward Int
   deriving (Show, Eq)
 
 type Stack = [Value]
