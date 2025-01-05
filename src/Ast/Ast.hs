@@ -31,7 +31,7 @@ module Ast.Ast
 import Debug.Trace (trace, traceId)
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, some, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -140,7 +140,7 @@ types ctx canBeVoid canBeConstraint = do
   t <- parseType
   followedByPipe <- (True <$ lookAhead (tok Pipe)) <|> pure False
   if followedByPipe && canBeConstraint
-    then ConstraintType Nothing . (t:) <$> Text.Megaparsec.some (tok Pipe *> parseType)
+    then ConstraintType Nothing . (t:) <$> some (tok Pipe *> parseType)
     else return t
 
   where
@@ -261,17 +261,16 @@ expression ctx locVar retT = choice
 getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getBlock ctx locVar retT = do
   void (tok CurlyOpen)
-  expressions <- Text.Megaparsec.some (expression ctx locVar retT)
+  expressions <- some (expression ctx locVar retT)
   void (tok CurlyClose)
   return expressions
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
-  cond <- subexpression ctx locVar (tok CurlyOpen)
+  cond <- subexpression ctx locVar (tok ThenKw)
   condType <- getType ctx locVar cond
   unless (condType == BoolType) $ fail "Condition in 'if' must evaluate to a boolean type"
-  void (tok ThenKw)
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
     void (tok ElseKw)
@@ -283,7 +282,7 @@ exprIf ctx locVar retT = do
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile ctx locVar retT = do
   void (tok WhileKw)
-  cond <- subexpression ctx locVar (tok CurlyOpen)
+  cond <- subexpression ctx locVar  (lookAhead $ tok CurlyOpen)
   condType <- getType ctx locVar cond
   unless (condType == BoolType) $ fail "Condition in 'while' must evaluate to a boolean type"
   body <- getBlock ctx locVar retT
