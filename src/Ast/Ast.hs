@@ -251,26 +251,12 @@ getBlock ctx locVar retT = do
   void (tok CurlyClose)
   return expressions
 
-isBooleanExpression :: SubExpression -> Bool
-isBooleanExpression expr = case expr of
-  FunctionCall "&&" _ -> True
-  FunctionCall "||" _ -> True
-  FunctionCall "!" _ -> True
-  FunctionCall "<" _ -> True
-  FunctionCall ">" _ -> True
-  FunctionCall "<=" _ -> True
-  FunctionCall ">=" _ -> True
-  FunctionCall "==" _ -> True
-  FunctionCall "!=" _ -> True
-  Lit (BoolLit _) -> True
-  _ -> False
-
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
   cond <- subexpression ctx locVar
-  unless (isBooleanExpression cond) $
-    fail "Condition in 'if' must be a boolean expression"
+  condType <- getType ctx locVar cond
+  unless (condType == BoolType) $ fail "Condition in 'if' must evaluate to a boolean type"
   void (tok ThenKw)
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
@@ -284,11 +270,10 @@ exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile ctx locVar retT = do
   void (tok WhileKw)
   cond <- subexpression ctx locVar
-  unless (isBooleanExpression cond) $
-    fail "Condition in 'while' must be a boolean expression"
+  condType <- getType ctx locVar cond
+  unless (condType == BoolType) $ fail "Condition in 'while' must evaluate to a boolean type"
   body <- getBlock ctx locVar retT
   return $ While cond body
-
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
