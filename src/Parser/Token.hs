@@ -18,17 +18,18 @@ data SubExpression
   deriving (Show, Eq, Ord)
 
 data Type
-  = CharType --                     \| char
-  | VoidType --                     \| void
-  | BoolType --                     \| bool
-  | IntType --                      \| int
-  | FloatType --                    \| float
-  | StrType --                      \| str -- todo: arr [ char ]
-  | ArrType Type --                 \| arr [ <type> ]
-  | StructType String --            \| struct <name> (the real parsing of the structure is done in the Ast)
-  | AnyType --                      \| any
-  | StructAnyType --                \| struct any (only for builtins)
-  | ConstraintType String [Type] -- \| int | float
+  = CharType --                             \| char
+  | NullType --                             \| null
+  | VoidType --                             \| void
+  | BoolType --                             \| bool
+  | IntType --                              \| int
+  | FloatType --                            \| float
+  | StrType --                              \| str -- todo: arr [ char ]
+  | ArrType Type --                         \| arr [ <type> ]
+  | StructType String --                    \| struct <name> (the real parsing of the structure is done in the Ast)
+  | AnyType --                              \| any
+  | StructAnyType --                        \| struct any (only for builtins)
+  | ConstraintType (Maybe String) [Type] -- \| int | float
   deriving (Ord)
 
 instance Eq Type where
@@ -38,7 +39,7 @@ instance Eq Type where
   (ArrType t) == (ArrType t') = t == t'
   AnyType == _ = True
   _ == AnyType = True
-  (ConstraintType n _) == (ConstraintType n' _) | n == n' = True
+  (ConstraintType (Just n) _) == (ConstraintType (Just n') _) | n == n' = True
   c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
   (ConstraintType _ ts) == t = t `elem` ts
   t == (ConstraintType _ ts) = t `elem` ts
@@ -52,6 +53,7 @@ instance Eq Type where
 
 instance Show Type where
   show CharType = "char"
+  show NullType = "null"
   show VoidType = "void"
   show BoolType = "bool"
   show IntType = "int"
@@ -61,7 +63,8 @@ instance Show Type where
   show (StructType n) = printf "struct %s" n
   show AnyType = "any"
   show StructAnyType = "struct any"
-  show (ConstraintType n _) = printf "constraint %s" n
+  show (ConstraintType (Just n) _) = n
+  show (ConstraintType Nothing t) = intercalate " | " (map show t)
 
 data Literal
   = CharLit Char --                                                 \| 'c'   -> may be a list of char
@@ -72,7 +75,7 @@ data Literal
   | ArrLitPre Type [[MyToken]] --                                   \| before computation of the elements
   | ArrLit Type [SubExpression] --                                  \| [1, 2, 3]
   | StructLitPre String [(String, [MyToken])] --                    \| before computation of the elements
-  | StructLit String [(String, SubExpression)] --                       \| {name: "marius", age: 19}
+  | StructLit String [(String, SubExpression)] --                   \| {name: "marius", age: 19}
   | NullLit -- put this value when var is created without assigned value (garice do this)
   deriving (Eq, Ord)
 
@@ -111,16 +114,17 @@ data MyToken
   | ElseKw --            \| else         -> else
   | ReturnKw --          \| return       -> return
   -- Symbol
-  | CurlyOpen --         \|  {   -> struct definition
-  | CurlyClose --        \|  }   -> struct definition
-  | ParenOpen --         \|  (   -> resolve expressions
-  | ParenClose --        \|  )   -> resolve expressions
+  | CurlyOpen --         \|  {   -> struct definition and creation start
+  | CurlyClose --        \|  }   -> struct definition and creation end
+  | ParenOpen --         \|  (   -> group start
+  | ParenClose --        \|  )   -> group end
   | BracketOpen --       \|  [   -> array start
   | BracketClose --      \|  ]   -> array end
   | Arrow --             \|  ->  -> return type of functions
   | SemiColon --         \|  ;   -> end of statement
-  | Comma --             \|  ,   -> separate arguments in function call/creation
-  | Pipe --              \|  |   -> separate arguments in function call/creation
+  | Comma --             \|  ,   -> separate arguments for functions
+  | Pipe --              \|  |   -> separate types for constraints
+  | Assign --            \|  |   -> create a varible or assign a new value to an alreayd existing one
   -- Type
   | Type Type
   -- Literal
@@ -150,6 +154,7 @@ instance Show MyToken where
   show SemiColon = ";"
   show Comma = ","
   show Pipe = "|"
+  show Assign = "="
 
   show (Type t) = show t
   show (Literal l) = show l

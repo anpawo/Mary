@@ -182,6 +182,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  semicolonSym
             ,  commaSym
             ,  pipeSym
+            ,  assignSym
 
             -- Keyword
             , functionKw
@@ -212,13 +213,13 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , IntLit <$> (((0 -) <$> (char '-' *> decimal)) <|> decimal)
             , StringLit <$> (quote *> manyTill anySingle quote)
             , do
-                arrType <- parseType
+                ty <- parseType
                 args <- spaces *> getargs (char '[') (someTill (tokens <* spaces) (lookAhead (char ']' <|> char ','))) (char ']')
-                return $ ArrLitPre arrType args
+                return $ ArrLitPre ty args
             , do
-                structName <- some symbolIdentifierChar <* spaces
+                name <- some symbolIdentifierChar <* spaces
                 args <- getargs (char '{') ((,) <$> some symbolIdentifierChar <* spaces <* char '=' <* spaces <*> someTill (tokens <* spaces) (lookAhead (char '}' <|> char ','))) (char '}')
-                return $ StructLitPre structName args
+                return $ StructLitPre name args
             ]
 
         -- Symbol
@@ -228,10 +229,11 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         parenCloseSym = char ')' $> ParenClose
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
-        arrowSym = try $ symbol "->" $> Arrow
         semicolonSym = char ';' $> SemiColon
         commaSym = char ',' $> Comma
-        pipeSym = char '|' $> Pipe
+        arrowSym = try $ symbol "->" $> Arrow
+        pipeSym = try $ symbol "|" $> Pipe
+        assignSym = try $ symbol "=" $> Assign
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
@@ -254,7 +256,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "str" $> StrType
             , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
             , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
-            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` [])
+            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` []) . Just
             ]
 
         -- Identifier
