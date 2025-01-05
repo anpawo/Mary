@@ -1,0 +1,3 @@
+function create_person(str person_name, age person_age) -> person {
+    return person { name = person_name, age = person_age};
+}
