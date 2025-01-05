@@ -77,9 +77,9 @@ exec env args (Push v : is) stack =
   exec env args is (v : stack)
 
 -- push the argument value on the stack
-exec env args (PushArg i : is) stack
-  | i < length args = exec env args is (args !! i : stack)
-  | otherwise       = Left "Invalid argument index"
+-- exec env args (PushArg i : is) stack
+--   | i < length args = exec env args is (args !! i : stack)
+--   | otherwise       = Left "Invalid argument index"
 
 -- push the variable value on the stack
 exec env args (PushEnv name : is) stack =
