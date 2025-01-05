@@ -44,6 +44,7 @@ instance Eq Type where
   (ConstraintType _ ts) == t = t `elem` ts
   t == (ConstraintType _ ts) = t `elem` ts
   CharType == CharType = True
+  NullType == NullType = True
   VoidType == VoidType = True
   BoolType == BoolType = True
   IntType == IntType = True
@@ -76,7 +77,7 @@ data Literal
   | ArrLit Type [SubExpression] --                                  \| [1, 2, 3]
   | StructLitPre String [(String, [MyToken])] --                    \| before computation of the elements
   | StructLit String [(String, SubExpression)] --                   \| {name: "marius", age: 19}
-  | NullLit -- put this value when var is created without assigned value (garice do this)
+  | NullLit --                                                      \| null
   deriving (Eq, Ord)
 
 instance Show Literal where
@@ -90,7 +91,7 @@ instance Show Literal where
   show (ArrLit t x) = printf "%s [%s]" (show t) $ intercalate ", " $ map show x
   show (StructLitPre n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(n', v) -> printf "%s = %s" n' (unwords $ map show v)) x
   show (StructLit n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(k, v) -> printf "%s = %s" k (show v)) x
-  show (NullLit) = "null"
+  show NullLit = "NULL"
 
 data Identifier
   = SymbolId String --   \| factorial, add_2, x

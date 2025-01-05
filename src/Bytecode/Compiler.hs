@@ -72,8 +72,8 @@ convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
 convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
 convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
-convertLiteral (NullLit) = VmNull
--- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur
+convertLiteral NullLit = VmNull
+-- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur, edit de marius: on veut pas ça permettre ça car c'est giga raciste et inutile.
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]

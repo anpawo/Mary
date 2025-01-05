@@ -150,6 +150,7 @@ types ctx canBeVoid canBeConstraint = do
     existingTypes =
       [ tok (Type CharType) $> CharType
       , tok (Type BoolType) $> BoolType
+      , tok (Type NullType) $> NullType
       , tok (Type IntType) $> IntType
       , tok (Type FloatType) $> FloatType
       , tok (Type StrType) $> StrType
@@ -515,6 +516,7 @@ isType StructAnyType (StructLit _ _) = True
 isType (ConstraintType _ t) lit = any (`isType` lit) t
 isType VoidType _ = False
 isType AnyType _ = True
+isType NullType NullLit = True
 isType _ _ = False -- any other combination
 
 getLitType :: Literal -> Type -- todo: remove ctx here becauser its not needed

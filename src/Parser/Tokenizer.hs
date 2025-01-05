@@ -212,6 +212,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , FloatLit <$> (((0 -) <$> (char '-' *> float)) <|> float)
             , IntLit <$> (((0 -) <$> (char '-' *> decimal)) <|> decimal)
             , StringLit <$> (quote *> manyTill anySingle quote)
+            , NullLit <$ string "NULL"
             , do
                 ty <- parseType
                 args <- spaces *> getargs (char '[') (someTill (tokens <* spaces) (lookAhead (char ']' <|> char ','))) (char ']')
@@ -248,6 +249,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         -- Type
         parseType = choicetry [
               keyword "any" $> AnyType
+            , keyword "null" $> NullType
             , keyword "char" $> CharType
             , keyword "void" $> VoidType
             , keyword "bool" $> BoolType
