@@ -168,11 +168,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
     where
         tokens = choicetry
             [
-              -- Literal
-              Literal <$> parseLit
-
             -- Symbol
-            ,  curlyOpenSym
+               curlyOpenSym
             ,  curlyCloseSym
             ,  parenOpenSym
             ,  parenCloseSym
@@ -193,6 +190,9 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , thenKw
             , elseKw
             , returnKw
+            
+            -- Literal
+            , Literal <$> parseLit
 
             -- Type
             , Type <$> parseType

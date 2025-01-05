@@ -1,0 +1,9 @@
+function main() -> void {
+    if x < 10
+        then {
+            y = y + 1;
+        }
+        else {
+            y = 0;
+        }
+}

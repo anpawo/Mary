@@ -238,7 +238,7 @@ getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs name
         _ -> failN $ errImpossibleCase "getFnArgs case endFound"
 
 getFnRetType :: Ctx -> Parser Type
-getFnRetType ctx = tok Arrow *> types ctx True True
+getFnRetType ctx = (tok Arrow <|> failN errMissingRetT) *> types ctx True True
 
 getNames :: Ctx -> [String]
 getNames [] = []
@@ -273,8 +273,7 @@ getBlock ctx locVar retT =
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
-  cond <- subexpression ctx locVar False
-  void (tok ThenKw)
+  cond <- subexpression ctx locVar (tok ThenKw)
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
     void (tok ElseKw)
@@ -291,7 +290,7 @@ exprReturn _ _ VoidType = failN errVoidRet
 exprReturn ctx locVar retT = do
   void (tok ReturnKw)
   offset <- getOffset
-  subexpr <- subexpression ctx locVar False
+  subexpr <- subexpression ctx locVar (tok SemiColon)
   case subexpr of
     (VariableCall x) -> case find (\(_, n) -> n == x) locVar of
         Just (t, _)
@@ -318,7 +317,7 @@ variableCreation ctx locVar = do
   t <- types ctx False True
   n <- symbolIdentifier
   void (tok Assign)
-  x <- subexpression ctx locVar False
+  x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
   if t == t'
     then return $ Variable (t, n) x
@@ -340,7 +339,7 @@ variableAssignation ctx locVar = do
     Nothing -> fail $ errVariableNotBound n
     Just (t, _) -> pure t
   void (tok Assign)
-  x <- subexpression ctx locVar False
+  x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
   if t == t'
     then return $ Variable (t, n) x
@@ -348,7 +347,7 @@ variableAssignation ctx locVar = do
 
 
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar False
+exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar (tok SemiColon)
 
 type Idx = Int
 type Prec = Int
@@ -464,12 +463,12 @@ getOpIdx _ = error "error: the token isn't an operator"
 validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
 validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
   where
-    tosub (n, v) = case (,) n <$> run (subexpression ctx locVar True) v of
+    tosub (n, v) = case (,) n <$> run (subexpression ctx locVar eof) v of
       Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
       Right suc -> pure suc
 validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
   where
-    tosub v = case run (subexpression ctx locVar True) v of
+    tosub v = case run (subexpression ctx locVar eof) v of
       Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
       Right suc -> pure suc
 validLit ctx locVar st@(StructLit name subexpr) =  case find (stNameIs name) ctx of
@@ -590,9 +589,9 @@ fixSpecialFunction [] = []
 fixSpecialFunction (dot@(GOp _ "." []): GVar idx name:xs) = dot : GLit idx (StringLit name) : fixSpecialFunction xs
 fixSpecialFunction (x:xs) = x : fixSpecialFunction xs
 
-subexpression :: Ctx -> LocalVariable -> Bool -> Parser SubExpression
-subexpression ctx locVar preProcess = do
-  group <- fixSpecialFunction <$> someTill (getGroup ctx locVar) (if preProcess then eof else void (tok SemiColon)) <|> failN errEmptyExpr
+subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
+subexpression ctx locVar endSubexpr = do
+  group <- fixSpecialFunction <$> someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr
   mount <- mountGroup ctx group
   validateMount ctx locVar mount
   toSubexpr mount
