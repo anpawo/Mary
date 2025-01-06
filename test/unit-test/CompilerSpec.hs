@@ -48,9 +48,9 @@ compileSubExpressionSpec = describe "compileSubExpression" $ do
     it "compiles a VariableCall" $
       compileSubExpression (VariableCall "x") `shouldBe` [Load "x"]
     it "compiles a FunctionCall with no arguments" $
-      compileSubExpression (FunctionCall "testFunction" []) `shouldBe` [PushEnv "testFunction", Call]
+      compileSubExpression (FunctionCall "testFunction" []) `shouldBe` [Push $ VmFunc "testFunction", Call]
     it "compiles a FunctionCall with arguments" $
-      compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), PushEnv "double", Call]
+      compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), Push $ VmFunc "double", Call]
     it "compiles a Literal" $
       compileSubExpression (Lit (StringLit "hello")) `shouldBe` [Push (VmString "hello")]
 
