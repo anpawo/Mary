@@ -18,7 +18,7 @@ module VM.VirtualMachine
   , Env
 
   , exec
-  , compile
+  -- , compile
   ) where
 
 data Value
@@ -102,7 +102,7 @@ exec env (PushEnv name : is) stack =
 -- call pop the function from the stack and execute it
 exec env (Call : is) (v : stack) =
   case v of
-    OpVal Add  -> case stack of
+    OpVal Add -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
@@ -159,28 +159,28 @@ exec _ [] []      = Left "No value in stack at end of program"
 exec _ _ _        = Left "Invalid program"
 
 -- compile an AST to a program
-compile :: AST -> Program
-compile (ASTValue v) =
-  [ Push v ]
+-- compile :: AST -> Program
+-- compile (ASTValue v) =
+--   [ Push v ]
 
--- compile a binary operation
-compile (ASTBinOp op left right) =
-  compile left
-  ++ compile right
-  ++ [ Push (OpVal op)
-     , Call
-     ]
--- compile an if statement
-compile (ASTIf cond thenBranch elseBranch) =
-  let condCode = compile cond
-      thenCode = compile thenBranch
-      elseCode = compile elseBranch
-  in
-    condCode
-    ++ [ JumpIfFalse (length thenCode + 1) ]
-    ++ thenCode
-    ++ [ JumpIfFalse (length elseCode) ]
-    ++ elseCode
+-- -- compile a binary operation
+-- compile (ASTBinOp op left right) =
+--   compile left
+--   ++ compile right
+--   ++ [ Push (OpVal op)
+--      , Call
+--      ]
+-- -- compile an if statement
+-- compile (ASTIf cond thenBranch elseBranch) =
+--   let condCode = compile cond
+--       thenCode = compile thenBranch
+--       elseCode = compile elseBranch
+--   in
+--     condCode
+--     ++ [ JumpIfFalse (length thenCode + 1) ]
+--     ++ thenCode
+--     ++ [ JumpIfFalse (length elseCode) ]
+--     ++ elseCode
 
 -- compile a function call
 -- compile (ASTCall name) =
