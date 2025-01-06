@@ -21,7 +21,7 @@ import Ast.Ast (tokenToAst)
 import Ast.Error (prettyPrintError, bggray)
 
 import Bytecode.Compiler (compiler)
-
+import VM.VirtualMachine (exec)
 type Error = String
 
 data Depth = Token | Ast | ByteCode deriving (Eq)
@@ -39,8 +39,7 @@ glados (d, content) = case run (comment &> tokenize) content of
             Left errBytecode -> print errBytecode
             Right (_instr, env)
                 | d == Just ByteCode -> print env
-                | otherwise -> print "vm todo"
-
+                | otherwise -> print $ exec env _instr []
 
 helper :: String
 helper =

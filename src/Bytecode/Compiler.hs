@@ -21,9 +21,6 @@ module Bytecode.Compiler
     -- testCompiler,
     --main
     compiler,
-    Instruction(..),
-    Value(..),
-    EnvVar(..),
 
     --test
     convertLiteral,
@@ -36,30 +33,7 @@ module Bytecode.Compiler
 
 import Ast.Ast
 import Parser.Token (Literal(..), Type(..))
-
-data Instruction
-  = Push Value
-  | Call
-  | Ret
-  | Store String
-  | Load String
-  | PushEnv String
-  | JumpIfFalse Int
-  | JumpBackward Int
-  deriving (Show, Eq)
-
-data Value
-  = VmChar Char
-  | VmBool Bool
-  | VmInt Int
-  | VmFloat Double
-  | VmString String
-  | VmArray [Instruction]
-  | VmStruct [(String, [Instruction])]
-  | VmNull
-  deriving (Show, Eq)
-
-data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
+import Bytecode.Data
 
 convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
 convertLitStruct (key, value) = [(key , compileSubExpression value)]
@@ -73,11 +47,10 @@ convertLiteral (StringLit s) = VmString s
 convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
 convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
 convertLiteral NullLit = VmNull
--- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur, edit de marius: on veut pas ça permettre ça car c'est giga raciste et inutile.
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
-compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [PushEnv fnName, Call]
+compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [Push $ VmFunc fnName, Call]
 compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 
 compileExpression :: Expression -> [Instruction]
@@ -106,19 +79,19 @@ compileParams :: [(Type, String)] -> [Instruction]
 compileParams params = concatMap compileParam (reverse params)
 
 astToEnvVar :: Ast -> Either String EnvVar
-astToEnvVar (Function fnName fnArgs _ fnBody) = Right $ EnvVar fnName (compileParams fnArgs ++ compileExpressions fnBody)
-astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right $ EnvVar opName (compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody)
+astToEnvVar (Function fnName fnArgs _ fnBody) = Right   (fnName ,(compileParams fnArgs ++ compileExpressions fnBody))
+astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right  (opName ,(compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody))
 astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
 
 findMainFunc :: [EnvVar] -> Bool
-findMainFunc envVars = any (\envVar -> envVarName envVar == "main") envVars
+findMainFunc envVars = any (\(nameFunc, _) ->  nameFunc == "main") envVars
 
 compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
 compiler asts =
   case mapM astToEnvVar asts of
     Left err -> Left err
     Right envVars -> if findMainFunc envVars
-      then Right ([PushEnv "main", Call], envVars)
+      then Right ([Push $ VmFunc "main", Call], envVars)
       else Right ([], envVars)
 
 -- testCompiler :: IO ()

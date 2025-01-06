@@ -1,0 +1,38 @@
+type number2 = int | float;
+
+struct empty {}
+
+struct list {
+    any data;
+    empty | list next;
+}
+
+/*
+the ideal would be to have a typed list:
+
+struct list (t) {
+    (t) data;
+    empty | list next;
+}
+
+*/
+
+operator !! precedence 10 (list l, int index) -> null | any {
+    if index < 0 then
+    {
+        return NULL;
+    }
+    else
+    {
+        if index == 0 then
+        {
+            return l;
+        }
+        else
+        {
+            return l . next !! (index - 1);
+        }
+    }
+}
+
+// need the operator to set a value of a struct

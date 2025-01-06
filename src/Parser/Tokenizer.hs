@@ -59,7 +59,7 @@ symbolIdentifierChar :: Parser Char
 symbolIdentifierChar = alphaNumChar <|> underscore
 
 operatorIdentifierChar :: Parser Char
-operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=']
+operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -260,7 +260,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "str" $> StrType
             , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
             , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
-            , keyword "constraint" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` []) . Just
+            , keyword "type" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` []) . Just
             ]
 
         -- Identifier

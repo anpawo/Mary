@@ -1,5 +1,0 @@
-constraint number2 = int | float;
-
-function test(number2 a, constraint number2 b) -> number2 {
-    return a;
-}
