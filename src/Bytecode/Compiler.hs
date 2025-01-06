@@ -50,7 +50,7 @@ convertLiteral NullLit = VmNull
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
-compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [PushEnv fnName, Call]
+compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [Push $ VmFunc fnName, Call]
 compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 
 compileExpression :: Expression -> [Instruction]
@@ -91,7 +91,7 @@ compiler asts =
   case mapM astToEnvVar asts of
     Left err -> Left err
     Right envVars -> if findMainFunc envVars
-      then Right ([PushEnv "main", Call], envVars)
+      then Right ([Push $ VmFunc "main", Call], envVars)
       else Right ([], envVars)
 
 -- testCompiler :: IO ()
