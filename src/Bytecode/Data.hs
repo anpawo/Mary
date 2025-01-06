@@ -21,8 +21,7 @@ module Bytecode.Data
     --main
     Instruction(..),
     Value(..),
-    EnvVar(..),
-
+    EnvVar,
   ) where
 
 data Instruction
@@ -47,4 +46,4 @@ data Value
   | VmFunc String
   deriving (Show, Eq)
 
-data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
+type EnvVar = (String, [Instruction])
