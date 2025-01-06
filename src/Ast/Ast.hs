@@ -270,7 +270,7 @@ exprIf ctx locVar retT = do
   void (tok IfKw)
   cond <- subexpression ctx locVar (tok ThenKw)
   condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail "Condition in 'if' must evaluate to a boolean type"
+  unless (condType == BoolType) $ fail $ errCondNotBool "if"
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
     void (tok ElseKw)
@@ -284,7 +284,7 @@ exprWhile ctx locVar retT = do
   void (tok WhileKw)
   cond <- subexpression ctx locVar  (lookAhead $ tok CurlyOpen)
   condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail "Condition in 'while' must evaluate to a boolean type"
+  unless (condType == BoolType) $ fail $ errCondNotBool "while"
   body <- getBlock ctx locVar retT
   return $ While cond body
 
@@ -678,4 +678,4 @@ constraint ctx = do
   return $ Constraint name ts
 
 structure :: Ctx -> Parser Ast
-structure _ = failN $ errTodo "structure" -- garice
+structure _ = failN $ errTodo "structure"
