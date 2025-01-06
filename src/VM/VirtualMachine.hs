@@ -21,6 +21,8 @@ module VM.VirtualMachine
   , compile
   ) where
 
+import Bytecode.Compiler(EnvVar(..))
+
 data Value
   = VmInt Int
   | VmFloat Double
@@ -62,7 +64,7 @@ data Instruction
 type Stack = [Value]
 type Program = [Instruction]
 type Args = [Value]
-type Env = [(String, Value)]
+type Env = [EnvVar]
 
 exec :: Env -> Program -> Stack -> Either String Value
 
@@ -85,7 +87,7 @@ exec env (Push v : is) stack =
 exec env (PushEnv name : is) stack =
   case lookup name env of
     Just v  -> exec env is (v : stack)
-    Nothing -> Left ("Variable " ++ name ++ " not found")
+    Nothing -> Left ("Variable or function " ++ name ++ " not found")
 
 -- call pop the function from the stack and execute it
 exec env (Call : is) (v : stack) =
