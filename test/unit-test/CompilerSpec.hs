@@ -25,6 +25,7 @@ spec = do
   compileParamsSpec
   astToEnvVarSpec
   findMainFuncSpec
+  compilerSpec
 
 convertLiteralSpec :: SpecWith ()
 convertLiteralSpec = describe "convertLiteral" $ do
@@ -104,10 +105,13 @@ findMainFuncSpec = describe "findMainFunc" $ do
   it "check if there isn't a function main in env" $ 
     findMainFunc [("lol", [Push (VmInt 1)]), ("boobakaka", [Push (VmInt 1)])] `shouldBe` False
 
--- compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
--- compiler asts =
---   case mapM astToEnvVar asts of
---     Left err -> Left err
---     Right envVars -> if findMainFunc envVars
---       then Right ([Push $ VmFunc "main", Call], envVars)
---       else Right ([], envVars)
+compilerSpec :: SpecWith ()
+compilerSpec = describe "compiler" $ do
+  it "compiler with main" $ do
+    let ast = [Function {fnName = "mul_add", fnArgs = [(IntType,"a"),(IntType,"b"),(IntType,"c")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "*", fnCallArgs = [VariableCall {varCallName = "b"},VariableCall {varCallName = "c"}]}]}}]},Function {fnName = "test_condition", fnArgs = [(IntType,"a"),(IntType,"b")], fnRetType = IntType, fnBody = [IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}]},Function {fnName = "main", fnArgs = [], fnRetType = IntType, fnBody = [Variable {varMeta = (IntType,"res"), varValue = FunctionCall {fnCallName = "mul_add", fnCallArgs = [(Lit (IntLit 1)), (Lit (IntLit 2)), (Lit (IntLit 3))]}},Return {retValue = VariableCall {varCallName = "res"}}]}]
+    let expected = [("mul_add",[Store "c",Store "b",Store "a",Load "a",Load "b",Load "c",Push (VmFunc "*"),Call,Push (VmFunc "+"),Call,Ret]),("test_condition",[Store "b",Store "a",Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]),("main",[Push (VmInt 1),Push (VmInt 2),Push (VmInt 3),Push (VmFunc "mul_add"),Call,Store "res",Load "res",Ret])] 
+    compiler ast `shouldBe` Right ([Push $ VmFunc "main", Call], expected)
+  it "compiler without main" $ do
+    let ast = [Function {fnName = "mul_add", fnArgs = [(IntType,"a"),(IntType,"b"),(IntType,"c")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "*", fnCallArgs = [VariableCall {varCallName = "b"},VariableCall {varCallName = "c"}]}]}}]},Function {fnName = "test_condition", fnArgs = [(IntType,"a"),(IntType,"b")], fnRetType = IntType, fnBody = [IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}]}]
+    let expected = [("mul_add",[Store "c",Store "b",Store "a",Load "a",Load "b",Load "c",Push (VmFunc "*"),Call,Push (VmFunc "+"),Call,Ret]),("test_condition",[Store "b",Store "a",Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret])]
+    compiler ast `shouldBe` Right ([], expected)
