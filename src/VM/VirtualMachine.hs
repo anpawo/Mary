@@ -84,10 +84,10 @@ exec env (Call : is) (v : stack) =
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
-    -- OpVal Sub  -> case stack of
-    --   (VmInt a : VmInt b : rest) ->
-    --      exec env is (VmInt (b - a) : rest)
-    --   _ -> Left "Sub expects two VmInt on the stack"
+    VmFunc "-"  -> case stack of
+      (VmInt a : VmInt b : rest) ->
+         exec env is (VmInt (b - a) : rest)
+      _ -> Left "Sub expects two VmInt on the stack"
     -- OpVal Mul  -> case stack of
     --   (VmInt a : VmInt b : rest) ->
     --      exec env is (VmInt (b * a) : rest)
