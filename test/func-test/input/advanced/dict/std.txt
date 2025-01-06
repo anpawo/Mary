@@ -1,0 +1,10 @@
+import list
+
+struct kv (k) (v) {
+    k key;
+    v val;
+}
+
+type dict (k) (v) = list kv (k) (v)
+
+// lookup

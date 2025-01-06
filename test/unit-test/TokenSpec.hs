@@ -29,7 +29,7 @@ tokenSpec = describe "token" $ do
     describe "keywords" $ do
       it "function" $ show FunctionKw ==> "function"
       it "operator" $ show OperatorKw ==> "operator"
-      it "constraint" $ show ConstraintKw ==> "constraint"
+      it "type" $ show TypeKw ==> "type"
       it "precedence" $ show PrecedenceKw ==> "precedence"
       it "import" $ show ImportKw ==> "import"
       it "if" $ show IfKw ==> "if"
@@ -79,8 +79,8 @@ typeSpec = describe "type" $ do
     it "any == struct any" $ (AnyType == StructAnyType) ==> True
     it "struct any == any" $ (StructAnyType == AnyType) ==> True
     it "char == int" $ (CharType == IntType) ==> False
-    it "constraint number == constraint integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
-    it "int == constraint integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "type number == type integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "int == type integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
   describe "show" $ do
     it "char" $ show CharType ==> "char"
     it "void" $ show VoidType ==> "void"

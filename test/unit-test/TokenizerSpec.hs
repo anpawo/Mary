@@ -146,8 +146,8 @@ tokenizerTypeSpec = describe "tokenize types" $ do
     run tokenize "arr[int]" ==> [Type $ ArrType IntType]
   it "struct" $
     run tokenize "struct person" ==> [Type $ StructType "person"]
-  it "constraint" $
-    run tokenize "constraint number" ==> [Type $ ConstraintType (Just "number") []]
+  it "type" $
+    run tokenize "type number" ==> [Type $ ConstraintType (Just "number") []]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do
