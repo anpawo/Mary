@@ -21,9 +21,6 @@ module Bytecode.Compiler
     -- testCompiler,
     --main
     compiler,
-    Instruction(..),
-    Value(..),
-    EnvVar(..),
 
     --test
     convertLiteral,
@@ -36,30 +33,7 @@ module Bytecode.Compiler
 
 import Ast.Ast
 import Parser.Token (Literal(..), Type(..))
-
-data Instruction
-  = Push Value
-  | Call
-  | Ret
-  | Store String
-  | Load String
-  | PushEnv String
-  | JumpIfFalse Int
-  | JumpBackward Int
-  deriving (Show, Eq)
-
-data Value
-  = VmChar Char
-  | VmBool Bool
-  | VmInt Int
-  | VmFloat Double
-  | VmString String
-  | VmArray [Instruction]
-  | VmStruct [(String, [Instruction])]
-  | VmNull
-  deriving (Show, Eq)
-
-data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
+import Bytecode.Data
 
 convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
 convertLitStruct (key, value) = [(key , compileSubExpression value)]
@@ -73,7 +47,6 @@ convertLiteral (StringLit s) = VmString s
 convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
 convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
 convertLiteral NullLit = VmNull
--- garice devra mettre les valeurs à null quand une variable ou la structure est cree sans qu'on lui mette de valeur à l'interieur, edit de marius: on veut pas ça permettre ça car c'est giga raciste et inutile.
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]

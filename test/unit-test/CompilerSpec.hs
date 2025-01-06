@@ -12,6 +12,7 @@ import Test.Hspec.Runner (SpecWith)
 
 import Parser.Token (Literal(..), Type(..))
 import Bytecode.Compiler
+import Bytecode.Data
 import Ast.Ast
 
 spec :: Spec
