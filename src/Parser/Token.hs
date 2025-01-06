@@ -18,18 +18,18 @@ data SubExpression
   deriving (Show, Eq, Ord)
 
 data Type
-  = CharType --                             \| char
-  | NullType --                             \| null
-  | VoidType --                             \| void
-  | BoolType --                             \| bool
-  | IntType --                              \| int
-  | FloatType --                            \| float
-  | StrType --                              \| str -- todo: arr [ char ]
-  | ArrType Type --                         \| arr [ <type> ]
-  | StructType String --                    \| struct <name> (the real parsing of the structure is done in the Ast)
-  | AnyType --                              \| any
-  | StructAnyType --                        \| struct any (only for builtins)
-  | ConstraintType (Maybe String) [Type] -- \| int | float
+  = CharType --                                                        \| char
+  | NullType --                                                        \| null
+  | VoidType --                                                        \| void
+  | BoolType --                                                        \| bool
+  | IntType --                                                         \| int
+  | FloatType --                                                       \| float
+  | StrType --                                                         \| str -- todo: arr [ char ]
+  | ArrType Type --                                                    \| arr [ <type> ]
+  | AnyType --                                                         \| any
+  | StructType { stTyName :: String} --                                \| struct <name> (the real parsing of the structure is done in the Ast)
+  | StructAnyType --                                                   \| struct any (only for builtins)
+  | ConstraintType { crTyName :: Maybe String, crTyTypes :: [Type]} -- \| int | float
   deriving (Ord)
 
 instance Eq Type where
@@ -94,12 +94,12 @@ instance Show Literal where
   show NullLit = "NULL"
 
 data Identifier
-  = SymbolId String --   \| factorial, add_2, x
-  | OperatorId String -- \| <*>, +, *, **
+  = TextId { textName :: String} --   \| factorial, add_2, x
+  | OperatorId { opeName :: String } -- \| <*>, +, *, **
   deriving (Eq, Ord)
 
 instance Show Identifier where
-  show (SymbolId x) = x
+  show (TextId x) = x
   show (OperatorId x) = x
 
 data MyToken
@@ -128,11 +128,11 @@ data MyToken
   | Pipe --              \|  |   -> separate types for constraints
   | Assign --            \|  |   -> create a varible or assign a new value to an alreayd existing one
   -- Type
-  | Type Type
+  | Type { typing :: Type}
   -- Literal
   | Literal Literal
   -- Identifier
-  | Identifier Identifier
+  | Identifier { identifier :: Identifier}
   deriving (Eq, Ord)
 
 instance Show MyToken where
