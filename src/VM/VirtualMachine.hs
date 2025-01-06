@@ -21,8 +21,6 @@ module VM.VirtualMachine
   , compile
   ) where
 
-import Bytecode.Compiler(EnvVar(..))
-
 data Value
   = VmInt Int
   | VmFloat Double
@@ -64,7 +62,7 @@ data Instruction
 type Stack = [Value]
 type Program = [Instruction]
 type Args = [Value]
-type Env = [EnvVar]
+type Env = [(String, [Instruction])]
 
 exec :: Env -> Program -> Stack -> Either String Value
 
