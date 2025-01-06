@@ -2,17 +2,19 @@ type number2 = int | float;
 
 struct empty {}
 
-struct list {
-    any data;
-    empty | list next;
+struct elem {
+    data: any;
+    next: empty | elem;
 }
+
+type list = elem | empty
 
 /*
 the ideal would be to have a typed list:
 
-struct list (t) {
-    (t) data;
-    empty | list next;
+struct list <t> {
+    data: t;
+    next: empty | list;
 }
 
 */
@@ -26,11 +28,11 @@ operator !! precedence 10 (list l, int index) -> null | any {
     {
         if index == 0 then
         {
-            return l;
+            return l.data;
         }
         else
         {
-            return l . next !! (index - 1);
+            return l.next !! (index - 1);
         }
     }
 }

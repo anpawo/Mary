@@ -8,7 +8,7 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, expectationFailure, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy)
 import Test.Hspec.Runner (SpecWith)
 import Text.RawString.QQ
 import Text.Megaparsec.Error (ParseErrorBundle(..))
@@ -79,7 +79,7 @@ whileSpec :: SpecWith ()
 whileSpec = describe "while loop" $ do
   describe "valid cases" $ do
     it "parses a valid while loop with one statement" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 { x = x + 1; } }"
+      let input = "function main () -> void { int x = 0; while x < 10 then { x = x + 1; } }"
       pAst input ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
@@ -89,7 +89,7 @@ whileSpec = describe "while loop" $ do
         ]
 
     it "parses a valid while loop with multiple statements" $ do
-      let input = "function main () -> void { int x = 0; int y = 0; while x < 10 { x = x + 1; y = y + 2; } }"
+      let input = "function main () -> void { int x = 0; int y = 0; while x < 10 then { x = x + 1; y = y + 2; } }"
       pAst input ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
@@ -103,11 +103,11 @@ whileSpec = describe "while loop" $ do
 
   describe "invalid cases" $ do
     it "fails on missing braces in while loop" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 x = x + 1; }"
+      let input = "function main () -> void { int x = 0; while x < 10 then x = x + 1; }"
       pAst input `shouldSatisfy` isLeft
 
     it "fails on empty body for while loop" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 {} }"
+      let input = "function main () -> void { int x = 0; while x < 10 then {} }"
       pAst input `shouldSatisfy` isLeft
 
 
