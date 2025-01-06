@@ -36,8 +36,8 @@ exec env (Push v : is) stack =
   exec env is (v : stack)
 
 -- Store the value on top of the stack in the environment
--- exec env (Store name : is) (v : stack) =
---   exec ((name, v) : env) is stack
+exec env (Store name : is) (v : stack) =
+  exec ((name, [Push v]) : env) is stack
 
 -- -- Load the value from the environment and push it on the stack
 -- exec env (Load name : is) stack =
