@@ -70,7 +70,7 @@ instance Show Type where
 data Literal
   = CharLit Char --                                                 \| 'c'   -> may be a list of char
   | BoolLit Bool --                                                 \| true | false
-  | IntLit Int --                                                   \| 2
+  | IntLit { intLiteralValue :: Int} --                                  \| 2
   | FloatLit Double --                                              \| 1.5
   | StringLit String --                                             \| "yo"   -> may be a list of char
   | ArrLitPre Type [[MyToken]] --                                   \| before computation of the elements
@@ -94,8 +94,8 @@ instance Show Literal where
   show NullLit = "NULL"
 
 data Identifier
-  = TextId { textName :: String} --   \| factorial, add_2, x
-  | OperatorId { opeName :: String } -- \| <*>, +, *, **
+  = TextId { textIdName :: String} --   \| factorial, add_2, x
+  | OperatorId { opIdName :: String } -- \| <*>, +, *, **
   deriving (Eq, Ord)
 
 instance Show Identifier where
@@ -128,11 +128,11 @@ data MyToken
   | Pipe --              \|  |   -> separate types for constraints
   | Assign --            \|  |   -> create a varible or assign a new value to an alreayd existing one
   -- Type
-  | Type { typing :: Type}
+  | Type { typing :: Type }
   -- Literal
-  | Literal Literal
+  | Literal { literal :: Literal }
   -- Identifier
-  | Identifier { identifier :: Identifier}
+  | Identifier { identifier :: Identifier }
   deriving (Eq, Ord)
 
 instance Show MyToken where
