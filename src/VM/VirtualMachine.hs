@@ -150,6 +150,10 @@ exec env (JumpIfFalse _ : is) (VmBool True : stack) =
 exec _  (JumpIfFalse _ : _) (_ : _) =
   Left "JumpIfFalse expects a boolean on the stack" 
 
+-- jump backward
+-- exec env (JumpBackward n : is) stack =
+--   exec env (drop n is) stack -- TODO je sais meme pas comment faire ça, peut etre qu'on peut garder une copie de la pile avant le jump et la remettre après le jump ?
+
 exec _ [] (x : _) = Right x
 exec _ [] []      = Left "No value in stack at end of program"
 exec _ _ _        = Left "Invalid program"
