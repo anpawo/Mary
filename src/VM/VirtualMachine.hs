@@ -76,6 +76,10 @@ exec _ (Ret : _) [] =
 exec env (Push v : is) stack =
   exec env is (v : stack)
 
+-- Store the value on top of the stack in the environment
+exec env (Store name : is) (v : stack) =
+  exec ((name, [Push v]) : env) is stack
+
 -- push the argument value on the stack
 -- exec env (PushArg i : is) stack
 --   | i < length args = exec env args is (args !! i : stack)
