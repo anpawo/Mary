@@ -30,6 +30,8 @@ data Value
   | VmArray [Instruction]
   | VmStruct [(String, [Instruction])]
   | VmNull
+  | OpVal Operator
+  | FunVal [Instruction]
   deriving (Show, Eq)
 
 data Operator
@@ -62,7 +64,7 @@ data Instruction
 type Stack = [Value]
 type Program = [Instruction]
 type Args = [Value]
-type Env = [(String, [Instruction])]
+type Env = [(String, Value)]
 
 exec :: Env -> Program -> Stack -> Either String Value
 
@@ -78,7 +80,13 @@ exec env (Push v : is) stack =
 
 -- Store the value on top of the stack in the environment
 exec env (Store name : is) (v : stack) =
-  exec ((name, [Push v]) : env) is stack
+  exec ((name, v) : env) is stack
+
+-- Load the value from the environment and push it on the stack
+exec env (Load name : is) stack =
+  case lookup name env of
+    Just v  -> exec env is (v : stack)
+    Nothing -> Left ("Variable or function " ++ name ++ " not found")
 
 -- push the argument value on the stack
 -- exec env (PushArg i : is) stack
