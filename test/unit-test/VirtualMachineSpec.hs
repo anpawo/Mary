@@ -11,9 +11,6 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
   ( exec
-  , Value(..)
-  , Operator(..)
-  , Instruction(..)
   , Program
   , Env
   )

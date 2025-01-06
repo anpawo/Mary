@@ -62,6 +62,9 @@ compileExpressionSpec = describe "compileExpression" $ do
     compileExpression (Variable (IntType, "x") (Lit (IntLit 10))) `shouldBe` [Push (VmInt 10), Store "x"]
   it "compiles a Return expression" $ 
     compileExpression (Return (Lit (StringLit "result"))) `shouldBe` [Push (VmString "result"), Ret]
+  it "compiles a IfThenElse expression" $ do
+    let cond = IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
+    compileExpression (cond) `shouldBe` [Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]
 
 compileExpressionsSpec :: SpecWith ()
 compileExpressionsSpec = describe "compileExpressions" $ do
