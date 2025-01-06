@@ -47,11 +47,11 @@ tokenizerUtils = describe "utils" $ do
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
   it "fibonacci" $
-    run tokenize "fibonacci" ==> [Identifier $ SymbolId "fibonacci"]
+    run tokenize "fibonacci" ==> [Identifier $ TextId "fibonacci"]
   it "add1" $
-    run tokenize "add1" ==> [Identifier $ SymbolId "add1"]
+    run tokenize "add1" ==> [Identifier $ TextId "add1"]
   it "str_cmp" $
-    run tokenize "str_cmp" ==> [Identifier $ SymbolId "str_cmp"]
+    run tokenize "str_cmp" ==> [Identifier $ TextId "str_cmp"]
   it "+" $
     run tokenize "+" ==> [Identifier $ OperatorId "+"]
   it "<*>" $

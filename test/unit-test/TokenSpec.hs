@@ -54,7 +54,7 @@ tokenSpec = describe "token" $ do
 identifierSpec :: SpecWith ()
 identifierSpec = describe "identifier" $ do
   describe "show" $ do
-    it "add" $ show (SymbolId "add") ==> "add"
+    it "add" $ show (TextId "add") ==> "add"
     it "<*>" $ show (OperatorId "<*>") ==> "<*>"
 
 literalSpec :: SpecWith ()
