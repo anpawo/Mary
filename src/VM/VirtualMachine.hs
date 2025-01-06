@@ -24,7 +24,7 @@ type Program = [Instruction]
 
 type Args = [Value]
 
-type Env = [(String, Value)]
+type Env = [EnvVar]
 
 exec :: Env -> Program -> Stack -> Either String Value
 
