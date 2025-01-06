@@ -98,10 +98,10 @@ exec env (Call : is) (v : stack) =
           then Left "Division by zero"
           else exec env is (VmInt (b `div` a) : rest)
       _ -> Left "Div expects two VmInt on the stack"
-    -- OpVal Eq   -> case stack of
-    --   (VmInt a : VmInt b : rest) ->
-    --     exec env is (VmBool (b == a) : rest)
-    --   _ -> Left "Eq expects two VmInt on the stack"
+    VmFunc "==" -> case stack of
+      (VmInt a : VmInt b : rest) ->
+        exec env is (VmBool (b == a) : rest)
+      _ -> Left "Eq expects two VmInt on the stack"
     -- OpVal Less -> case stack of
     --   (VmInt a : VmInt b : rest) ->
     --     exec env is (VmBool (b < a) : rest)
