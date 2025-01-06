@@ -90,35 +90,35 @@ exec env (PushEnv name : is) stack =
 -- call pop the function from the stack and execute it
 exec env (Call : is) (v : stack) =
   case v of
-    OpVal Add  -> case stack of
+    Add  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
-    OpVal Sub  -> case stack of
+    Sub  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b - a) : rest)
       _ -> Left "Sub expects two VmInt on the stack"
-    OpVal Mul  -> case stack of
+    Mul  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b * a) : rest)
       _ -> Left "Mul expects two VmInt on the stack"
-    OpVal Div  -> case stack of
+    Div  -> case stack of
       (VmInt a : VmInt b : rest) ->
         if a == 0
           then Left "Division by zero"
           else exec env is (VmInt (b `div` a) : rest)
       _ -> Left "Div expects two VmInt on the stack"
-    OpVal Eq   -> case stack of
+    Eq   -> case stack of
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b == a) : rest)
       _ -> Left "Eq expects two VmInt on the stack"
-    OpVal Less -> case stack of
+    Less -> case stack of
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b < a) : rest)
       _ -> Left "Less expects two VmInt on the stack"
-    FuncVal body -> case stack of
+    body -> case stack of
       (arg : rest) ->
-        case exec env [arg] body [] of
+        case exec env body [] of
           Right result -> exec env is (result : rest)
           Left err     -> Left err
       [] ->
@@ -135,12 +135,12 @@ exec env (JumpIfFalse _ : is) (VmBool True : stack) =
   exec env is stack
 
 -- error case
-exec _ _ (JumpIfFalse _ : _) (_ : _) =
+exec _  (JumpIfFalse _ : _) (_ : _) =
   Left "JumpIfFalse expects a boolean on the stack" 
 
-exec _ _ [] (x : _) = Right x
-exec _ _ [] []      = Left "No value in stack at end of program"
-exec _ _ _ _        = Left "Invalid program"
+exec _ [] (x : _) = Right x
+exec _ [] []      = Left "No value in stack at end of program"
+exec _ _ _        = Left "Invalid program"
 
 -- compile an AST to a program
 compile :: AST -> Program
