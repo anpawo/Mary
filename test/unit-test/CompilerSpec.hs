@@ -12,6 +12,7 @@ import Test.Hspec.Runner (SpecWith)
 
 import Parser.Token (Literal(..), Type(..))
 import Bytecode.Compiler
+import Bytecode.Data
 import Ast.Ast
 
 spec :: Spec
@@ -22,6 +23,7 @@ spec = do
   compileExpressionsSpec
   compileParamSpec
   compileParamsSpec
+  findMainFuncSpec
 
 convertLiteralSpec :: SpecWith ()
 convertLiteralSpec = describe "convertLiteral" $ do
@@ -47,9 +49,9 @@ compileSubExpressionSpec = describe "compileSubExpression" $ do
     it "compiles a VariableCall" $
       compileSubExpression (VariableCall "x") `shouldBe` [Load "x"]
     it "compiles a FunctionCall with no arguments" $
-      compileSubExpression (FunctionCall "testFunction" []) `shouldBe` [PushEnv "testFunction", Call]
+      compileSubExpression (FunctionCall "testFunction" []) `shouldBe` [Push $ VmFunc "testFunction", Call]
     it "compiles a FunctionCall with arguments" $
-      compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), PushEnv "double", Call]
+      compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), Push $ VmFunc "double", Call]
     it "compiles a Literal" $
       compileSubExpression (Lit (StringLit "hello")) `shouldBe` [Push (VmString "hello")]
 
@@ -61,6 +63,9 @@ compileExpressionSpec = describe "compileExpression" $ do
     compileExpression (Variable (IntType, "x") (Lit (IntLit 10))) `shouldBe` [Push (VmInt 10), Store "x"]
   it "compiles a Return expression" $ 
     compileExpression (Return (Lit (StringLit "result"))) `shouldBe` [Push (VmString "result"), Ret]
+  it "compiles a IfThenElse expression" $ do
+    let cond = IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
+    compileExpression (cond) `shouldBe` [Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]
 
 compileExpressionsSpec :: SpecWith ()
 compileExpressionsSpec = describe "compileExpressions" $ do
@@ -77,3 +82,23 @@ compileParamsSpec :: SpecWith ()
 compileParamsSpec = describe "compileParams" $ do
   it "compiles multiple parameters into instructions" $ 
     compileParams [(IntType, "x"), (StrType, "y")] `shouldBe` [Store "y", Store "x"]
+
+-- astToEnvVar :: Ast -> Either String EnvVar
+-- astToEnvVar (Function fnName fnArgs _ fnBody) = Right   (fnName ,(compileParams fnArgs ++ compileExpressions fnBody))
+-- astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right  (opName ,(compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody))
+-- astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
+
+findMainFuncSpec :: SpecWith ()
+findMainFuncSpec = describe "findMainFunc" $ do
+  it "check if there is a function main in env" $ 
+    findMainFunc [("lol", [Push (VmInt 1)]), ("main", [Push (VmInt 1)])] `shouldBe` True
+  it "check if there isn't a function main in env" $ 
+    findMainFunc [("lol", [Push (VmInt 1)]), ("boobakaka", [Push (VmInt 1)])] `shouldBe` False
+
+-- compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
+-- compiler asts =
+--   case mapM astToEnvVar asts of
+--     Left err -> Left err
+--     Right envVars -> if findMainFunc envVars
+--       then Right ([Push $ VmFunc "main", Call], envVars)
+--       else Right ([], envVars)
