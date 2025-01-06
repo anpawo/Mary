@@ -9,7 +9,7 @@ module VirtualMachineSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe)
 
-import VM.VirtualMachine 
+import VM.VirtualMachine
   ( exec
   , Value(..)
   , Operator(..)

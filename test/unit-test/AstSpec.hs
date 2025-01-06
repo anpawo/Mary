@@ -8,7 +8,7 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, expectationFailure, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy)
 import Test.Hspec.Runner (SpecWith)
 import Text.RawString.QQ
 import Text.Megaparsec.Error (ParseErrorBundle(..))
@@ -52,7 +52,6 @@ ifThenElseSpec = describe "if-then-else" $ do
                         [Variable (IntType, "y") (Lit (IntLit 0))]
             ]
         ]
-
     it "parses a valid if-then statement without else" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x == 0 then { y = 1; } }"
       pAst input ==>
@@ -64,7 +63,6 @@ ifThenElseSpec = describe "if-then-else" $ do
                         []
             ]
         ]
-
   describe "invalid cases" $ do
     it "fails on missing 'then' keyword in if-then-else" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x == 0 { y = 1; } else { y = 0; } }"
@@ -87,7 +85,6 @@ whileSpec = describe "while loop" $ do
                     [Variable (IntType, "x") (FunctionCall "+" [VariableCall "x", Lit (IntLit 1)])]
             ]
         ]
-
     it "parses a valid while loop with multiple statements" $ do
       let input = "function main () -> void { int x = 0; int y = 0; while x < 10 { x = x + 1; y = y + 2; } }"
       pAst input ==>
@@ -100,7 +97,6 @@ whileSpec = describe "while loop" $ do
                     ]
             ]
         ]
-
   describe "invalid cases" $ do
     it "fails on missing braces in while loop" $ do
       let input = "function main () -> void { int x = 0; while x < 10 x = x + 1; }"
