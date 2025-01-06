@@ -35,6 +35,7 @@ module Bytecode.Compiler
 import Ast.Ast
 import Parser.Token (Literal(..), Type(..))
 import Bytecode.Data
+import Data.Either (rights)
 
 convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
 convertLitStruct (key, value) = [(key , compileSubExpression value)]
@@ -60,10 +61,10 @@ compileExpression (Variable (_, name) value) = compileSubExpression value ++ [St
 compileExpression (Return value) = compileSubExpression value ++ [Ret]
 compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse nbInstructionsTrue] ++ instructionsTrue ++ instructionsFalse
   where
-      instructionsTrue = compileExpressions true
-      instructionsFalse = compileExpressions false
-      instructionsCond = compileSubExpression cond
-      nbInstructionsTrue = length instructionsTrue
+    instructionsTrue = compileExpressions true
+    instructionsFalse = compileExpressions false
+    instructionsCond = compileSubExpression cond
+    nbInstructionsTrue = length instructionsTrue
 compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 2] ++ [JumpBackward (nbSkipLoop + 1)]
   where
     instructionsCond = compileSubExpression cond
@@ -88,9 +89,7 @@ findMainFunc :: [EnvVar] -> Bool
 findMainFunc envVars = any (\(nameFunc, _) ->  nameFunc == "main") envVars
 
 compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
-compiler asts =
-  case mapM astToEnvVar asts of
-    Left err -> Left err
-    Right envVars -> if findMainFunc envVars
-      then Right ([Push $ VmFunc "main", Call], envVars)
-      else Right ([], envVars)
+compiler asts = let envVars = rights $ map astToEnvVar asts
+  in if findMainFunc envVars
+    then Right ([Push $ VmFunc "main", Call], envVars)
+    else Right ([], envVars)
