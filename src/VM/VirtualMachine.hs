@@ -102,39 +102,39 @@ exec env (PushEnv name : is) stack =
 -- call pop the function from the stack and execute it
 exec env (Call : is) (v : stack) =
   case v of
-    Add  -> case stack of
+    OpVal Add  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
-    Sub  -> case stack of
+    OpVal Sub  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b - a) : rest)
       _ -> Left "Sub expects two VmInt on the stack"
-    Mul  -> case stack of
+    OpVal Mul  -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b * a) : rest)
       _ -> Left "Mul expects two VmInt on the stack"
-    Div  -> case stack of
+    OpVal Div  -> case stack of
       (VmInt a : VmInt b : rest) ->
         if a == 0
           then Left "Division by zero"
           else exec env is (VmInt (b `div` a) : rest)
       _ -> Left "Div expects two VmInt on the stack"
-    Eq   -> case stack of
+    OpVal Eq   -> case stack of
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b == a) : rest)
       _ -> Left "Eq expects two VmInt on the stack"
-    Less -> case stack of
+    OpVal Less -> case stack of
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b < a) : rest)
       _ -> Left "Less expects two VmInt on the stack"
-    body -> case stack of
-      (arg : rest) ->
-        case exec env body [] of
-          Right result -> exec env is (result : rest)
-          Left err     -> Left err
-      [] ->
-         Left "Function expects 1 argument, but stack is empty!"
+    -- body -> case stack of
+    --   (arg : rest) ->
+    --     case exec env body [] of
+    --       Right result -> exec env is (result : rest)
+    --       Left err     -> Left err
+    --   [] ->
+    --      Left "Function expects 1 argument, but stack is empty!"
 
     _ -> Left "Call expects an operator or a function on top of the stack"
 
