@@ -107,12 +107,13 @@ data MyToken
   -- Keyword
     FunctionKw --        \| function     -> declare a function
   | OperatorKw --        \| operator     -> declare an operator
-  | ConstraintKw --      \| constraint   -> declare a constraint
+  | TypeKw --      \| constraint   -> declare a constraint
   | PrecedenceKw --      \| precedence   -> declare an operator precedence
   | ImportKw --          \| import       -> for imports (bonus)
   | IfKw --              \| if           -> if
   | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
+  | WhileKw --           \| while        -> while
   | ReturnKw --          \| return       -> return
   -- Symbol
   | CurlyOpen --         \|  {   -> struct definition and creation start
@@ -137,12 +138,13 @@ data MyToken
 instance Show MyToken where
   show FunctionKw = "function"
   show OperatorKw = "operator"
-  show ConstraintKw = "constraint"
+  show TypeKw = "type"
   show PrecedenceKw = "precedence"
   show ImportKw = "import"
   show IfKw = "if"
   show ThenKw = "then"
   show ElseKw = "else"
+  show WhileKw = "while"
   show ReturnKw = "return"
 
   show CurlyOpen = "{"

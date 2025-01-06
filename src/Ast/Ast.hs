@@ -31,7 +31,7 @@ module Ast.Ast
 import Debug.Trace (trace, traceId)
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, token, many, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -39,7 +39,7 @@ import Data.List (find)
 import Data.Foldable (traverse_)
 
 import Control.Applicative ((<|>), Alternative(..))
-import Control.Monad (void)
+import Control.Monad (void, unless)
 
 import Parser.Token
 import Ast.Error
@@ -103,7 +103,6 @@ builtin =
     , Operator {opName = "!=", opPrecedence = 4, opRetType = BoolType, opArgLeft = (AnyType, "l"), opArgRight = (AnyType, "r"), opBody = []}
     , Operator {opName = "||", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
     , Operator {opName = "&&", opPrecedence = 4, opRetType = BoolType, opArgLeft = (BoolType, "l"), opArgRight = (BoolType, "r"), opBody = []}
-
     -- tests
     , Structure {structName = "age", structMember = [("y", IntType), ("m", IntType), ("d", IntType)]}
     , Structure {structName = "person", structMember = [("name", StrType), ("age", StructType "age")]}
@@ -259,21 +258,19 @@ expression ctx locVar retT = choice
   , exprWhile ctx locVar retT
   ]
 
-parseBraces :: Parser a -> Parser a
-parseBraces p = do
-  _ <- token (\t -> if t == CurlyOpen then Just () else Nothing) mempty
-  result <- p
-  _ <- token (\t -> if t == CurlyClose then Just () else Nothing) mempty
-  return result
-
 getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
-getBlock ctx locVar retT =
-  parseBraces (Text.Megaparsec.many (expression ctx locVar retT))
+getBlock ctx locVar retT = do
+  void (tok CurlyOpen)
+  expressions <- some (expression ctx locVar retT)
+  void (tok CurlyClose)
+  return expressions
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
   void (tok IfKw)
   cond <- subexpression ctx locVar (tok ThenKw)
+  condType <- getType ctx locVar cond
+  unless (condType == BoolType) $ fail "Condition in 'if' must evaluate to a boolean type"
   thenExpr <- getBlock ctx locVar retT
   maybeElseExpr <- optional $ do
     void (tok ElseKw)
@@ -283,7 +280,13 @@ exprIf ctx locVar retT = do
     Nothing -> IfThenElse cond thenExpr []
 
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprWhile _ _ _ = failN $ errTodo "while expression"
+exprWhile ctx locVar retT = do
+  void (tok WhileKw)
+  cond <- subexpression ctx locVar  (lookAhead $ tok CurlyOpen)
+  condType <- getType ctx locVar cond
+  unless (condType == BoolType) $ fail "Condition in 'while' must evaluate to a boolean type"
+  body <- getBlock ctx locVar retT
+  return $ While cond body
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet

@@ -8,11 +8,11 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, expectationFailure, shouldSatisfy)
 import Test.Hspec.Runner (SpecWith)
 import Text.RawString.QQ
 import Text.Megaparsec.Error (ParseErrorBundle(..))
-
+import Data.Either (isLeft)
 import Data.Void (Void)
 
 import Parser.Tokenizer
@@ -35,6 +35,81 @@ spec :: Spec
 spec = do
   functionSpec
   operatorSpec
+  ifThenElseSpec
+  whileSpec
+
+ifThenElseSpec :: SpecWith ()
+ifThenElseSpec = describe "if-then-else" $ do
+  describe "valid cases" $ do
+    it "parses a valid if-then-else statement" $ do
+      let input = "function main() -> void { int x = 0; int y = 0; if x < 10 then { y = y + 1; } else { y = 0; } }"
+      pAst input ==>
+        [ Function "main" [] VoidType
+            [ Variable (IntType, "x") (Lit (IntLit 0))
+            , Variable (IntType, "y") (Lit (IntLit 0))
+            , IfThenElse (FunctionCall "<" [VariableCall "x", Lit (IntLit 10)])
+                        [Variable (IntType, "y") (FunctionCall "+" [VariableCall "y", Lit (IntLit 1)])]
+                        [Variable (IntType, "y") (Lit (IntLit 0))]
+            ]
+        ]
+
+    it "parses a valid if-then statement without else" $ do
+      let input = "function main() -> void { int x = 0; int y = 0; if x == 0 then { y = 1; } }"
+      pAst input ==>
+        [ Function "main" [] VoidType
+            [ Variable (IntType, "x") (Lit (IntLit 0))
+            , Variable (IntType, "y") (Lit (IntLit 0))
+            , IfThenElse (FunctionCall "==" [VariableCall "x", Lit (IntLit 0)])
+                        [Variable (IntType, "y") (Lit (IntLit 1))]
+                        []
+            ]
+        ]
+
+  describe "invalid cases" $ do
+    it "fails on missing 'then' keyword in if-then-else" $ do
+      let input = "function main() -> void { int x = 0; int y = 0; if x == 0 { y = 1; } else { y = 0; } }"
+      pAst input `shouldSatisfy` isLeft
+
+    it "fails on missing braces in if-then-else" $ do
+      let input = "function main()  -> void { int x = 0; int y = 0; if x == 0 then y = 1; else y = 0; }"
+      pAst input `shouldSatisfy` isLeft
+
+
+whileSpec :: SpecWith ()
+whileSpec = describe "while loop" $ do
+  describe "valid cases" $ do
+    it "parses a valid while loop with one statement" $ do
+      let input = "function main () -> void { int x = 0; while x < 10 { x = x + 1; } }"
+      pAst input ==>
+        [ Function "main" [] VoidType
+            [ Variable (IntType, "x") (Lit (IntLit 0))
+            ,  While (FunctionCall "<" [VariableCall "x", Lit (IntLit 10)])
+                    [Variable (IntType, "x") (FunctionCall "+" [VariableCall "x", Lit (IntLit 1)])]
+            ]
+        ]
+
+    it "parses a valid while loop with multiple statements" $ do
+      let input = "function main () -> void { int x = 0; int y = 0; while x < 10 { x = x + 1; y = y + 2; } }"
+      pAst input ==>
+        [ Function "main" [] VoidType
+            [ Variable (IntType, "x") (Lit (IntLit 0))
+            , Variable (IntType, "y") (Lit (IntLit 0))
+            , While (FunctionCall "<" [VariableCall "x", Lit (IntLit 10)])
+                    [ Variable (IntType, "x") (FunctionCall "+" [VariableCall "x", Lit (IntLit 1)])
+                    , Variable (IntType, "y") (FunctionCall "+" [VariableCall "y", Lit (IntLit 2)])
+                    ]
+            ]
+        ]
+
+  describe "invalid cases" $ do
+    it "fails on missing braces in while loop" $ do
+      let input = "function main () -> void { int x = 0; while x < 10 x = x + 1; }"
+      pAst input `shouldSatisfy` isLeft
+
+    it "fails on empty body for while loop" $ do
+      let input = "function main () -> void { int x = 0; while x < 10 {} }"
+      pAst input `shouldSatisfy` isLeft
+
 
 op0 :: String
 op0 = [r|

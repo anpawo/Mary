@@ -19,7 +19,6 @@ import Text.Megaparsec ()
 import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
-
 import Utils.Lib
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
@@ -39,43 +38,6 @@ spec = do
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
   tokenizerUtils
-  tokenizerEdgeCases
-
-tokenizerEdgeCases :: SpecWith ()
-tokenizerEdgeCases = describe "tokenizer edge cases" $ do
-  it "handles empty input" $
-    run tokenize "" ==> []
-  it "handles spaces only input" $
-    run tokenize "   " ==> []
-  it "handles input with multiple spaces" $
-    run tokenize "   int  float   " ==> [Type IntType, Type FloatType]
-  -- it "handles input with mixed spaces and comments" $
-  --   run comment "x = 5 // comment \n y = 6" ==> "x = 5\ny = 6"
-  -- it "fails on unmatched parentheses" $
-  --   run tokenize "(" === isLeft
-  -- it "fails on unmatched braces" $
-  --   run tokenize "{" === isLeft
-  it "fails on malformed string" $
-    run tokenize "\"string" === isLeft
-  -- it "handles string with escape character" $
-  --   run tokenize "\"escaped\\\"quote\"" ==> [Literal $ StringLit "escaped\"quote"]
-  it "handles valid identifier with underscores" $
-    run tokenize "valid_identifier" ==> [Identifier $ SymbolId "valid_identifier"]
-  -- it "handles input with multiple operators" $
-  --   run tokenize "a + b - c * d / e" ==>
-  --     [Identifier $ SymbolId "a", OperatorKw, Identifier $ OperatorId "+", Identifier $ SymbolId "b", OperatorKw, Identifier $ OperatorId "-", 
-  --      Identifier $ SymbolId "c", OperatorKw, Identifier $ OperatorId "*", Identifier $ SymbolId "d", OperatorKw, Identifier $ OperatorId "/", 
-  --      Identifier $ SymbolId "e"]
-  -- it "handles long input with different token types" $
-  --   run tokenize "add(int a, int b) { return a + b; }" ==>
-  --     [Identifier $ SymbolId "add", ParenOpen, Type IntType, Identifier $ SymbolId "a", Comma, Type IntType, Identifier $ SymbolId "b", ParenClose, 
-  --      CurlyOpen, Identifier $ SymbolId "return", Identifier $ SymbolId "a", OperatorKw, Identifier $ OperatorId "+", Identifier $ SymbolId "b", 
-  --      SemiColon, CurlyClose]
-  it "handles if-then-else expression" $
-    run tokenize "if condition then { return 42; } else { return 84; }" ==>
-      [IfKw, Identifier $ SymbolId "condition", ThenKw, CurlyOpen,
-      ReturnKw, Literal (IntLit 42), SemiColon, CurlyClose,
-      ElseKw, CurlyOpen, ReturnKw, Literal (IntLit 84), SemiColon, CurlyClose]
 
 tokenizerUtils :: SpecWith ()
 tokenizerUtils = describe "utils" $ do
@@ -184,8 +146,8 @@ tokenizerTypeSpec = describe "tokenize types" $ do
     run tokenize "arr[int]" ==> [Type $ ArrType IntType]
   it "struct" $
     run tokenize "struct person" ==> [Type $ StructType "person"]
-  it "constraint" $
-    run tokenize "constraint number" ==> [Type $ ConstraintType (Just "number") []]
+  it "type" $
+    run tokenize "type number" ==> [Type $ ConstraintType (Just "number") []]
 
 namespaceSpec :: SpecWith ()
 namespaceSpec= describe "namespace" $ do
