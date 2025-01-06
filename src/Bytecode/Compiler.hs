@@ -28,7 +28,8 @@ module Bytecode.Compiler
     compileExpression,
     compileExpressions,
     compileParam,
-    compileParams
+    compileParams,
+    findMainFunc
   ) where
 
 import Ast.Ast

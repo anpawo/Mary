@@ -23,6 +23,7 @@ spec = do
   compileExpressionsSpec
   compileParamSpec
   compileParamsSpec
+  findMainFuncSpec
 
 convertLiteralSpec :: SpecWith ()
 convertLiteralSpec = describe "convertLiteral" $ do
@@ -81,3 +82,23 @@ compileParamsSpec :: SpecWith ()
 compileParamsSpec = describe "compileParams" $ do
   it "compiles multiple parameters into instructions" $ 
     compileParams [(IntType, "x"), (StrType, "y")] `shouldBe` [Store "y", Store "x"]
+
+-- astToEnvVar :: Ast -> Either String EnvVar
+-- astToEnvVar (Function fnName fnArgs _ fnBody) = Right   (fnName ,(compileParams fnArgs ++ compileExpressions fnBody))
+-- astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right  (opName ,(compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody))
+-- astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
+
+findMainFuncSpec :: SpecWith ()
+findMainFuncSpec = describe "findMainFunc" $ do
+  it "check if there is a function main in env" $ 
+    findMainFunc [("lol", [Push (VmInt 1)]), ("main", [Push (VmInt 1)])] `shouldBe` True
+  it "check if there isn't a function main in env" $ 
+    findMainFunc [("lol", [Push (VmInt 1)]), ("boobakaka", [Push (VmInt 1)])] `shouldBe` False
+
+-- compiler :: [Ast] -> Either String ([Instruction], [EnvVar])
+-- compiler asts =
+--   case mapM astToEnvVar asts of
+--     Left err -> Left err
+--     Right envVars -> if findMainFunc envVars
+--       then Right ([Push $ VmFunc "main", Call], envVars)
+--       else Right ([], envVars)
