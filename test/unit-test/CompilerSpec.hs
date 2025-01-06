@@ -23,6 +23,7 @@ spec = do
   compileExpressionsSpec
   compileParamSpec
   compileParamsSpec
+  astToEnvVarSpec
   findMainFuncSpec
 
 convertLiteralSpec :: SpecWith ()
@@ -64,7 +65,9 @@ compileExpressionSpec = describe "compileExpression" $ do
   it "compiles a Return expression" $ 
     compileExpression (Return (Lit (StringLit "result"))) `shouldBe` [Push (VmString "result"), Ret]
   it "compiles a IfThenElse expression" $ do
-    let cond = IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
+    let cond = IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]},
+    thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}],
+    elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
     compileExpression (cond) `shouldBe` [Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]
 
 compileExpressionsSpec :: SpecWith ()
@@ -83,10 +86,16 @@ compileParamsSpec = describe "compileParams" $ do
   it "compiles multiple parameters into instructions" $ 
     compileParams [(IntType, "x"), (StrType, "y")] `shouldBe` [Store "y", Store "x"]
 
--- astToEnvVar :: Ast -> Either String EnvVar
--- astToEnvVar (Function fnName fnArgs _ fnBody) = Right   (fnName ,(compileParams fnArgs ++ compileExpressions fnBody))
--- astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right  (opName ,(compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody))
--- astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
+astToEnvVarSpec :: SpecWith ()
+astToEnvVarSpec = describe "astToEnvVar" $ do
+  it "astToEnvVar a Function" $ do
+    let ast = Function {fnName = "mul_add", fnArgs = [(IntType,"a"),(IntType,"b"),(IntType,"c")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "*", fnCallArgs = [VariableCall {varCallName = "b"},VariableCall {varCallName = "c"}]}]}}]}
+    astToEnvVar ast `shouldBe` Right ("mul_add",[Store "c",Store "b",Store "a",Load "a",Load "b",Load "c",Push (VmFunc "*"),Call,Push (VmFunc "+"),Call,Ret])
+  it "astToEnvVar a Operator" $ do
+    let ast = Operator {opName = "**", opPrecedence = 8, opRetType = IntType, opArgLeft = (IntType, "n"), opArgRight = (IntType, "power"), opBody = [Return {retValue = FunctionCall {fnCallName = "**", fnCallArgs = [VariableCall {varCallName = "n"}, FunctionCall {fnCallName = "-", fnCallArgs = [VariableCall {varCallName = "power"}, Lit (IntLit 1)]}]}}]}
+    astToEnvVar ast `shouldBe` Right ("**",[Store "power",Store "n",Load "n",Load "power",Push (VmInt 1),Push (VmFunc "-"),Call,Push (VmFunc "**"),Call,Ret])
+  it "astToEnvVar doesn't work" $
+    astToEnvVar (Constraint "test" [IntType, FloatType]) `shouldBe` (Left $ "Unsupported AST to bytecode: " ++ show (Constraint "test" [IntType, FloatType]))
 
 findMainFuncSpec :: SpecWith ()
 findMainFuncSpec = describe "findMainFunc" $ do
