@@ -9,7 +9,6 @@ module VM.VirtualMachine
   (
     Stack,
     Program,
-    Args,
     Env,
     exec,
     -- , compile
@@ -21,8 +20,6 @@ import Bytecode.Data
 type Stack = [Value]
 
 type Program = [Instruction]
-
-type Args = [Value]
 
 type Env = [EnvVar]
 
