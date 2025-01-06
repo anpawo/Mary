@@ -6,10 +6,7 @@
 -}
 
 module VM.VirtualMachine
-  ( Value (..),
-    Operator (..),
-    AST (..),
-    Instruction (..),
+  (
     Stack,
     Program,
     Args,
@@ -20,22 +17,6 @@ module VM.VirtualMachine
 where
 
 import Bytecode.Data
-
-data Operator
-  = Add
-  | Sub
-  | Mul
-  | Div
-  | Eq
-  | Less
-  deriving (Show, Eq)
-
-data AST
-  = ASTValue Value
-  | ASTBinOp Operator AST AST
-  | ASTIf AST AST AST
-  | ASTCall String [AST]
-  deriving (Show, Eq)
 
 type Stack = [Value]
 
