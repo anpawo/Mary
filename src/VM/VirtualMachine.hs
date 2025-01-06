@@ -21,18 +21,7 @@ module VM.VirtualMachine
   -- , compile
   ) where
 
-data Value
-  = VmInt Int
-  | VmFloat Double
-  | VmBool Bool
-  | VmChar Char
-  | VmString String
-  | VmArray [Instruction]
-  | VmStruct [(String, [Instruction])]
-  | VmNull
-  | OpVal Operator
-  | FunVal [Instruction]
-  deriving (Show, Eq)
+import Bytecode.Data
 
 data Operator
   = Add
@@ -48,17 +37,6 @@ data AST
   | ASTBinOp Operator AST AST
   | ASTIf AST AST AST
   | ASTCall String [AST]
-  deriving (Show, Eq)
-
-data Instruction
-  = Push Value
-  | Call
-  | Ret
-  | JumpIfFalse Int
-  | Store String
-  | Load String
-  | PushEnv String
-  | JumpBackward Int
   deriving (Show, Eq)
 
 type Stack = [Value]
@@ -94,40 +72,40 @@ exec env (Load name : is) stack =
 --   | otherwise       = Left "Invalid argument index"
 
 -- push the variable value on the stack
-exec env (PushEnv name : is) stack =
-  case lookup name env of
-    Just v  -> exec env is (v : stack)
-    Nothing -> Left ("Variable or function " ++ name ++ " not found")
+-- exec env (PushEnv name : is) stack =
+--   case lookup name env of
+--     Just v  -> exec env is (v : stack)
+--     Nothing -> Left ("Variable or function " ++ name ++ " not found")
 
--- call pop the function from the stack and execute it
+-- -- call pop the function from the stack and execute it
 exec env (Call : is) (v : stack) =
   case v of
-    OpVal Add -> case stack of
+    VmFunc "+" -> case stack of
       (VmInt a : VmInt b : rest) ->
          exec env is (VmInt (b + a) : rest)
       _ -> Left "Add expects two VmInt on the stack"
-    OpVal Sub  -> case stack of
-      (VmInt a : VmInt b : rest) ->
-         exec env is (VmInt (b - a) : rest)
-      _ -> Left "Sub expects two VmInt on the stack"
-    OpVal Mul  -> case stack of
-      (VmInt a : VmInt b : rest) ->
-         exec env is (VmInt (b * a) : rest)
-      _ -> Left "Mul expects two VmInt on the stack"
-    OpVal Div  -> case stack of
-      (VmInt a : VmInt b : rest) ->
-        if a == 0
-          then Left "Division by zero"
-          else exec env is (VmInt (b `div` a) : rest)
-      _ -> Left "Div expects two VmInt on the stack"
-    OpVal Eq   -> case stack of
-      (VmInt a : VmInt b : rest) ->
-        exec env is (VmBool (b == a) : rest)
-      _ -> Left "Eq expects two VmInt on the stack"
-    OpVal Less -> case stack of
-      (VmInt a : VmInt b : rest) ->
-        exec env is (VmBool (b < a) : rest)
-      _ -> Left "Less expects two VmInt on the stack"
+    -- OpVal Sub  -> case stack of
+    --   (VmInt a : VmInt b : rest) ->
+    --      exec env is (VmInt (b - a) : rest)
+    --   _ -> Left "Sub expects two VmInt on the stack"
+    -- OpVal Mul  -> case stack of
+    --   (VmInt a : VmInt b : rest) ->
+    --      exec env is (VmInt (b * a) : rest)
+    --   _ -> Left "Mul expects two VmInt on the stack"
+    -- OpVal Div  -> case stack of
+    --   (VmInt a : VmInt b : rest) ->
+    --     if a == 0
+    --       then Left "Division by zero"
+    --       else exec env is (VmInt (b `div` a) : rest)
+    --   _ -> Left "Div expects two VmInt on the stack"
+    -- OpVal Eq   -> case stack of
+    --   (VmInt a : VmInt b : rest) ->
+    --     exec env is (VmBool (b == a) : rest)
+    --   _ -> Left "Eq expects two VmInt on the stack"
+    -- OpVal Less -> case stack of
+    --   (VmInt a : VmInt b : rest) ->
+    --     exec env is (VmBool (b < a) : rest)
+    --   _ -> Left "Less expects two VmInt on the stack"
     -- body -> case stack of
     --   (arg : rest) ->
     --     case exec env body [] of
