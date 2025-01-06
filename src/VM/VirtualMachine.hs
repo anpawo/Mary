@@ -102,10 +102,10 @@ exec env (Call : is) (v : stack) =
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b == a) : rest)
       _ -> Left "Eq expects two VmInt on the stack"
-    -- OpVal Less -> case stack of
-    --   (VmInt a : VmInt b : rest) ->
-    --     exec env is (VmBool (b < a) : rest)
-    --   _ -> Left "Less expects two VmInt on the stack"
+    VmFunc "<" -> case stack of
+      (VmInt a : VmInt b : rest) ->
+        exec env is (VmBool (b < a) : rest)
+      _ -> Left "Less expects two VmInt on the stack"
     -- body -> case stack of
     --   (arg : rest) ->
     --     case exec env body [] of
