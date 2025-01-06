@@ -60,25 +60,22 @@ exec env (Push v : is) stack =
 --     Nothing -> Left ("Variable or function " ++ name ++ " not found")
 
 -- -- call pop the function from the stack and execute it
-exec env (Call : is) (v : stack) =
-  case v of
-    VmFunc "+" -> operatorExec "+" (+) env is stack
-    VmFunc "-" -> operatorExec "-" (-) env is stack
-    VmFunc "*" -> operatorExec "*" (*) env is stack
-    VmFunc "/" -> operatorExec "/" div env is stack
-    VmFunc "<" -> boolOperatorExec "<" (<) env is stack
-    VmFunc "==" -> case stack of
+exec env (Call : is) (v : stack) = case v of
+    (VmFunc "+") -> operatorExec "+" (+) env is stack
+    (VmFunc "-") -> operatorExec "-" (-) env is stack
+    (VmFunc "*") -> operatorExec "*" (*) env is stack
+    (VmFunc "/") -> operatorExec "/" div env is stack
+    (VmFunc "<") -> boolOperatorExec "<" (<) env is stack
+    (VmFunc "==") -> case stack of
       (VmInt a : VmInt b : rest) ->
         exec env is (VmBool (b == a) : rest)
       _ -> Left "Eq expects two VmInt on the stack"
-    -- body -> case stack of
-    --   (arg : rest) ->
-    --     case exec env body [] of
-    --       Right result -> exec env is (result : rest)
-    --       Left err     -> Left err
-    --   [] ->
-    --      Left "Function expects 1 argument, but stack is empty!"
-    _ -> Left "Call expects an operator or a function on top of the stack"
+    VmFunc name -> case lookup name env of
+      Just body  -> case exec env body stack of
+        Right res -> exec env is (res : stack)
+        Left _ -> Left "Error executing instructions"
+      Nothing -> Left ("Variable or function " ++ name ++ " not found")
+    _ -> Left " Call expects an operator or a function on top of the stack 2345678"
 
 -- jump if the value on top of the stack is false
 exec env (JumpIfFalse n : is) (VmBool False : stack) =
