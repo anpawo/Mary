@@ -31,9 +31,10 @@ module Ast.Ast
 import Debug.Trace (trace, traceId)
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
+import Data.Maybe (fromJust)
 import Data.Functor (($>))
 import Data.List (find)
 import Data.Foldable (traverse_)
@@ -43,7 +44,8 @@ import Control.Monad (void, unless)
 
 import Parser.Token
 import Ast.Error
-import Utils.Lib (choicetry, run)
+import Ast.TokenParser
+import Utils.Lib
 
 type Parser = Parsec Void [MyToken]
 
@@ -117,104 +119,64 @@ ast ctx = (eof $> drop (length builtin) ctx) <|> ((function ctx <|> operator ctx
 tok :: MyToken -> Parser MyToken
 tok = single
 
-sym :: Parser String
-sym = satisfy isSym >>= (\case
-  Identifier (SymbolId name) -> pure name
-  _ -> failN $ errImpossibleCase "sym case t"
-  )
+
+-- type check
+isStruct :: Ast -> Bool
+isStruct (Structure {}) = True
+isStruct _              = False
+
+isOp :: Ast -> Bool
+isOp (Operator {}) = True
+isOp _             = False
+
+isFn :: Ast -> Bool
+isFn (Function {}) = True
+isFn _             = False
+
+isConstr :: Ast -> Bool
+isConstr (Constraint {}) = True
+isConstr _               = False
+
+-- context name
+getName :: Ast -> String
+getName (Structure {..}) = structName
+getName (Constraint {..}) = constrName
+getName (Operator {..}) = opName
+getName (Function {..}) = fnName
+
+getCtxName :: [Ast -> Bool] -> Ctx -> [String]
+getCtxName _ [] = []
+getCtxName fs (x:xs)
+  | foldr (\f b -> b || f x) False fs = getName x : getCtxName fs xs
+  | otherwise                         = getCtxName fs xs
+
+getAllName :: Ctx -> [String]
+getAllName = getCtxName [isStruct, isOp, isFn, isConstr]
+--
+
+
+types :: Ctx -> Bool -> Bool -> Parser Type
+types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then notFollowedBy (tok Pipe) $> t <|> constrTy t else pure t
   where
-    isSym (Identifier (SymbolId _)) = True
-    isSym _ = False
+    oneTy = choicetry existingTypes <|> failN (errExpectedType canBeVoid)
+    constrTy t = ConstraintType Nothing . (t:) <$> some (tok Pipe *> oneTy)
 
-ope :: Parser String
-ope = satisfy isOpe >>= (\case
-  Identifier (OperatorId name) -> pure name
-  _ -> failN $ errImpossibleCase "ope case t"
-  )
-  where
-    isOpe (Identifier (OperatorId _)) = True
-    isOpe _ = False
+    existingTypes = [charType, boolType, nullType, intType, floatType, strType, arrayType,
+      structType     >>= loadStructure . stTyName,
+      constraintType >>= loadConstraint . fromJust . crTyName,
+      textIdentifier >>= loadStructure,
+      textIdentifier >>= loadConstraint
+      ] ++ if canBeVoid then [voidType] else []
 
-types :: Ctx -> Bool -> Bool -> Parser Type -- todo: enhance it to not need the keyword struct and constraint
-types ctx canBeVoid canBeConstraint = do
-  t <- parseType
-  followedByPipe <- (True <$ lookAhead (tok Pipe)) <|> pure False
-  if followedByPipe && canBeConstraint
-    then ConstraintType Nothing . (t:) <$> some (tok Pipe *> parseType)
-    else return t
+    loadConstraint name
+      | name `elem` getCtxName [isConstr] ctx = pure $ ConstraintType (Just name) (loadConstraintType name)
+      | otherwise                             = fail $ errConstraintNotBound name
 
-  where
-    parseType = choicetry existingTypes <|> failN (errExpectedType canBeVoid)
+    loadConstraintType name = constrType $ fromJust $ find (\a -> isConstr a && getName a == name) ctx
 
-    existingTypes =
-      [ tok (Type CharType) $> CharType
-      , tok (Type BoolType) $> BoolType
-      , tok (Type NullType) $> NullType
-      , tok (Type IntType) $> IntType
-      , tok (Type FloatType) $> FloatType
-      , tok (Type StrType) $> StrType
-      , satisfy isArrayType >>= (\case
-        (Type (ArrType t')) -> pure (ArrType t')
-        _ -> failN $ errImpossibleCase "types arr")
-      , satisfy isStructType >>= (\case
-        (Type (StructType n))
-          | structExists n -> pure (StructType n)
-          | otherwise -> fail $ errStructureNotBound n
-        _ -> failN $ errImpossibleCase "types struct")
-      , satisfy isConstraintType >>= (\case
-        (Type (ConstraintType (Just n) _)) -> ConstraintType (Just n) <$> getCsTypes n ctx
-        _ -> failN $ errImpossibleCase "types constraint")
-      , satisfy structInCtx >>= (\case
-        (Identifier (SymbolId name)) -> pure (StructType name)
-        _ -> failN $ errImpossibleCase "types struct")
-      , satisfy constraintInCtx >>= (\case
-        (Identifier (SymbolId name)) -> ConstraintType (Just name) <$> getCsTypes name ctx
-        _ -> failN $ errImpossibleCase "types struct")
-      ] ++ if canBeVoid then [tok (Type VoidType) $> VoidType] else []
-
-    getCsTypes name [] = fail $ errConstraintNotBound name
-    getCsTypes name (x: xs) = if sameName x then pure (constrType x) else getCsTypes name xs
-      where
-        sameName (Constraint {..}) = name == constrName
-        sameName _ = False
-
-    structExists name = any sameName ctx
-      where
-        sameName (Structure {..}) = name == structName
-        sameName _ = False
-
-    structInCtx (Identifier (SymbolId name)) = any sameName ctx
-      where
-        sameName (Structure {..}) = name == structName
-        sameName _ = False
-    structInCtx _ = False
-
-    constraintInCtx (Identifier (SymbolId name)) = any sameName ctx
-      where
-        sameName (Constraint {..}) = name == constrName
-        sameName _ = False
-    constraintInCtx _ = False
-
-    isArrayType (Type (ArrType _)) = True
-    isArrayType _ = False
-
-    isStructType (Type (StructType _)) = True
-    isStructType _ = False
-
-    isConstraintType (Type (ConstraintType {})) = True
-    isConstraintType _ = False
-
-failN :: (MonadParsec e s m, MonadFail m) => String -> m a
-failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
-
-failP :: (MonadParsec e s m, MonadFail m) => String -> m a
-failP err = (setOffset . subtract 1 =<< getOffset) *> fail err
-
--- failX :: (MonadParsec e s m, MonadFail m) => Int -> String -> m a
--- failX idx err = (setOffset . (+ idx) =<< getOffset) *> fail err
-
-failI :: (MonadParsec e s m, MonadFail m) => Int -> String -> m a
-failI idx err = setOffset idx *> fail err
+    loadStructure name
+      | name `elem` getCtxName [isStruct] ctx = pure $ StructType name
+      | otherwise                             = fail $ errStructureNotBound name
 
 -- The function exists to be able to return the value expected
 notTaken :: [String] -> String -> Parser String
@@ -223,13 +185,13 @@ notTaken names name
   | otherwise = pure name
 
 getFnName :: [String] -> Parser String
-getFnName names = tok FunctionKw *> sym >>= notTaken names
+getFnName names = tok FunctionKw *> textIdentifier >>= notTaken names
 
 getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
 getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
   where
     getAllArgs names' = do
-      arg <- (,) <$> types ctx False True <*> (sym >>= notTaken names')
+      arg <- (,) <$> types ctx False True <*> (textIdentifier >>= notTaken names')
       endFound <- tok ParenClose <|> tok Comma
       case endFound of
         ParenClose -> pure [arg]
@@ -329,10 +291,10 @@ variableCreation ctx locVar = do
 symbolIdentifier :: Parser String
 symbolIdentifier = extractName <$> satisfy isSymbolId
   where
-    isSymbolId (Identifier (SymbolId {})) = True
+    isSymbolId (Identifier (TextId {})) = True
     isSymbolId _                          = False
 
-    extractName (Identifier (SymbolId name)) = name
+    extractName (Identifier (TextId name)) = name
     extractName _                            = fail $ errImpossibleCase "extractName"
 
 variableAssignation :: Ctx -> LocalVariable -> Parser Expression
@@ -382,9 +344,9 @@ getGroup ctx locVar = do
           (Literal x) -> validLit ctx locVar x
           _ -> failN $ errImpossibleCase "getGroup case glit")
     gsym = satisfy (\case
-      Parser.Token.Identifier (SymbolId _) -> True
+      Parser.Token.Identifier (TextId _) -> True
       _ -> False) >>= (\case
-          (Parser.Token.Identifier (SymbolId x)) -> pure x
+          (Parser.Token.Identifier (TextId x)) -> pure x
           _ -> failN $ errImpossibleCase "getGroup case gsym")
     gop = satisfy (\case
       Parser.Token.Identifier (OperatorId _) -> True
@@ -621,7 +583,7 @@ getFnBody ctx locVar retT = do
             x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r
 
 getOpeName :: [String] -> Parser String
-getOpeName names = tok OperatorKw *> ope >>= notTaken names
+getOpeName names = tok OperatorKw *> operatorIdentifier >>= notTaken names
 
 getOpePrec :: Parser Int
 getOpePrec = (tok PrecedenceKw *> precValue) <|> pure 0
