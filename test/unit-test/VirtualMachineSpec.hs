@@ -9,7 +9,7 @@ module VirtualMachineSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe)
 
-import VM.VirtualMachine 
+import VM.VirtualMachine
   ( exec
   , Value(..)
   , Operator(..)
@@ -77,7 +77,7 @@ factorialProgram =
 errorProgram :: Program
 errorProgram =
   [ Push (IntVal 42)
-  , Push (OpVal Add)  -- stack underflow 
+  , Push (OpVal Add)  -- stack underflow
   , Call
   , Ret
   ]
