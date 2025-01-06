@@ -31,7 +31,6 @@ data Instruction
   | Ret
   | Store String
   | Load String
-  | PushEnv String
   | JumpIfFalse Int
   | JumpBackward Int
   deriving (Show, Eq)
@@ -45,6 +44,7 @@ data Value
   | VmArray [Instruction]
   | VmStruct [(String, [Instruction])]
   | VmNull
+  | VmFunc String
   deriving (Show, Eq)
 
 data EnvVar = EnvVar { envVarName :: String, envVarBody :: [Instruction]} deriving (Show, Eq)
