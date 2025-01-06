@@ -5,7 +5,7 @@
 -- TokenParser
 -}
 
-module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType) where 
+module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral) where 
 
 import Parser.Token
 
@@ -39,12 +39,21 @@ isStructType :: MyToken -> Bool
 isStructType (Type (StructType {})) = True
 isStructType _                   = False
 
+-- literal check
+isIntLiteral :: MyToken -> Bool
+isIntLiteral (Literal (IntLit {})) = True
+isIntLiteral _                     = False
+
+-- literal parser
+intLiteral :: Parser Int
+intLiteral = intLiteralValue . literal <$> satisfy isIntLiteral
+
 -- identifier parser
 operatorIdentifier :: Parser String
-operatorIdentifier = opeName . identifier <$> satisfy isOpIdentifier
+operatorIdentifier = opIdName . identifier <$> satisfy isOpIdentifier
 
 textIdentifier :: Parser String
-textIdentifier = textName . identifier <$> satisfy isSymIdentifier
+textIdentifier = textIdName . identifier <$> satisfy isSymIdentifier
 
 -- type parser
 constraintType :: Parser Type

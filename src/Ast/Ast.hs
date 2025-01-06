@@ -4,34 +4,15 @@
 -- File description:
 -- TokenToAst
 -}
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# HLINT ignore "Use isNothing" #-}
-{-# HLINT ignore "Use list comprehension" #-}
 
-module Ast.Ast
-  (
-    -- main
-    Ast(..),
-    tokenToAst,
-    Expression(..),
-    SubExpression(..),
-
-    -- test
-    isType,
-    runParser,
-    function,
-    trace,
-    traceId
-  ) where
-
-import Debug.Trace (trace, traceId)
+module Ast.Ast (Ast(..), tokenToAst, Expression(..), SubExpression(..)) where
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), getOffset, optional, someTill, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, MonadParsec(..), getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
 import Data.Maybe (fromJust)
@@ -150,8 +131,8 @@ getCtxName fs (x:xs)
   | foldr (\f b -> b || f x) False fs = getName x : getCtxName fs xs
   | otherwise                         = getCtxName fs xs
 
-getAllName :: Ctx -> [String]
-getAllName = getCtxName [isStruct, isOp, isFn, isConstr]
+getNames :: Ctx -> [String]
+getNames = getCtxName [isStruct, isOp, isFn, isConstr]
 --
 
 
@@ -166,7 +147,7 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
       constraintType >>= loadConstraint . fromJust . crTyName,
       textIdentifier >>= loadStructure,
       textIdentifier >>= loadConstraint
-      ] ++ if canBeVoid then [voidType] else []
+      ] ++ ([voidType | canBeVoid])
 
     loadConstraint name
       | name `elem` getCtxName [isConstr] ctx = pure $ ConstraintType (Just name) (loadConstraintType name)
@@ -177,36 +158,6 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
     loadStructure name
       | name `elem` getCtxName [isStruct] ctx = pure $ StructType name
       | otherwise                             = fail $ errStructureNotBound name
-
--- The function exists to be able to return the value expected
-notTaken :: [String] -> String -> Parser String
-notTaken names name
-  | name `elem` names = fail $ errNameTaken name
-  | otherwise = pure name
-
-getFnName :: [String] -> Parser String
-getFnName names = tok FunctionKw *> textIdentifier >>= notTaken names
-
-getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
-getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs names)
-  where
-    getAllArgs names' = do
-      arg <- (,) <$> types ctx False True <*> (textIdentifier >>= notTaken names')
-      endFound <- tok ParenClose <|> tok Comma
-      case endFound of
-        ParenClose -> pure [arg]
-        Comma -> (arg :) <$> getAllArgs (snd arg : names')
-        _ -> failN $ errImpossibleCase "getFnArgs case endFound"
-
-getFnRetType :: Ctx -> Parser Type
-getFnRetType ctx = (tok Arrow <|> failN errMissingRetT) *> types ctx True True
-
-getNames :: Ctx -> [String]
-getNames [] = []
-getNames (Structure {structName = name}:rst) = name : getNames rst
-getNames (Function {fnName = name}:rst) = name : getNames rst
-getNames (Operator {opName = name}:rst) = name : getNames rst
-getNames (Constraint {constrName = name}:rst) = name : getNames rst
 
 type LocalVariable = [(Type, String)]
 type RetType = Type
@@ -562,82 +513,47 @@ subexpression ctx locVar endSubexpr = do
   toSubexpr mount
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
-getFnBody ctx locVar retT = do
-  void (tok CurlyOpen) <|> failN errExpectedStartBody
-  expr <- getExprAndUpdateCtx ctx locVar retT
-  void (tok CurlyClose) <|> failN errExpectedEndBody
-  return expr
+getFnBody ctx locVar retT = (tok CurlyOpen <|> failN errStartBody) *> getExprAndUpdateCtx ctx locVar retT
   where
-    getExprAndUpdateCtx :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
-    getExprAndUpdateCtx c l r = do
-      next <- optional $ lookAhead $ tok CurlyClose
-      case next of
-        Just CurlyClose -> pure []
-        _ -> do
-          expr <- expression c l r
-          case expr of
-            x@(Variable metadata _) -> (:) x <$> getExprAndUpdateCtx c (metadata : l) r
-            x@(Return {}) -> pure [x] -- todo: should check if it's the last expression
-            x@(SubExpression {}) -> (:) x <$> getExprAndUpdateCtx c l r
-            x@(IfThenElse {}) -> (:) x <$> getExprAndUpdateCtx c l r -- todo: should check if both ways return so we end it there
-            x@(While {}) -> (:) x <$> getExprAndUpdateCtx c l r
-
-getOpeName :: [String] -> Parser String
-getOpeName names = tok OperatorKw *> operatorIdentifier >>= notTaken names
-
-getOpePrec :: Parser Int
-getOpePrec = (tok PrecedenceKw *> precValue) <|> pure 0
-  where
-    precValue = satisfy (\case
-      Literal (IntLit _) -> True
-      _ -> False) >>= (\case
-          (Literal (IntLit x)) -> pure x
-          _ -> failN $ errImpossibleCase "getOpePrec precValue")
+    getExprAndUpdateCtx c l r = (tok CurlyClose $> []) <|> (expression c l r >>= \case
+            x@(Variable metadata _) -> (x:) <$> getExprAndUpdateCtx c (metadata : l) r
+            x -> (x:) <$> getExprAndUpdateCtx c l r)
 
 validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
 validArgNumber _ _ args@[_, _] = pure args
-validArgNumber start name args = do
-  offset <- subtract (start - 1) <$> getOffset
-  failI start $ errOpArgs offset (length args) name
+validArgNumber start name args = getOffset >>= (\offset -> failI start $ errOpArgs offset (length args) name) . subtract (start - 1)
 
-getConstrTypes :: Ctx -> Parser [Type]
-getConstrTypes ctx = do
-  t <- types ctx False False
-  endFound <- (tok Pipe $> False) <|> (tok SemiColon $> True)
-  if endFound
-    then pure [t]
-    else (:) t <$> getConstrTypes ctx
+notTaken :: [String] -> String -> Parser String
+notTaken names name
+  | name `elem` names = fail $ errNameTaken name
+  | otherwise = pure name
+
+getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
+getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> args names)
+  where
+    args n = (,) <$> types ctx False True <*> (textIdentifier >>= notTaken n) >>= \a -> (tok ParenClose $> [a]) <|> (tok Comma *> ((a :) <$> args (snd a : n)))
 
 function :: Ctx -> Parser Ast
 function ctx = do
-  name <- getFnName (getNames ctx)
+  name <- tok FunctionKw *> textIdentifier >>= notTaken (getNames ctx)
   args <- getFnArgs ctx (name : getNames ctx)
-  retT <- getFnRetType ctx
-  let shellFn = Function name args retT []
-  body <- getFnBody (shellFn : ctx) args retT
+  retT <- (tok Arrow <|> failN errMissingRetT) *> types ctx True True
+  body <- getFnBody (Function name args retT [] : ctx) args retT
   return $ Function name args retT body
 
 operator :: Ctx -> Parser Ast
 operator ctx = do
-  name <- getOpeName (getNames ctx)
-  prcd <- getOpePrec
-  offset <- (+1) <$> getOffset
-  args <- getFnArgs ctx (name : getNames ctx) >>= validArgNumber offset name
-  retT <- getFnRetType ctx
-  let shellOp = Operator name prcd retT (head args) (args !! 1) []
-  body <- getFnBody (shellOp : ctx) args retT
+  name <- tok OperatorKw *> operatorIdentifier >>= notTaken (getNames ctx)
+  prcd <- (tok PrecedenceKw *> intLiteral) <|> pure 0
+  args <- getOffset >>= (\offset -> getFnArgs ctx (name : getNames ctx) >>= validArgNumber offset name) . (+1)
+  retT <- (tok Arrow <|> failN errMissingRetT) *> types ctx True True
+  body <- getFnBody (Operator name prcd retT (head args) (args !! 1) [] : ctx) args retT
   return $ Operator name prcd retT (head args) (args !! 1) body
 
 constraint :: Ctx -> Parser Ast
-constraint ctx = do
-  name <- satisfy (\case
-    (Type ConstraintType {}) -> True
-    _ -> False) >>= (\case
-      (Type (ConstraintType (Just n) _)) -> notTaken (getNames ctx) n
-      _ -> failN $ errImpossibleCase "constraint")
-  void (tok Assign)
-  ts <- getConstrTypes ctx
-  return $ Constraint name ts
+constraint ctx = Constraint <$> (constraintType >>= notTaken (getNames ctx) . fromJust . crTyName) <*> (tok Assign *> constrTypes)
+  where
+    constrTypes = types ctx False False >>= \t -> (tok SemiColon $> [t]) <|> (tok Pipe *> ((t:) <$> constrTypes))
 
 structure :: Ctx -> Parser Ast
 structure _ = failN $ errTodo "structure"

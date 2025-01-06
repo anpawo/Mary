@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray, errStructureFieldNotBound, errMissingRetT) where
+module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray, errStructureFieldNotBound, errMissingRetT) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -27,11 +27,11 @@ errExpectedType canBeVoid
     | canBeVoid = printf "expected a %s (including void)." $ purple "type"
     | otherwise = printf "expected a %s (excluding void)." $ purple "type"
 
-errExpectedStartBody :: String
-errExpectedStartBody = printf "expected a '%s' representing the start of the body of the function." $ purple "{"
+errStartBody :: String
+errStartBody = printf "expected a '%s' representing the start of the body of the function." $ purple "{"
 
-errExpectedEndBody :: String
-errExpectedEndBody = printf "expected a '%s' representing the end of the body of the function." $ purple "}"
+errEndBody :: String
+errEndBody = printf "expected a '%s' representing the end of the body of the function." $ purple "}"
 
 errTodo :: String -> String
 errTodo = printf "todo: %s." . purple
