@@ -21,7 +21,7 @@ import Data.List (find)
 import Data.Foldable (traverse_)
 
 import Control.Applicative ((<|>), Alternative(..))
-import Control.Monad (void, unless)
+import Control.Monad (void, unless, when)
 
 import Parser.Token
 import Ast.Error
@@ -387,7 +387,7 @@ validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM
     tosub v = case run (subexpression ctx locVar eof) v of
       Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
       Right suc -> pure suc
-validLit ctx locVar st@(StructLit name subexpr) =  case find (stNameIs name) ctx of
+validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
   Nothing -> failN $ errStructureNotBound name
   Just (Structure _ kv) -> do
     kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr
@@ -407,7 +407,7 @@ getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && get
   Just (Operator {..}) -> pure opRetType
   Nothing -> fail $ errFunctionNotBound name
   Just _ -> fail $ errImpossibleCase "gettype"
-getType ctx locVar (Lit struct@(StructLit name lit)) = case find (stNameIs name) ctx of
+getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
   Nothing -> failN $ errStructureNotBound name
   Just (Structure _ kv) -> do
     kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit
@@ -447,26 +447,21 @@ getLitType (ArrLitPre t _) = t
 getLitType NullLit = NullType
 
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
-getGrType ctx _ (GOp index name _) expected = maybe
-  (failI index $ errImpossibleCase "getGrType GOp")
-  ((\t -> if t == expected then pure () else failI index $ errInvalidOpType name (show expected) (show t)) . opRetType)
-  (find (\a -> isOp a && getName a == name) ctx)
-getGrType ctx _ (GFn index name _) expected = maybe
-  (failI index $ errImpossibleCase "getGrType GFn")
-  ((\t -> if t == expected then pure () else failI index $ errInvalidFnType name (show expected) (show t)) . fnRetType)
-  (find (fnNameIs name) ctx)
-getGrType _ locVar (GVar index name) expected = maybe
-  (failI index $ errVariableNotBound name)
-  ((\t -> if t == expected then pure () else failI index $ errInvalidVarType name (show expected) (show t)) . fst)
-  (find ((== name) . snd) locVar)
-getGrType _ _ (GLit index lit) expected = if isType expected lit then pure () else failI index $ errInvalidLitType (show expected) (show $ getLitType lit)
+getGrType ctx _ (GOp index name _) expected = let t = opRetType $ fromJust $ find (\a -> isOp a && getName a == name) ctx in
+  when (t /= expected) (failI index $ errInvalidOpType name (show expected) (show t))
+getGrType ctx _ (GFn index name _) expected = let t = opRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
+  when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+getGrType _ locVar (GVar index name) expected = case find ((== name) . snd) locVar of
+  Nothing -> failI index $ errVariableNotBound name
+  Just a -> let t = fst a in when (t /= expected) (failI index $ errInvalidVarType name (show expected) (show t))
+getGrType _ _ (GLit index lit) expected = unless (isType expected lit) $ failI index $ errInvalidLitType (show expected) (show $ getLitType lit)
 getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
 
 validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
 validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
 validateMount _ locVar (GVar index name) = maybe (failI index $ errVariableNotBound name) (const $ pure ()) (find ((== name) . snd) locVar)
 validateMount _ _ (GLit {}) = pure ()
-validateMount ctx locVar (GFn index name args) = case find (fnNameIs name) ctx of
+validateMount ctx locVar (GFn index name args) = case find (\a -> isFn a && getName a == name) ctx of
   Nothing -> failI index $ errFunctionNotBound name
   Just (Function _ args' _ _)
     | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
@@ -480,14 +475,6 @@ validateMount ctx locVar (GOp index name [l, r]) = case find (\a -> isOp a && ge
   Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
   Just _ -> failI index $ errImpossibleCase "validateMount GOp"
 validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
-
-fnNameIs :: String -> Ast -> Bool
-fnNameIs name' (Function {..}) = name' == fnName
-fnNameIs _ _ = False
-
-stNameIs :: String -> Ast -> Bool
-stNameIs name' (Structure {..}) = name' == structName
-stNameIs _ _ = False
 
 toSubexpr :: Group -> Parser SubExpression
 toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
