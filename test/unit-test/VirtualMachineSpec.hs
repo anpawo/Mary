@@ -12,7 +12,7 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 import VM.VirtualMachine
   ( exec
   , Program
-  , Env
+  -- , Env
   )
 
 import Bytecode.Data

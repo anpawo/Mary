@@ -21,6 +21,7 @@ import Ast.Ast (tokenToAst)
 import Ast.Error (prettyPrintError, bggray)
 
 import Bytecode.Compiler (compiler)
+import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
 type Error = String
 
@@ -38,7 +39,7 @@ glados (d, content) = case run (comment &> tokenize) content of
         | otherwise -> case compiler ast of
             Left errBytecode -> print errBytecode
             Right (_instr, env)
-                | d == Just ByteCode -> print env
+                | d == Just ByteCode -> displayBytecode _instr env
                 | otherwise -> print $ exec env _instr []
 
 helper :: String

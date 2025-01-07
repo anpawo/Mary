@@ -282,7 +282,7 @@ exprIf ctx locVar retT = do
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile ctx locVar retT = do
   void (tok WhileKw)
-  cond <- subexpression ctx locVar  (lookAhead $ tok CurlyOpen)
+  cond <- subexpression ctx locVar  (tok ThenKw)
   condType <- getType ctx locVar cond
   unless (condType == BoolType) $ fail $ errCondNotBool "while"
   body <- getBlock ctx locVar retT

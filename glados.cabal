@@ -29,6 +29,7 @@ library
       Ast.Error
       Bytecode.Compiler
       Bytecode.Data
+      Bytecode.Display
       Parser.Token
       Parser.Tokenizer
       Utils.Lib
