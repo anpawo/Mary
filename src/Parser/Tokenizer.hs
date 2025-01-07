@@ -177,6 +177,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             ,  bracketCloseSym
             ,  arrowSym
             ,  semicolonSym
+            ,  colonSym
             ,  commaSym
             ,  pipeSym
             ,  assignSym
@@ -191,7 +192,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , elseKw
             , whileKw
             , returnKw
-            
+
             -- Literal
             , Literal <$> parseLit
 
@@ -232,6 +233,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
         semicolonSym = char ';' $> SemiColon
+        colonSym = char ':' $> Colon
         commaSym = char ',' $> Comma
         arrowSym = try $ symbol "->" $> Arrow
         pipeSym = try $ symbol "|" $> Pipe
