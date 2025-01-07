@@ -124,6 +124,7 @@ data MyToken
   | BracketClose --      \|  ]   -> array end
   | Arrow --             \|  ->  -> return type of functions
   | SemiColon --         \|  ;   -> end of statement
+  | Colon --             \|  :   -> definition in structure
   | Comma --             \|  ,   -> separate arguments for functions
   | Pipe --              \|  |   -> separate types for constraints
   | Assign --            \|  |   -> create a varible or assign a new value to an alreayd existing one
@@ -155,6 +156,7 @@ instance Show MyToken where
   show BracketClose = "]"
   show Arrow = "->"
   show SemiColon = ";"
+  show Colon = ":"
   show Comma = ","
   show Pipe = "|"
   show Assign = "="
