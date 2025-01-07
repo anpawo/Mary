@@ -31,7 +31,7 @@ module Ast.Ast
 import Debug.Trace (trace, traceId)
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice, sepBy, sepBy1)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -679,40 +679,39 @@ constraint ctx = do
 
 structure :: Ctx -> Parser Ast
 structure ctx = do
-  void (tok StructKw)
-  structName <- identifier
-  void (tok OpenCurly)
+  structName <- symbolIdentifier
+  void (tok CurlyOpen)
   structMembers <- parseMembers ctx
-  void (tok CloseCurly)
+  void (tok CurlyClose)
   return $ Structure structName structMembers
 
 parseMembers :: Ctx -> Parser [(String, Type)]
-parseMembers ctx = sepBy parseMember (tok Semicolon)
+parseMembers ctx = sepBy (parseMember ctx) (tok SemiColon)
 
 parseMember :: Ctx -> Parser (String, Type)
 parseMember ctx = do
-  memberName <- identifier
+  memberName <- symbolIdentifier
   void (tok Colon)
   memberType <- parseType ctx
   return (memberName, memberType)
 
 parseType :: Ctx -> Parser Type
 parseType ctx = choice
-  [ AnyType <$ tok AnyKw
-  , NullType <$ tok EmptyKw
-  , StructType <$> (tok StructKw *> identifier)
-  , ConstraintType Nothing <$> sepBy1 parseSimpleType (tok Pipe)
+  [ AnyType <$ tok (Type AnyType)
+  , NullType <$ tok (Type NullType)
+  , StructType <$> symbolIdentifier
+  , ConstraintType Nothing <$> sepBy1 (parseSimpleType ctx) (tok Pipe)
   ]
 
-parseSimpleType :: Parser Type
-parseSimpleType = choice
-  [ CharType <$ tok CharKw
-  , NullType <$ tok NullKw
-  , VoidType <$ tok VoidKw
-  , BoolType <$ tok BoolKw
-  , IntType <$ tok IntKw
-  , FloatType <$ tok FloatKw
-  , StrType <$ tok StrKw
-  , ArrType <$> (tok ArrKw *> tok OpenSquare *> parseType ctx <* tok CloseSquare)
-  , StructAnyType <$ (tok StructKw *> tok AnyKw)
+parseSimpleType :: Ctx -> Parser Type
+parseSimpleType ctx = choice
+  [ CharType <$ tok (Type CharType)
+  , NullType <$ tok (Type NullType)
+  , VoidType <$ tok (Type VoidType)
+  , BoolType <$ tok (Type BoolType)
+  , IntType <$ tok (Type IntType)
+  , FloatType <$ tok (Type FloatType)
+  , StrType <$ tok (Type StrType)
+  , ArrType <$> (tok BracketOpen *> parseType ctx <* tok BracketClose)
+  , StructAnyType <$ tok (Type StructAnyType)
   ]
