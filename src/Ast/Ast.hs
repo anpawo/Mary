@@ -15,7 +15,7 @@ import Text.Printf (printf)
 import Text.Megaparsec (Parsec, single, eof, satisfy, MonadParsec(..), getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isNothing)
 import Data.Functor (($>))
 import Data.List (find)
 import Data.Foldable (traverse_)
@@ -459,21 +459,19 @@ getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
 
 validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
 validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
-validateMount _ locVar (GVar index name) = maybe (failI index $ errVariableNotBound name) (const $ pure ()) (find ((== name) . snd) locVar)
+validateMount _ locVar (GVar index name) = when (isNothing $ find ((== name) . snd) locVar) (failI index $ errVariableNotBound name)
 validateMount _ _ (GLit {}) = pure ()
 validateMount ctx locVar (GFn index name args) = case find (\a -> isFn a && getName a == name) ctx of
-  Nothing -> failI index $ errFunctionNotBound name
   Just (Function _ args' _ _)
     | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
     | otherwise -> mapM_ (\((t, _), g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
     where
       expected = length args'
       found = length args
-  Just _ -> failI index $ errImpossibleCase "validateMount GFn"
+  _ -> failI index $ errFunctionNotBound name
 validateMount ctx locVar (GOp index name [l, r]) = case find (\a -> isOp a && getName a == name) ctx of
-  Nothing -> failI index $ errOperatorNotBound name
   Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
-  Just _ -> failI index $ errImpossibleCase "validateMount GOp"
+  _ -> failI index $ errOperatorNotBound name
 validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
 
 toSubexpr :: Group -> Parser SubExpression
