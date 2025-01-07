@@ -678,22 +678,17 @@ constraint ctx = do
   return $ Constraint name ts
 
 structure :: Ctx -> Parser Ast
-structure ctx = do
-  structName <- symbolIdentifier
-  void (tok CurlyOpen)
-  structMembers <- parseMembers ctx
-  void (tok CurlyClose)
-  return $ Structure structName structMembers
+structure ctx =
+  Structure <$> symbolIdentifier
+            <*> (tok CurlyOpen *> parseMembers ctx <* tok CurlyClose)
 
 parseMembers :: Ctx -> Parser [(String, Type)]
 parseMembers ctx = sepBy (parseMember ctx) (tok SemiColon)
 
 parseMember :: Ctx -> Parser (String, Type)
-parseMember ctx = do
-  memberName <- symbolIdentifier
-  void (tok Colon)
-  memberType <- parseType ctx
-  return (memberName, memberType)
+parseMember ctx =
+  (,) <$> symbolIdentifier
+      <*> (tok Colon *> parseType ctx)
 
 parseType :: Ctx -> Parser Type
 parseType ctx = choice
