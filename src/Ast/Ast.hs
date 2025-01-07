@@ -37,9 +37,10 @@ import Data.Void (Void)
 import Data.Functor (($>))
 import Data.List (find)
 import Data.Foldable (traverse_)
+import Data.Maybe(fromMaybe)
 
 import Control.Applicative ((<|>), Alternative(..))
-import Control.Monad (void, unless)
+import Control.Monad (void, unless, (>=>))
 
 import Parser.Token
 import Ast.Error
@@ -259,34 +260,31 @@ expression ctx locVar retT = choice
   ]
 
 getBlock :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
-getBlock ctx locVar retT = do
-  void (tok CurlyOpen)
-  expressions <- some (expression ctx locVar retT)
-  void (tok CurlyClose)
-  return expressions
+getBlock ctx locVar retT =
+  tok CurlyOpen *> some (expression ctx locVar retT) <* tok CurlyClose
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprIf ctx locVar retT = do
-  void (tok IfKw)
-  cond <- subexpression ctx locVar (tok ThenKw)
-  condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail $ errCondNotBool "if"
-  thenExpr <- getBlock ctx locVar retT
-  maybeElseExpr <- optional $ do
-    void (tok ElseKw)
-    getBlock ctx locVar retT
-  return $ case maybeElseExpr of
-    Just elseExpr -> IfThenElse cond thenExpr elseExpr
-    Nothing -> IfThenElse cond thenExpr []
+exprIf ctx locVar retT =
+  IfThenElse
+    <$> (tok IfKw *> subexpression ctx locVar (tok ThenKw) <* validateBool "if")
+    <*> getBlock ctx locVar retT
+    <*> (fromMaybe [] <$> optional (tok ElseKw *> getBlock ctx locVar retT))
+  where
+    validateBool context = subexpression ctx locVar (tok ThenKw) >>= (getType ctx locVar
+      >=>
+        (\ condType
+            -> unless (condType == BoolType) $ fail $ errCondNotBool context))
 
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
-exprWhile ctx locVar retT = do
-  void (tok WhileKw)
-  cond <- subexpression ctx locVar  (tok ThenKw)
-  condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail $ errCondNotBool "while"
-  body <- getBlock ctx locVar retT
-  return $ While cond body
+exprWhile ctx locVar retT =
+  While
+    <$> (tok WhileKw *> subexpression ctx locVar (tok ThenKw) <* validateBool "while")
+    <*> getBlock ctx locVar retT
+  where
+    validateBool context = subexpression ctx locVar (tok ThenKw) >>= (getType ctx locVar
+      >=>
+        (\ condType
+            -> unless (condType == BoolType) $ fail $ errCondNotBool context))
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
