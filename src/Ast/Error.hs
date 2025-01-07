@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray, errStructureFieldNotBound, errMissingRetT) where
+module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -47,6 +47,9 @@ errEmptyParen = printf ":2expected an expression inside the %s." $ purple "paren
 
 errEmptyExpr :: String
 errEmptyExpr = "expected an expression."
+
+errExpectedField :: String
+errExpectedField = "expected a structure field."
 
 errMissingRetT :: String
 errMissingRetT = printf "expected return type: '%s'." (purple "-> <type>")
@@ -161,5 +164,5 @@ purple s = "\ESC[95m" ++ s ++ reset
 reset :: String
 reset = "\ESC[0m"
 
-bggray :: String -> String
-bggray s = "\ESC[48;2;10;10;10m" ++ s ++ reset
+bgBlack :: String -> String
+bgBlack s = "\ESC[48;2;10;10;10m" ++ s ++ reset

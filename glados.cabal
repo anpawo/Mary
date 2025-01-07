@@ -51,6 +51,7 @@ library
 executable glados-exe
   main-is: Main.hs
   other-modules:
+      ArgParser
       Paths_glados
   autogen-modules:
       Paths_glados

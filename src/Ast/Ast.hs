@@ -402,7 +402,7 @@ getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
 getType _ locVar (VariableCall name) = case find ((== name) . snd) locVar of
   Just (t, _) -> pure t
   Nothing -> fail $ errVariableNotBound name
-getType ctx _ (FunctionCall name _) = case find (\x -> fnNameIs name x || opNameIs name x) ctx of
+getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
   Just (Function {..}) -> pure fnRetType
   Just (Operator {..}) -> pure opRetType
   Nothing -> fail $ errFunctionNotBound name
@@ -450,7 +450,7 @@ getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = maybe
   (failI index $ errImpossibleCase "getGrType GOp")
   ((\t -> if t == expected then pure () else failI index $ errInvalidOpType name (show expected) (show t)) . opRetType)
-  (find (opNameIs name) ctx)
+  (find (\a -> isOp a && getName a == name) ctx)
 getGrType ctx _ (GFn index name _) expected = maybe
   (failI index $ errImpossibleCase "getGrType GFn")
   ((\t -> if t == expected then pure () else failI index $ errInvalidFnType name (show expected) (show t)) . fnRetType)
@@ -475,15 +475,11 @@ validateMount ctx locVar (GFn index name args) = case find (fnNameIs name) ctx o
       expected = length args'
       found = length args
   Just _ -> failI index $ errImpossibleCase "validateMount GFn"
-validateMount ctx locVar (GOp index name [l, r]) = case find (opNameIs name) ctx of
+validateMount ctx locVar (GOp index name [l, r]) = case find (\a -> isOp a && getName a == name) ctx of
   Nothing -> failI index $ errOperatorNotBound name
   Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
   Just _ -> failI index $ errImpossibleCase "validateMount GOp"
 validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
-
-opNameIs :: String -> Ast -> Bool
-opNameIs name' (Operator {..}) = name' == opName
-opNameIs _ _ = False
 
 fnNameIs :: String -> Ast -> Bool
 fnNameIs name' (Function {..}) = name' == fnName
@@ -500,24 +496,22 @@ toSubexpr (GFn _ name body) = FunctionCall name <$> traverse toSubexpr body
 toSubexpr (GVar _ name) = pure $ VariableCall name
 toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 
-fixSpecialFunction :: [Group] -> [Group]
-fixSpecialFunction [] = []
-fixSpecialFunction (dot@(GOp _ "." []): GVar idx name:xs) = dot : GLit idx (StringLit name) : fixSpecialFunction xs
-fixSpecialFunction (x:xs) = x : fixSpecialFunction xs
+fixOp :: [Group] -> Parser [Group]
+fixOp [] = pure []
+fixOp (dot@(GOp _ "." []): GVar idx name:xs) = (dot:) . (GLit idx (StringLit name):) <$> fixOp xs
+fixOp (GOp index "." []: _:_) = failI index errExpectedField
+fixOp (x:xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
-subexpression ctx locVar endSubexpr = do
-  group <- fixSpecialFunction <$> someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr
-  mount <- mountGroup ctx group
-  validateMount ctx locVar mount
-  toSubexpr mount
+subexpression ctx locVar endSubexpr =
+  someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>= mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr m
 
 getFnBody :: Ctx -> LocalVariable -> RetType -> Parser [Expression]
 getFnBody ctx locVar retT = (tok CurlyOpen <|> failN errStartBody) *> getExprAndUpdateCtx ctx locVar retT
   where
     getExprAndUpdateCtx c l r = (tok CurlyClose $> []) <|> (expression c l r >>= \case
-            x@(Variable metadata _) -> (x:) <$> getExprAndUpdateCtx c (metadata : l) r
-            x -> (x:) <$> getExprAndUpdateCtx c l r)
+      x@(Variable metadata _) -> (x:) <$> getExprAndUpdateCtx c (metadata : l) r
+      x -> (x:) <$> getExprAndUpdateCtx c l r)
 
 validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
 validArgNumber _ _ args@[_, _] = pure args
