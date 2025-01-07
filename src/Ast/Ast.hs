@@ -678,4 +678,41 @@ constraint ctx = do
   return $ Constraint name ts
 
 structure :: Ctx -> Parser Ast
-structure _ = failN $ errTodo "structure"
+structure ctx = do
+  void (tok StructKw)
+  structName <- identifier
+  void (tok OpenCurly)
+  structMembers <- parseMembers ctx
+  void (tok CloseCurly)
+  return $ Structure structName structMembers
+
+parseMembers :: Ctx -> Parser [(String, Type)]
+parseMembers ctx = sepBy parseMember (tok Semicolon)
+
+parseMember :: Ctx -> Parser (String, Type)
+parseMember ctx = do
+  memberName <- identifier
+  void (tok Colon)
+  memberType <- parseType ctx
+  return (memberName, memberType)
+
+parseType :: Ctx -> Parser Type
+parseType ctx = choice
+  [ AnyType <$ tok AnyKw
+  , NullType <$ tok EmptyKw
+  , StructType <$> (tok StructKw *> identifier)
+  , ConstraintType Nothing <$> sepBy1 parseSimpleType (tok Pipe)
+  ]
+
+parseSimpleType :: Parser Type
+parseSimpleType = choice
+  [ CharType <$ tok CharKw
+  , NullType <$ tok NullKw
+  , VoidType <$ tok VoidKw
+  , BoolType <$ tok BoolKw
+  , IntType <$ tok IntKw
+  , FloatType <$ tok FloatKw
+  , StrType <$ tok StrKw
+  , ArrType <$> (tok ArrKw *> tok OpenSquare *> parseType ctx <* tok CloseSquare)
+  , StructAnyType <$ (tok StructKw *> tok AnyKw)
+  ]
