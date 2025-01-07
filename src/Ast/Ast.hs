@@ -265,17 +265,13 @@ variableAssignation ctx locVar = do
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar (tok SemiColon)
 
-type Idx = Int
-type Prec = Int
-type Name = String
-
 data Group
-  = GGr Idx [Group]
-  | GLit Idx Literal
-  | GFn Idx String [Group]
-  | GVar Idx String
-  | GOp Idx String [Group]
-  deriving (Show) -- should contain an index to make better errors
+  = GGr { getIndex :: Int, ggValue :: [Group]}
+  | GLit { getIndex :: Int, glValue :: Literal}
+  | GFn { getIndex :: Int, gfnName :: String, gfnArgs :: [Group]}
+  | GVar { getIndex :: Int, gvarName :: String}
+  | GOp { getIndex :: Int, gopName :: String, gopArgs :: [Group]}
+  deriving (Show)
 
 getGroup :: Ctx -> LocalVariable -> Parser Group
 getGroup ctx locVar = do
@@ -319,47 +315,37 @@ mountGroup _ [x@(GFn {})] = pure x
 mountGroup _ [x@(GVar {})] = pure x
 mountGroup _ [x@(GOp _ _ [_, _])] = pure x
 mountGroup ctx (GGr _ group: rst) = mountGroup ctx group >>= mountGroup ctx . (:rst)
-mountGroup ctx group = do
-  opId <- calcPrec Nothing (-1) 1 group
-  case opId of
-    Nothing -> do
-      let errorIndex = getGrIdx (head group)
-      nbInvalidToken <- subtract errorIndex <$> getOffset
-      failI errorIndex $ errTooManyExpr nbInvalidToken
+mountGroup ctx group = calcPrec ctx Nothing (-1) 1 group >>= \case
+    Nothing -> let errIdx = getGrIdx (head group) in (getOffset >>= (failI errIdx . errTooManyExpr) . subtract errIdx)
     (Just (x, name))
-      | x <= 0 -> failI (getOpIdx (head group)) $ errMissingOperand "left" name
-      | x >= length group - 1 -> failI (getOpIdx (last group)) $ errMissingOperand "right" name
-      | otherwise -> do
-        let tmpL = group !! (x - 1)
-        let tmpR = group !! (x + 1)
-        l <- case tmpL of
-          (GGr {}) -> mountGroup ctx [tmpL]
-          _ -> pure tmpL
-        r <- case tmpR of
-          (GGr {}) -> mountGroup ctx [tmpR]
-          _ -> pure tmpR
-        case l of
-          (GOp _ _ []) -> failI (getOpIdx (group !! x)) $ errMissingOperand "left" name
-          _ -> case r of
-            (GOp _ _ []) -> failI (getOpIdx (group !! x)) $ errMissingOperand "right" name
-            _ -> mountGroup ctx (take (x - 1) group ++ (GOp (getOpIdx (group !! x)) (getOpName (group !! x)) [l, r] : drop (x + 2) group))
-  where
-    calcPrec :: Maybe (Prec, Name) -> Idx -> Idx -> [Group] -> Parser (Maybe (Idx, Name))
-    calcPrec Nothing _ _ [] = pure Nothing
-    calcPrec (Just (_, name)) idx _ [] = pure $ Just (idx, name)
-    calcPrec prec idx idx2 (GOp tokIdx name []: rst) = case find (isSame name) ctx of
-      Nothing -> failI tokIdx $ errOpNotDefined name
-      Just (Operator {..}) -> case prec of
-        Nothing -> calcPrec (Just (opPrecedence, opName)) (idx + idx2) 1 rst
-        Just (oldPrec, _)
-          | oldPrec < opPrecedence -> calcPrec (Just (opPrecedence, opName)) (idx + idx2) 1 rst
-          | otherwise -> calcPrec prec idx (idx2 + 1) rst
-      Just _ -> fail $ errImpossibleCase "moungGroup calcPrec case find"
-    calcPrec prec idx idx2 (_: rst) = calcPrec prec idx (idx2 + 1) rst
+      | x <= 0 -> failI (getGrIdx (head group)) $ errMissingOperand "left" name
+      | x >= length group - 1 -> failI (getGrIdx (last group)) $ errMissingOperand "right" name
+      | otherwise ->
+          let tmpL = group !! (x - 1)
+              tmpR = group !! (x + 1) in do
+          l <- case tmpL of
+            (GGr {}) -> mountGroup ctx [tmpL]
+            _ -> pure tmpL
+          r <- case tmpR of
+            (GGr {}) -> mountGroup ctx [tmpR]
+            _ -> pure tmpR
+          case l of
+            (GOp _ _ []) -> failI (getGrIdx (group !! x)) $ errMissingOperand "left" name
+            _ -> case r of
+              (GOp _ _ []) -> failI (getGrIdx (group !! x)) $ errMissingOperand "right" name
+              _ -> mountGroup ctx (take (x - 1) group ++ (GOp (getGrIdx (group !! x)) (getOpName (group !! x)) [l, r] : drop (x + 2) group))
 
-    isSame name (Operator {..}) = name == opName
-    isSame _ _ = False
-
+calcPrec :: Ctx -> Maybe (Int, String) -> Int -> Int -> [Group] -> Parser (Maybe (Int, String))
+calcPrec _ Nothing _ _ [] = pure Nothing
+calcPrec _ (Just (_, name)) idx _ [] = pure $ Just (idx, name)
+calcPrec ctx prec idx idx2 (GOp tokIdx name []: rst) = case find (\a -> isOp a && getName a == name) ctx of
+  Just (Operator {..}) -> case prec of
+    Nothing -> calcPrec ctx (Just (opPrecedence, opName)) (idx + idx2) 1 rst
+    Just (oldPrec, _)
+      | oldPrec < opPrecedence -> calcPrec ctx (Just (opPrecedence, opName)) (idx + idx2) 1 rst
+      | otherwise -> calcPrec ctx prec idx (idx2 + 1) rst
+  _ -> failI tokIdx $ errOpNotDefined name
+calcPrec ctx prec idx idx2 (_: rst) = calcPrec ctx prec idx (idx2 + 1) rst
 
 getOpName :: Group -> String
 getOpName (GOp _ name _) = name
@@ -372,29 +358,23 @@ getGrIdx (GLit index _) = index
 getGrIdx (GFn index _ _) = index
 getGrIdx (GVar index _) = index
 
-getOpIdx :: Group -> Int
-getOpIdx (GOp index _ _) = index
-getOpIdx _ = error "error: the token isn't an operator"
-
 validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
 validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
   where
     tosub (n, v) = case (,) n <$> run (subexpression ctx locVar eof) v of
-      Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
+      Left err -> fail $ ";" ++ prettyPrintError v err
       Right suc -> pure suc
 validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
   where
     tosub v = case run (subexpression ctx locVar eof) v of
-      Left err -> fail $ ";" ++ prettyPrintError v err -- todo fix error
+      Left err -> fail $ ";" ++ prettyPrintError v err
       Right suc -> pure suc
 validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
-  Nothing -> failN $ errStructureNotBound name
-  Just (Structure _ kv) -> do
-    kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr
-    if kv == kv'
-      then pure st
-      else fail $ errInvalidStructure name kv
-  Just _ -> fail $ errImpossibleCase "validLit struct"
+  Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr >>= \case
+    kv'
+      | kv == kv' -> pure st
+      | otherwise -> fail $ errInvalidStructure name kv
+  _ -> failN $ errStructureNotBound name
 validLit ctx locVar arr@(ArrLit t subexp) = any (/= t) <$> mapM (getType ctx locVar) subexp $> arr
 validLit _ _ lit = pure lit
 
@@ -405,8 +385,8 @@ getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && get
   Just (Operator {..}) -> pure opRetType
   _ -> fail $ errFunctionNotBound name
 getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
-  Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case 
-    kv' 
+  Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case
+    kv'
       | kv == kv' -> pure $ getLitType struct
       | otherwise -> fail $ errInvalidStructure name kv
   _ -> failN $ errStructureNotBound name
@@ -493,7 +473,7 @@ getFnBody ctx locVar retT = (tok CurlyOpen <|> failN errStartBody) *> getExprAnd
       x@(Variable metadata _) -> (x:) <$> getExprAndUpdateCtx c (metadata : l) r
       x -> (x:) <$> getExprAndUpdateCtx c l r)
 
-validArgNumber :: Idx -> String -> [(Type, String)] -> Parser [(Type, String)]
+validArgNumber :: Int -> String -> [(Type, String)] -> Parser [(Type, String)]
 validArgNumber _ _ args@[_, _] = pure args
 validArgNumber start name args = getOffset >>= (\offset -> failI start $ errOpArgs offset (length args) name) . subtract (start - 1)
 
