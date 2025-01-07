@@ -261,7 +261,6 @@ variableAssignation ctx locVar = do
     then return $ Variable (t, n) x
     else failP $ errAssignType n (show t) (show t')
 
-
 exprSubexpr :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar (tok SemiColon)
 
@@ -279,34 +278,12 @@ getGroup ctx locVar = do
   choice
     [ eof *> fail errEndSubexpr
     , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
-    , GLit offset <$> glit
-    , try $ GVar offset <$> gsym <* notFollowedBy (tok ParenOpen)
-    , GFn offset <$> gsym <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
-    , GOp offset <$> gop <*> pure []
+    , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
+    , try $ GVar offset <$> textIdentifier <* notFollowedBy (tok ParenOpen)
+    , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
+    , GOp offset <$> operatorIdentifier <*> pure []
     ]
-  where
-    glit = satisfy (\case
-      Literal _ -> True
-      _ -> False) >>= (\case
-          (Literal x) -> validLit ctx locVar x
-          _ -> failN $ errImpossibleCase "getGroup case glit")
-    gsym = satisfy (\case
-      Parser.Token.Identifier (TextId _) -> True
-      _ -> False) >>= (\case
-          (Parser.Token.Identifier (TextId x)) -> pure x
-          _ -> failN $ errImpossibleCase "getGroup case gsym")
-    gop = satisfy (\case
-      Parser.Token.Identifier (OperatorId _) -> True
-      _ -> False) >>= (\case
-          (Parser.Token.Identifier (OperatorId x)) -> pure x
-          _ -> failN $ errImpossibleCase "getGroup case gop")
-    getAllArgs = do
-      arg <- getGroup ctx locVar
-      endFound <- tok ParenClose <|> tok Comma
-      case endFound of
-        ParenClose -> pure [arg]
-        Comma -> (arg :) <$> getAllArgs
-        _ -> failN $ errImpossibleCase "getGroup case getAllArgs"
+  where getAllArgs = getGroup ctx locVar >>= \arg -> (tok ParenClose $> [arg]) <|> (tok Comma *> ((arg :) <$> getAllArgs))
 
 mountGroup :: Ctx -> [Group] -> Parser Group
 mountGroup _ [] = fail errEmptyExpr

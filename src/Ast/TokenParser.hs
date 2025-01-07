@@ -5,7 +5,7 @@
 -- TokenParser
 -}
 
-module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral) where 
+module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral) where 
 
 import Parser.Token
 
@@ -43,6 +43,10 @@ isStructType _                   = False
 isIntLiteral :: MyToken -> Bool
 isIntLiteral (Literal (IntLit {})) = True
 isIntLiteral _                     = False
+
+isLiteral :: MyToken -> Bool
+isLiteral (Literal {}) = True
+isLiteral _            = False
 
 -- literal parser
 intLiteral :: Parser Int
