@@ -399,22 +399,17 @@ validLit ctx locVar arr@(ArrLit t subexp) = any (/= t) <$> mapM (getType ctx loc
 validLit _ _ lit = pure lit
 
 getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
-getType _ locVar (VariableCall name) = case find ((== name) . snd) locVar of
-  Just (t, _) -> pure t
-  Nothing -> fail $ errVariableNotBound name
+getType _ locVar (VariableCall name) = maybe (fail $ errVariableNotBound name) (pure . fst) (find ((== name) . snd) locVar)
 getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
   Just (Function {..}) -> pure fnRetType
   Just (Operator {..}) -> pure opRetType
-  Nothing -> fail $ errFunctionNotBound name
-  Just _ -> fail $ errImpossibleCase "gettype"
+  _ -> fail $ errFunctionNotBound name
 getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
-  Nothing -> failN $ errStructureNotBound name
-  Just (Structure _ kv) -> do
-    kv' <- mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit
-    if kv == kv'
-      then pure $ getLitType struct
-      else fail $ errInvalidStructure name kv
-  Just _ -> fail $ errImpossibleCase "gettype struct"
+  Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case 
+    kv' 
+      | kv == kv' -> pure $ getLitType struct
+      | otherwise -> fail $ errInvalidStructure name kv
+  _ -> failN $ errStructureNotBound name
 getType ctx locVar (Lit (ArrLit t lit)) = any (/= t) <$> mapM (getType ctx locVar) lit $> t
 getType _ _ (Lit x) = pure $ getLitType x
 
