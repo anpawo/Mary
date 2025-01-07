@@ -675,25 +675,37 @@ constraint ctx = do
   return $ Constraint name ts
 
 structure :: Ctx -> Parser Ast
-structure ctx =
-  Structure <$> symbolIdentifier
-            <*> (tok CurlyOpen *> parseMembers ctx <* tok CurlyClose)
+structure ctx = do
+  name <- satisfy (\case
+    (Type (StructType _)) -> True
+    _ -> False) >>= (\case
+      (Type (StructType n)) -> notTaken (getNames ctx) n
+      _ -> failN $ errImpossibleCase "structure")
+  void (tok CurlyOpen)
+  members <- parseMembers ctx
+  void (tok CurlyClose)
+  return $ Structure name members
 
 parseMembers :: Ctx -> Parser [(String, Type)]
 parseMembers ctx = sepBy (parseMember ctx) (tok SemiColon)
-
-parseMember :: Ctx -> Parser (String, Type)
-parseMember ctx =
-  (,) <$> symbolIdentifier
-      <*> (tok Colon *> parseType ctx)
 
 parseType :: Ctx -> Parser Type
 parseType ctx = choice
   [ AnyType <$ tok (Type AnyType)
   , NullType <$ tok (Type NullType)
   , StructType <$> symbolIdentifier
-  , ConstraintType Nothing <$> sepBy1 (parseSimpleType ctx) (tok Pipe)
+  , parseConstraintTypes ctx
   ]
+
+parseMember :: Ctx -> Parser (String, Type)
+parseMember ctx =
+  (,) <$> symbolIdentifier
+      <*> (tok Colon *> parseType ctx)
+
+parseConstraintTypes :: Ctx -> Parser Type
+parseConstraintTypes ctx = do
+  typesList <- sepBy1 (parseSimpleType ctx) (tok Pipe)
+  return $ ConstraintType Nothing typesList
 
 parseSimpleType :: Ctx -> Parser Type
 parseSimpleType ctx = choice
