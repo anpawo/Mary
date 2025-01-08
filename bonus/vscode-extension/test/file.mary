@@ -8,7 +8,7 @@ function add(int a, int b) -> int {
     commentaire
 */
 
-struct person {
+struct Person {
     name x;
     age y;
 }
@@ -23,7 +23,7 @@ function test_all_features() -> void {
 
     // tableaux structures
     arr[int] numbers = [1, 2];
-    struct person p { name = "john", age = 30 };
+    struct Person personStruct { name = "john", age = 30 };
 
     // operateurs
     int result = x + 3 * (2 - 1);
