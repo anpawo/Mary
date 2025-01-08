@@ -50,16 +50,16 @@ singlequote :: Parser Char
 singlequote = char '\''
 
 keyword :: String -> Parser String
-keyword s = string s <* notFollowedBy symbolIdentifierChar
+keyword s = string s <* notFollowedBy textIdentifier
 
 symbol :: String -> Parser String
-symbol s = string s <* notFollowedBy operatorIdentifierChar
+symbol s = string s <* notFollowedBy operatorIdentifier
 
-symbolIdentifierChar :: Parser Char
-symbolIdentifierChar = alphaNumChar <|> underscore
+textIdentifier :: Parser Char
+textIdentifier = alphaNumChar <|> underscore
 
-operatorIdentifierChar :: Parser Char
-operatorIdentifierChar = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':']
+operatorIdentifier :: Parser Char
+operatorIdentifier = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':', '%']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -187,6 +187,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , operatorKw
             , precedenceKw
             , importKw
+            , builtinKw
             , ifKw
             , thenKw
             , elseKw
@@ -220,8 +221,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
                 args <- spaces *> getargs (char '[') (someTill (tokens <* spaces) (lookAhead (char ']' <|> char ','))) (char ']')
                 return $ ArrLitPre ty args
             , do
-                name <- some symbolIdentifierChar <* spaces
-                args <- getargs (char '{') ((,) <$> some symbolIdentifierChar <* spaces <* char '=' <* spaces <*> someTill (tokens <* spaces) (lookAhead (char '}' <|> char ','))) (char '}')
+                name <- some textIdentifier <* spaces
+                args <- getargs (char '{') ((,) <$> some textIdentifier <* spaces <* char '=' <* spaces <*> someTill (tokens <* spaces) (lookAhead (char '}' <|> char ','))) (char '}')
                 return $ StructLitPre name args
             ]
 
@@ -243,7 +244,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         functionKw = try $ keyword "function" $> FunctionKw
         operatorKw = try $ keyword "operator" $> OperatorKw
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
-        importKw =  try $ keyword "import" $> ImportKw
+        importKw =  try $ ImportKw <$> (keyword "import" *> spaces *> some textIdentifier)
+        builtinKw =  try $ keyword "builtin" $> BuiltinKw
         ifKw = try $ keyword "if" $> IfKw
         thenKw = try $ keyword "then" $> ThenKw
         elseKw = try $ keyword "else" $> ElseKw
@@ -261,11 +263,11 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , keyword "float" $> FloatType
             , keyword "str" $> StrType
             , keyword "arr" *> spaces *> char '[' *> spaces *> parseType <* spaces <* char ']' <&> ArrType
-            , keyword "struct" *> spaces *> some symbolIdentifierChar <&> StructType
-            , keyword "type" *> spaces *> some symbolIdentifierChar <&> (`ConstraintType` []) . Just
+            , keyword "struct" *> spaces *> some textIdentifier <&> StructType
+            , keyword "type" *> spaces *> some textIdentifier <&> (`ConstraintType` []) . Just
             ]
 
         -- Identifier
-        symbolId = Identifier . SymbolId <$> some symbolIdentifierChar -- names cannot start as number because they will just be parsed as int first
-        operatorId = Identifier . OperatorId <$> some operatorIdentifierChar
+        symbolId = Identifier . TextId <$> some textIdentifier -- names cannot start as number because they will just be parsed as int first
+        operatorId = Identifier . OperatorId <$> some operatorIdentifier
 -- TokenType

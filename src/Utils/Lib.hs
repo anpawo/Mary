@@ -5,16 +5,16 @@
 -- Lib
 -}
 
-module Utils.Lib (choicetry, (&>), (~>), run) where
+module Utils.Lib (choicetry, (&>), (~>), run, failN, failP, failI) where
 
-import Text.Megaparsec (MonadParsec, try, Parsec, setInput, runParser)
+import Text.Megaparsec (MonadParsec, try, Parsec, setInput, runParser, setOffset, getOffset)
 import Text.Megaparsec.Error (ParseErrorBundle)
 
 import Control.Applicative ((<|>), empty)
 
 import Data.Void (Void)
 
-
+-- choice fusion with try
 choicetry :: (Foldable f, MonadParsec e s m) => f (m a) -> m a
 choicetry = foldr ((<|>) . try) empty
 
@@ -28,5 +28,18 @@ type Parser = Parsec Void String
 (&>) :: Parser String -> Parser a -> Parser a
 (&>) p1 p2 = p1 >>= setInput >> p2
 
+-- runParser alias without context
 run :: Parsec Void input output -> input -> Either (ParseErrorBundle input Void) output
 run parser = runParser parser ""
+
+-- fail at next token
+failN :: (MonadParsec e s m, MonadFail m) => String -> m a
+failN err = (setOffset . (+ 1) =<< getOffset) *> fail err
+
+-- fail at prev token
+failP :: (MonadParsec e s m, MonadFail m) => String -> m a
+failP err = (setOffset . subtract 1 =<< getOffset) *> fail err
+
+-- fail at index token
+failI :: (MonadParsec e s m, MonadFail m) => Int -> String -> m a
+failI idx err = setOffset idx *> fail err

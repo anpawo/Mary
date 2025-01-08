@@ -7,64 +7,77 @@
 
 module Main (main) where
 
-import System.Exit (exitWith, ExitCode (ExitFailure))
 import System.Environment (getArgs)
+import System.Exit (exitWith, ExitCode(..), exitSuccess)
 import Control.Exception (IOException, catch)
 import Data.List (intercalate)
-
+import Data.Maybe (isNothing, fromJust)
 import Text.Megaparsec (errorBundlePretty)
 
 import Utils.Lib ((&>), run)
+import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize, comment)
-
 import Ast.Ast (tokenToAst)
-import Ast.Error (prettyPrintError, bggray)
-
+import Ast.Error (prettyPrintError, bgBlack)
 import Bytecode.Compiler (compiler)
 import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
-type Error = String
+import Ast.Import (resolveImports)
 
-data Depth = Token | Ast | ByteCode deriving (Eq)
 
-glados :: (Maybe Depth, String) -> IO ()
-glados (d, content) = case run (comment &> tokenize) content of
-  Left tokErr -> putStrLn $ errorBundlePretty tokErr
-  Right tokens
-    | d == Just Token -> putStrLn $ intercalate "  " (map (bggray . show) tokens)
-    | otherwise -> case run tokenToAst tokens of
-    Left astErr -> putStrLn $ prettyPrintError tokens astErr
-    Right ast
-        | d == Just Ast -> print ast
-        | otherwise -> case compiler ast of
-            Left errBytecode -> print errBytecode
-            Right (_instr, env)
-                | d == Just ByteCode -> displayBytecode _instr env
-                | otherwise -> print $ exec env _instr []
+glados :: Arguments -> String ->  IO ()
+glados args = toToken
+    where
+        toToken input = case run (comment &> tokenize) input of
+            Left err -> putStrLn (errorBundlePretty err) >> exitWith (ExitFailure 1)
+            Right tokens
+                | tokenTy $ argOutputType args -> putStrLn $ intercalate "  " (map (bgBlack . show) tokens)
+                | otherwise -> toAst tokens
+
+        toAst tokens = do
+            (builtins, imports) <- resolveImports args tokens
+            case run (tokenToAst builtins imports) tokens of
+                Left err -> putStrLn (prettyPrintError tokens err) >> exitWith (ExitFailure 1)
+                Right ast
+                    | astTy $ argOutputType args -> print ast
+                    | otherwise -> toBytecode ast
+
+        toBytecode ast = case compiler ast of
+            Left err -> print err >> exitWith (ExitFailure 1)
+            Right (instr, env)
+                | bytecodeTy $ argOutputType args -> displayBytecode instr env
+                | otherwise -> runVm env instr
+        
+        runVm env instr = case exec env instr [] of
+            Left err -> print err >> exitWith (ExitFailure 1)
+            Right result -> print result
 
 helper :: String
 helper =
-    "execute the file given as argument.\n" ++
-    "--help       => help.\n" ++
-    "--token      => generate the tokens.\n" ++
-    "--ast        => generate the ast.\n" ++
-    "--bytecode   => generate bytecode."
+    "execute the .mary file.\n" ++
+    "\n" ++
+    "<file>             => mandatory: an input file.\n" ++
+    "\n" ++
+    "--token            => display the tokens.\n" ++
+    "--ast              => display the ast.\n" ++
+    "--bytecode         => display the bytecode.\n" ++
+    "--import <path>    => import path for the libraries.\n" ++
+    "--optimize         => optimize the code before running it.\n" ++
+    "--colorblind       => display colors according to most colorblinds.\n" ++
+    "--no-builtins      => doesn't load the builtins.\n"
 
 
-handleArgs :: [String] -> IO (Either Error (Maybe Depth, String))
-handleArgs x = do
-    case x of
-        ["--token",    file] -> getFile file $ Just Token
-        ["--ast",      file] -> getFile file $ Just Ast
-        ["--bytecode", file] -> getFile file $ Just ByteCode
-        [file]               -> getFile file   Nothing
-        _ -> return $ Left helper
+handleArgs :: Arguments -> IO ()
+handleArgs args
+    | argShowHelper args = putStrLn helper >> exitSuccess
+    | isNothing $ argInputFile args = putStrLn helper >> exitWith (ExitFailure 1)
+    | otherwise = getFile (fromJust $ argInputFile args) >>= \input -> glados args input
     where
-        getFile file depth = catch (Right . (,) depth <$> readFile file) invalidFile
+        getFile file = catch (readFile file) invalidFile
 
-        invalidFile :: IOException -> IO (Either Error (Maybe Depth, String))
-        invalidFile _ = return $ Left "Invalid file."
+        invalidFile :: IOException -> IO String
+        invalidFile _ = putStrLn "Invalid input file." >> exitWith (ExitFailure 1)
 
 
 main :: IO ()
-main = getArgs >>= handleArgs >>= either (\err -> putStrLn err >> exitWith (ExitFailure 1)) glados
+main = getArgs >>= \args -> either (\_ -> putStrLn helper >> exitWith (ExitFailure 1)) handleArgs (parseArguments args)

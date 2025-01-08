@@ -1,0 +1,61 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - std
+//
+
+operator % precedence 7 (number a, number b) -> null | number {
+    number | null c = a / b;
+
+    if c == NULL then
+    {
+        return NULL;
+    }
+    else
+    {
+        return a - c * b;
+    }
+}
+
+function not(bool a) -> bool {
+    return a == false;
+}
+
+operator != precedence 4 (any a, any b) -> bool {
+    return not(a == b);
+}
+
+operator > precedence 5 (number a, number b) -> bool {
+    return b < a;
+}
+
+operator <= precedence 4 (number a, number b) -> bool {
+    return not(a > b);
+}
+
+operator >= precedence 4 (number a, number b) -> bool {
+    return not(a < b);
+}
+
+operator && precedence 4 (bool a, bool b) -> bool {
+    if a then
+    {
+        return b;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+operator || precedence 4 (bool a, bool b) -> bool {
+    if a then
+    {
+        return true;
+    }
+    else
+    {
+        return b;
+    }
+}

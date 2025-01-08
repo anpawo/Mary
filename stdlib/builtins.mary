@@ -1,0 +1,49 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - builtins
+//
+
+// todo: create atoms
+// they are currently handled internally and not generalized.
+
+/*
+atom void;
+atom null;
+atom any;
+
+atom false;
+atom true;
+
+type bool = false | true;
+*/
+
+// simplify type checks
+type number = int | float;
+
+// arithmetic operators
+operator builtin + precedence 6 (number a, number b) -> number
+operator builtin - precedence 6 (number a, number b) -> number
+operator builtin * precedence 7 (number a, number b) -> number
+operator builtin / precedence 7 (number a, number b) -> number
+
+// comparison operators
+function builtin is(any a, str b) -> bool
+operator builtin == precedence 4 (any a, any b) -> bool
+operator builtin < precedence 5 (number a, number b) -> bool
+
+// io
+function builtin print(any a) -> void
+function builtin eprint(any a) -> void
+function builtin getline() -> str
+function builtin exit(int a) -> void
+
+// access struct field
+operator builtin . precedence 10 (any a, any b) -> any
+
+// access array elements
+function builtin length(arr[any] a) -> int
+function builtin at(arr[any] a, int b) -> any
+
+// more to come

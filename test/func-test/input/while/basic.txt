@@ -1,0 +1,6 @@
+function while_test(int a, int b) -> int {
+    while a < b then {
+        return a;
+    }
+    return b;
+}

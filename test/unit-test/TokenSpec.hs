@@ -31,7 +31,7 @@ tokenSpec = describe "token" $ do
       it "operator" $ show OperatorKw ==> "operator"
       it "type" $ show TypeKw ==> "type"
       it "precedence" $ show PrecedenceKw ==> "precedence"
-      it "import" $ show ImportKw ==> "import"
+      it "import" $ show (ImportKw "std") ==> "import std"
       it "if" $ show IfKw ==> "if"
       -- it "then" $ (show $ ThenKw) ==> "then"
       it "else" $ show ElseKw ==> "else"
@@ -54,7 +54,7 @@ tokenSpec = describe "token" $ do
 identifierSpec :: SpecWith ()
 identifierSpec = describe "identifier" $ do
   describe "show" $ do
-    it "add" $ show (SymbolId "add") ==> "add"
+    it "add" $ show (TextId "add") ==> "add"
     it "<*>" $ show (OperatorId "<*>") ==> "<*>"
 
 literalSpec :: SpecWith ()

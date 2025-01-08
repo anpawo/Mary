@@ -1,0 +1,10 @@
+function if_test(int a, int b) -> int {
+    if a < b then
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
+}
