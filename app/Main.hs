@@ -9,23 +9,19 @@ module Main (main) where
 
 import System.Environment (getArgs)
 import System.Exit (exitWith, ExitCode(..), exitSuccess)
-
 import Control.Exception (IOException, catch)
-
 import Data.List (intercalate)
 import Data.Maybe (isNothing, fromJust)
-
 import Text.Megaparsec (errorBundlePretty)
 
-
 import Utils.Lib ((&>), run)
-import ArgParser (parseArguments, Arguments (..), OutputType (..))
-
+import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize, comment)
 import Ast.Ast (tokenToAst)
 import Ast.Error (prettyPrintError, bgBlack)
 import Bytecode.Compiler (compiler)
 import VM.VirtualMachine (exec)
+import Ast.Import (resolveImports)
 
 
 glados :: Arguments -> String ->  IO ()
@@ -34,19 +30,21 @@ glados args = toToken
         toToken input = case run (comment &> tokenize) input of
             Left err -> putStrLn (errorBundlePretty err) >> exitWith (ExitFailure 1)
             Right tokens
-                | tokenTy $ outputType args -> putStrLn $ intercalate "  " (map (bgBlack . show) tokens)
+                | tokenTy $ argOutputType args -> putStrLn $ intercalate "  " (map (bgBlack . show) tokens)
                 | otherwise -> toAst tokens
 
-        toAst tokens = case run tokenToAst tokens of
-            Left err -> putStrLn (prettyPrintError tokens err) >> exitWith (ExitFailure 1)
-            Right ast
-                | astTy $ outputType args -> print ast
-                | otherwise -> toBytecode ast
-        
+        toAst tokens = do
+            (builtins, imports) <- resolveImports args tokens
+            case run (tokenToAst builtins imports) tokens of
+                Left err -> putStrLn (prettyPrintError tokens err) >> exitWith (ExitFailure 1)
+                Right ast
+                    | astTy $ argOutputType args -> print ast
+                    | otherwise -> toBytecode ast
+
         toBytecode ast = case compiler ast of
             Left err -> print err >> exitWith (ExitFailure 1)
             Right (instr, env)
-                | bytecodeTy $ outputType args -> print env
+                | bytecodeTy $ argOutputType args -> print env
                 | otherwise -> runVm env instr
         
         runVm env instr = case exec env instr [] of
@@ -60,19 +58,20 @@ helper =
     "\n" ++
     "<file>             => mandatory: an input file.\n" ++
     "\n" ++
-    "--help             => display the helper.\n" ++
     "--token            => display the tokens.\n" ++
     "--ast              => display the ast.\n" ++
     "--bytecode         => display the bytecode.\n" ++
     "--import <path>    => import path for the libraries.\n" ++
-    "--optimize         => optimize the code before running it.\n"
+    "--optimize         => optimize the code before running it.\n" ++
+    "--colorblind       => display colors according to most colorblinds.\n" ++
+    "--no-builtins      => doesn't load the builtins.\n"
 
 
 handleArgs :: Arguments -> IO ()
 handleArgs args
-    | showHelper args = putStrLn helper >> exitSuccess
-    | isNothing $ inputFile args = putStrLn helper >> exitWith (ExitFailure 1)
-    | otherwise = getFile (fromJust $ inputFile args) >>= \input -> glados args input
+    | argShowHelper args = putStrLn helper >> exitSuccess
+    | isNothing $ argInputFile args = putStrLn helper >> exitWith (ExitFailure 1)
+    | otherwise = getFile (fromJust $ argInputFile args) >>= \input -> glados args input
     where
         getFile file = catch (readFile file) invalidFile
 
