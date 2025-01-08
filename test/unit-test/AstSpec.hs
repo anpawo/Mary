@@ -18,6 +18,7 @@ import Data.Void (Void)
 import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
+import Ast.Parser
 import Utils.Lib
 import Utils.ArgParser
 import Ast.Import (resolveImports)

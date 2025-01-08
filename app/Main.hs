@@ -17,7 +17,7 @@ import Text.Megaparsec (errorBundlePretty)
 import Utils.Lib ((&>), run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize, comment)
-import Ast.Ast (tokenToAst)
+import Ast.Parser (tokenToAst)
 import Ast.Error (prettyPrintError, bgBlack)
 import Bytecode.Compiler (compiler)
 import Bytecode.Display (displayBytecode)
@@ -66,7 +66,6 @@ helper =
     "--colorblind       => display colors according to most colorblinds.\n" ++
     "--no-builtins      => doesn't load the builtins.\n"
 
-
 handleArgs :: Arguments -> IO ()
 handleArgs args
     | argShowHelper args = putStrLn helper >> exitSuccess
@@ -77,7 +76,6 @@ handleArgs args
 
         invalidFile :: IOException -> IO String
         invalidFile _ = putStrLn "Invalid input file." >> exitWith (ExitFailure 1)
-
 
 main :: IO ()
 main = getArgs >>= \args -> either (\_ -> putStrLn helper >> exitWith (ExitFailure 1)) handleArgs (parseArguments args)

@@ -19,6 +19,7 @@ import Utils.Lib
 import Data.Maybe (mapMaybe)
 import Utils.ArgParser
 import Data.List (intercalate)
+import Ast.Parser (tokenToAst)
 
 errImport :: [String] -> String -> IO a
 errImport pathTried file = do
