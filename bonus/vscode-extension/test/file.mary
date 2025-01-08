@@ -13,4 +13,11 @@ function test_all_features() -> void {
     // operateurs
     int result = x + 3 * (2 - 1);
     float division = y / 2.0;
+
+    // conditions
+    if (b) {
+        result = result + 1;
+    } else {
+        result = result - 1;
+    }
 }
