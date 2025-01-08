@@ -30,7 +30,7 @@
 		},
 		{
 			"name": "storage.type.mary",
-			"match": "\\b(char|void|bool|int|float|str|arr\\[int\\]|struct\\s+\\w+|any|struct\\s+any|true|false)\\b"
+			"match": "\\b(char|void|bool|int|float|str|arr|any|struct|true|false)\\b"
 		},
 		{
 			"name": "variable.name.mary",

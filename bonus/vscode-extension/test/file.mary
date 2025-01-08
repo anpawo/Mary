@@ -8,6 +8,11 @@ function add(int a, int b) -> int {
     commentaire
 */
 
+struct Person {
+    name x;
+    age y;
+}
+
 function test_all_features() -> void {
     // variables types base
     int x = 5;
@@ -18,7 +23,7 @@ function test_all_features() -> void {
 
     // tableaux structures
     arr[int] numbers = [1, 2];
-    person { name = "john", age = 30 } personStruct;
+    struct Person personStruct { name = "john", age = 30 };
 
     // operateurs
     int result = x + 3 * (2 - 1);
