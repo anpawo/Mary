@@ -5,7 +5,7 @@
 -- TokenParser
 -}
 
-module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral) where 
+module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral, tok) where 
 
 import Parser.Token
 
@@ -16,6 +16,9 @@ import Data.Void (Void)
 
 type Parser = Parsec Void [MyToken]
 
+-- alias
+tok :: MyToken -> Parser MyToken
+tok = single
 
 -- identifier check
 isSymIdentifier :: MyToken -> Bool
@@ -70,22 +73,22 @@ structType :: Parser Type
 structType = typing <$> satisfy isStructType
 
 charType :: Parser Type
-charType = typing <$> single (Type CharType)
+charType = typing <$> tok (Type CharType)
 
 boolType :: Parser Type
-boolType = typing <$> single (Type BoolType)
+boolType = typing <$> tok (Type BoolType)
 
 nullType :: Parser Type
-nullType = typing <$> single (Type NullType)
+nullType = typing <$> tok (Type NullType)
 
 voidType :: Parser Type
-voidType = typing <$> single (Type VoidType)
+voidType = typing <$> tok (Type VoidType)
 
 intType :: Parser Type
-intType = typing <$> single (Type IntType)
+intType = typing <$> tok (Type IntType)
 
 floatType :: Parser Type
-floatType = typing <$> single (Type FloatType)
+floatType = typing <$> tok (Type FloatType)
 
 strType :: Parser Type
-strType = typing <$> single (Type StrType)
+strType = typing <$> tok (Type StrType)

@@ -153,7 +153,7 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | otherwise = drop (len - 10) l
                     where len = length l
         (TrivialError offset unexpected expected :| _) ->
-            printf "This error should be transformed into a custom one:\n\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show $ tokens !! offset) (show unexpected) (show expected)
+            printf "This error should be transformed into a custom one:\nindex error: %s\nerror token: %s %s %s\nunexpected: %s\nexpected: %s\n" (show offset) (show $ tokens !! (offset - 1)) (red . show $ tokens !! offset) (show $ tokens !! (offset + 1)) (show unexpected) (show expected)
 
 red :: String -> String
 red s = "\ESC[91m" ++ s ++ reset
