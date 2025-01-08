@@ -48,7 +48,7 @@ glados args = toToken
                 | bytecodeTy $ argOutputType args -> displayBytecode instr env
                 | otherwise -> runVm env instr
 
-        runVm env instr = case exec env instr [] of
+        runVm env instr = case exec 0 env instr [] of
             Left err -> print err >> exitWith (ExitFailure 1)
             Right result -> print result
 
