@@ -1,0 +1,5 @@
+[test.while]
+cmd = "../../glados --ast input/while/basic.txt"
+stdout = """
+[Function {fnName = "while_test", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [While {whileCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, whileExpr = [Return {retValue = VariableCall {varCallName = "a"}}]},Return {retValue = VariableCall {varCallName = "b"}}]}]
+"""

@@ -12,7 +12,7 @@
 module Ast.Ast (Ast(..), tokenToAst, Expression(..), SubExpression(..)) where
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, MonadParsec(..), getOffset, optional, someTill, choice)
+import Text.Megaparsec (Parsec, single, eof, satisfy, MonadParsec(..), getOffset, someTill, choice)
 
 import Data.Void (Void)
 import Data.Maybe (fromJust, isNothing)
@@ -180,44 +180,35 @@ getBlock ctx locVar retT = do
 
 exprIf :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprIf ctx locVar retT = do
-  void (tok IfKw)
+  start <- (+1) <$> (tok IfKw *> getOffset)
   cond <- subexpression ctx locVar (tok ThenKw)
-  condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail $ errCondNotBool "if"
-  thenExpr <- getBlock ctx locVar retT
-  maybeElseExpr <- optional $ do
-    void (tok ElseKw)
-    getBlock ctx locVar retT
-  return $ case maybeElseExpr of
-    Just elseExpr -> IfThenElse cond thenExpr elseExpr
-    Nothing -> IfThenElse cond thenExpr []
+  getType ctx locVar cond >>= \case
+    t
+      | t /= BoolType -> (getOffset >>= (failI start . errCondNotBool) . subtract start)
+      | otherwise     -> IfThenElse cond <$> getBlock ctx locVar retT <*> ((tok ElseKw *> getBlock ctx locVar retT) <|> pure [])
 
 exprWhile :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprWhile ctx locVar retT = do
-  void (tok WhileKw)
-  cond <- subexpression ctx locVar  (tok ThenKw)
-  condType <- getType ctx locVar cond
-  unless (condType == BoolType) $ fail $ errCondNotBool "while"
-  body <- getBlock ctx locVar retT
-  return $ While cond body
+  start <- (+1) <$> (tok WhileKw *> getOffset)
+  cond <- subexpression ctx locVar (tok ThenKw)
+  getType ctx locVar cond >>= \case
+    t
+      | t == BoolType -> While cond <$> getBlock ctx locVar retT
+      | otherwise     -> (getOffset >>= (failI start . errCondNotBool) . subtract start)
 
 exprReturn :: Ctx -> LocalVariable -> RetType -> Parser Expression
 exprReturn _ _ VoidType = failN errVoidRet
-exprReturn ctx locVar retT = do
-  void (tok ReturnKw)
-  offset <- getOffset
-  subexpr <- subexpression ctx locVar (tok SemiColon)
+exprReturn ctx locVar retT = tok ReturnKw *> getOffset >>= \offset -> subexpression ctx locVar (tok SemiColon) >>= \subexpr ->
   case subexpr of
-    (VariableCall x) -> case find (\(_, n) -> n == x) locVar of
-        Just (t, _)
-          | t == retT -> return $ Return subexpr -- todo: check return type, todo: prevent missing return at the end
+    (VariableCall x) -> case fromJust $ find (\(_, n) -> n == x) locVar of
+        (t, _)
+          | t == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show t)
-        Nothing -> failN $ errImpossibleCase "exprReturn variable call"
-    (FunctionCall {fnCallName = name}) -> case find (\case (Operator {..}) -> opName == name;(Function {..}) -> fnName == name;_ -> False) ctx of
-        Just (Operator {..})
+    (FunctionCall {fnCallName = name}) -> case fromJust $ find (\a -> (isOp a || isFn a) && getName a == name) ctx of
+        (Operator {..})
           | opRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
-        Just (Function {..})
+        (Function {..})
           | fnRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
         _ -> failN $ errImpossibleCase "exprReturn function call"
@@ -231,7 +222,7 @@ exprVariable ctx locVar = variableCreation ctx locVar <|> variableAssignation ct
 variableCreation :: Ctx -> LocalVariable -> Parser Expression
 variableCreation ctx locVar = do
   t <- types ctx False True
-  n <- symbolIdentifier
+  n <- textIdentifier
   void (tok Assign)
   x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
@@ -239,18 +230,9 @@ variableCreation ctx locVar = do
     then return $ Variable (t, n) x
     else failP $ errAssignType n (show t) (show t')
 
-symbolIdentifier :: Parser String
-symbolIdentifier = extractName <$> satisfy isSymbolId
-  where
-    isSymbolId (Identifier (TextId {})) = True
-    isSymbolId _                          = False
-
-    extractName (Identifier (TextId name)) = name
-    extractName _                            = fail $ errImpossibleCase "extractName"
-
 variableAssignation :: Ctx -> LocalVariable -> Parser Expression
 variableAssignation ctx locVar = do
-  n <- symbolIdentifier
+  n <- textIdentifier
   t <- case find ((== n) . snd) locVar of
     Nothing -> fail $ errVariableNotBound n
     Just (t, _) -> pure t
@@ -273,16 +255,14 @@ data Group
   deriving (Show)
 
 getGroup :: Ctx -> LocalVariable -> Parser Group
-getGroup ctx locVar = do
-  offset <- (+1) <$> getOffset
-  choice
+getGroup ctx locVar = getOffset >>= (\offset -> choice
     [ eof *> fail errEndSubexpr
     , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
     , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
     , try $ GVar offset <$> textIdentifier <* notFollowedBy (tok ParenOpen)
     , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs))
     , GOp offset <$> operatorIdentifier <*> pure []
-    ]
+    ]) . (+1)
   where getAllArgs = getGroup ctx locVar >>= \arg -> (tok ParenClose $> [arg]) <|> (tok Comma *> ((arg :) <$> getAllArgs))
 
 mountGroup :: Ctx -> [Group] -> Parser Group

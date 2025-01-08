@@ -16,8 +16,8 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set.Internal (elemAt)
 import Data.List (intercalate)
 
-errCondNotBool :: String -> String
-errCondNotBool name = printf "Condition in '%s' must evaluate to a boolean type" $ purple name
+errCondNotBool :: Int -> String
+errCondNotBool i = printf ":%sexpected a %s condition." (show i) (purple "boolean")
 
 errNameTaken :: String -> String
 errNameTaken name = printf "name '%s' already taken." $ purple name
