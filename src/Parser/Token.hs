@@ -107,9 +107,10 @@ data MyToken
   -- Keyword
     FunctionKw --        \| function     -> declare a function
   | OperatorKw --        \| operator     -> declare an operator
-  | TypeKw --      \| constraint   -> declare a constraint
+  | TypeKw --            \| type         -> declare a type constraint
   | PrecedenceKw --      \| precedence   -> declare an operator precedence
-  | ImportKw --          \| import       -> for imports (bonus)
+  | ImportKw String --   \| import <x>   -> for imports
+  | BuiltinKw --         \| builtin      -> for builtins
   | IfKw --              \| if           -> if
   | ThenKw --            \| then         -> then
   | ElseKw --            \| else         -> else
@@ -140,7 +141,8 @@ instance Show MyToken where
   show OperatorKw = "operator"
   show TypeKw = "type"
   show PrecedenceKw = "precedence"
-  show ImportKw = "import"
+  show (ImportKw name) = "import " ++ name
+  show BuiltinKw = "builtin"
   show IfKw = "if"
   show ThenKw = "then"
   show ElseKw = "else"

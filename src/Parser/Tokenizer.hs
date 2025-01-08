@@ -59,7 +59,7 @@ textIdentifier :: Parser Char
 textIdentifier = alphaNumChar <|> underscore
 
 operatorIdentifier :: Parser Char
-operatorIdentifier = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':']
+operatorIdentifier = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':', '%']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -186,6 +186,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , operatorKw
             , precedenceKw
             , importKw
+            , builtinKw
             , ifKw
             , thenKw
             , elseKw
@@ -241,7 +242,8 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         functionKw = try $ keyword "function" $> FunctionKw
         operatorKw = try $ keyword "operator" $> OperatorKw
         precedenceKw =  try $ keyword "precedence" $> PrecedenceKw
-        importKw =  try $ keyword "import" $> ImportKw
+        importKw =  try $ ImportKw <$> (keyword "import" *> spaces *> some textIdentifier)
+        builtinKw =  try $ keyword "builtin" $> BuiltinKw
         ifKw = try $ keyword "if" $> IfKw
         thenKw = try $ keyword "then" $> ThenKw
         elseKw = try $ keyword "else" $> ElseKw
