@@ -31,7 +31,7 @@ module Ast.Ast
 import Debug.Trace (trace, traceId)
 
 import Text.Printf (printf)
-import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice, sepBy, sepBy1)
+import Text.Megaparsec (Parsec, single, eof, satisfy, runParser, MonadParsec(..), setOffset, getOffset, optional, someTill, choice)
 
 import Data.Void (Void)
 import Data.Functor (($>))
@@ -681,37 +681,37 @@ structure ctx = do
     _ -> False) >>= (\case
       (Type (StructType n)) -> notTaken (getNames ctx) n
       _ -> failN $ errImpossibleCase "structure")
+  let shellStruct = Structure name []
   void (tok CurlyOpen)
-  members <- parseMembers ctx
-  void (tok CurlyClose)
+  members <- parseMembers (shellStruct : ctx)
   return $ Structure name members
 
 parseMembers :: Ctx -> Parser [(String, Type)]
-parseMembers ctx = sepBy (parseMember ctx) (tok SemiColon)
+parseMembers ctx = someTill (parseMember ctx <* tok SemiColon) (tok CurlyClose)
 
 parseMember :: Ctx -> Parser (String, Type)
 parseMember ctx =
   (,) <$> symbolIdentifier
-      <*> (tok Colon *> parseType ctx)
+      <*> (tok Colon *> types ctx False True)
 
-parseType :: Ctx -> Parser Type
-parseType ctx = do
-  firstType <- parseSimpleType ctx
-  moreTypes <- optional (tok Pipe *> sepBy1 (parseSimpleType ctx) (tok Pipe))
-  case moreTypes of
-    Nothing -> return firstType
-    Just more -> return $ ConstraintType Nothing (firstType : more)
+-- parseType :: Ctx -> Parser Type
+-- parseType ctx = do
+--   firstType <- parseSimpleType ctx
+--   moreTypes <- optional (tok Pipe *> sepBy1 (parseSimpleType ctx) (tok Pipe))
+--   case moreTypes of
+--     Nothing -> return firstType
+--     Just more -> return $ ConstraintType Nothing (firstType : more)
 
-parseSimpleType :: Ctx -> Parser Type
-parseSimpleType ctx = choice
-  [ CharType <$ tok (Type CharType)
-  , NullType <$ tok (Type NullType)
-  , VoidType <$ tok (Type VoidType)
-  , BoolType <$ tok (Type BoolType)
-  , IntType <$ tok (Type IntType)
-  , FloatType <$ tok (Type FloatType)
-  , StrType <$ tok (Type StrType)
-  , ArrType <$> (tok BracketOpen *> parseType ctx <* tok BracketClose)
-  , StructAnyType <$ tok (Type StructAnyType)
-  , StructType <$> symbolIdentifier
-  ]
+-- parseSimpleType :: Ctx -> Parser Type
+-- parseSimpleType ctx = choice
+--   [ CharType <$ tok (Type CharType)
+--   , NullType <$ tok (Type NullType)
+--   , VoidType <$ tok (Type VoidType)
+--   , BoolType <$ tok (Type BoolType)
+--   , IntType <$ tok (Type IntType)
+--   , FloatType <$ tok (Type FloatType)
+--   , StrType <$ tok (Type StrType)
+--   , ArrType <$> (tok BracketOpen *> parseType ctx <* tok BracketClose)
+--   , StructAnyType <$ tok (Type StructAnyType)
+--   , StructType <$> symbolIdentifier
+--   ]
