@@ -16,6 +16,10 @@
 		{
 			"name": "constant.numeric.mary",
 			"match": "\\b\\d+\\b"
+		},
+		{
+			"name": "punctuation.mary",
+			"match": "[{}();,=]"
 		}
 	],
 	"fileTypes": ["mary"]
