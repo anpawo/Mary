@@ -12,6 +12,10 @@
 		{
 			"name": "variable.name.mary",
 			"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+		},
+		{
+			"name": "constant.numeric.mary",
+			"match": "\\b\\d+\\b"
 		}
 	],
 	"fileTypes": ["mary"]
