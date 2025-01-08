@@ -1,5 +1,5 @@
 [test.null_literal_and_type]
-cmd = "../../glados --ast input/null/creation.txt"
+cmd = "../../glados --ast --import ../../stdlib input/null/creation.txt"
 stdout = """
 [Function {fnName = "fail", fnArgs = [], fnRetType = null, fnBody = [Return {retValue = Lit NULL}]}]
 """

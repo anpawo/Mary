@@ -117,8 +117,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "operator" ==> [OperatorKw]
   it "precedence" $
     run tokenize "precedence" ==> [PrecedenceKw]
-  it "import" $
-    run tokenize "import" ==> [ImportKw]
+  it "import std" $
+    run tokenize "import std" ==> [ImportKw "std"]
   it "if" $
     run tokenize "if" ==> [IfKw]
   it "else" $
