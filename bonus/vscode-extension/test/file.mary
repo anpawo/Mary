@@ -1,3 +1,4 @@
-function func (int a, int b) {
+function func (struct a, string b) -> int {
+    str | int abc = true; 
     return a + b;
 }
