@@ -20,6 +20,7 @@ import Parser.Tokenizer (tokenize, comment)
 import Ast.Ast (tokenToAst)
 import Ast.Error (prettyPrintError, bgBlack)
 import Bytecode.Compiler (compiler)
+import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
 import Ast.Import (resolveImports)
 
@@ -44,13 +45,12 @@ glados args = toToken
         toBytecode ast = case compiler ast of
             Left err -> print err >> exitWith (ExitFailure 1)
             Right (instr, env)
-                | bytecodeTy $ argOutputType args -> print env
+                | bytecodeTy $ argOutputType args -> displayBytecode instr env
                 | otherwise -> runVm env instr
         
         runVm env instr = case exec env instr [] of
             Left err -> print err >> exitWith (ExitFailure 1)
             Right result -> print result
-
 
 helper :: String
 helper =

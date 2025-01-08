@@ -33,6 +33,7 @@ library
       Ast.TreeBuilder
       Bytecode.Compiler
       Bytecode.Data
+      Bytecode.Display
       Parser.Token
       Parser.Tokenizer
       Utils.ArgParser
