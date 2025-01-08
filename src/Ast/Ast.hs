@@ -443,27 +443,5 @@ parseMembers ctx = someTill (parseMember ctx <* tok SemiColon) (tok CurlyClose)
 
 parseMember :: Ctx -> Parser (String, Type)
 parseMember ctx =
-  (,) <$> symbolIdentifier
+  (,) <$> symbolIdentifierj
       <*> (tok Colon *> types ctx False True)
-
--- parseType :: Ctx -> Parser Type
--- parseType ctx = do
---   firstType <- parseSimpleType ctx
---   moreTypes <- optional (tok Pipe *> sepBy1 (parseSimpleType ctx) (tok Pipe))
---   case moreTypes of
---     Nothing -> return firstType
---     Just more -> return $ ConstraintType Nothing (firstType : more)
-
--- parseSimpleType :: Ctx -> Parser Type
--- parseSimpleType ctx = choice
---   [ CharType <$ tok (Type CharType)
---   , NullType <$ tok (Type NullType)
---   , VoidType <$ tok (Type VoidType)
---   , BoolType <$ tok (Type BoolType)
---   , IntType <$ tok (Type IntType)
---   , FloatType <$ tok (Type FloatType)
---   , StrType <$ tok (Type StrType)
---   , ArrType <$> (tok BracketOpen *> parseType ctx <* tok BracketClose)
---   , StructAnyType <$ tok (Type StructAnyType)
---   , StructType <$> symbolIdentifier
---   ]
