@@ -372,7 +372,7 @@ toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
 fixOp :: [Group] -> Parser [Group]
 fixOp [] = pure []
 fixOp (dot@(GOp _ "." []): GVar idx name:xs) = (dot:) . (GLit idx (StringLit name):) <$> fixOp xs
-fixOp (GOp index "." []: _:_) = failI index errExpectedField
+fixOp (GOp index "." []: _:_) = failI (index + 1) errExpectedField
 fixOp (x:xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
@@ -426,22 +426,14 @@ constraint ctx = Constraint <$> (constraintType >>= notTaken (getNames ctx) . fr
   where
     constrTypes = types ctx False False >>= \t -> (tok SemiColon $> [t]) <|> (tok Pipe *> ((t:) <$> constrTypes))
 
+getMembers :: Ctx -> [String] -> Parser [(String, Type)]
+getMembers ctx names = tok CurlyOpen *> (tok CurlyClose $> [] <|> fields names)
+  where
+    fields n = (,) <$> (textIdentifier >>= notTaken n) <*> (tok Colon *> types ctx False True) >>= \a -> (tok CurlyClose $> [a]) <|> (tok Comma *> ((a :) <$> fields (fst a : n)))
+
 structure :: Ctx -> Parser Ast
 structure ctx = do
-  name <- satisfy (\case
-    (Type (StructType _)) -> True
-    _ -> False) >>= (\case
-      (Type (StructType n)) -> notTaken (getNames ctx) n
-      _ -> failN $ errImpossibleCase "structure")
+  name <- structType >>= notTaken (getNames ctx) . stTyName
   let shellStruct = Structure name []
-  void (tok CurlyOpen)
-  members <- parseMembers (shellStruct : ctx)
+  members <- getMembers (shellStruct : ctx) (name : getNames ctx)
   return $ Structure name members
-
-parseMembers :: Ctx -> Parser [(String, Type)]
-parseMembers ctx = someTill (parseMember ctx <* tok SemiColon) (tok CurlyClose)
-
-parseMember :: Ctx -> Parser (String, Type)
-parseMember ctx =
-  (,) <$> symbolIdentifierj
-      <*> (tok Colon *> types ctx False True)

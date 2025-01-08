@@ -1,0 +1,11 @@
+[test.structure_creation]
+cmd = "../../glados --ast --import ../../stdlib input/struct/creation.txt"
+stdout = """
+[Structure {structName = "age_s", structMember = [("d",int),("m",int),("y",int)]},Structure {structName = "person", structMember = [("name",str),("age",struct age_s)]}]
+"""
+
+[test.structure_access_field]
+cmd = "../../glados --ast --import ../../stdlib input/struct/access_field.txt"
+stdout = """
+[Structure {structName = "age_s", structMember = [("d",int),("m",int),("y",int)]},Structure {structName = "person", structMember = [("name",str),("age",struct age_s)]},Function {fnName = "getname", fnArgs = [(struct person,"p")], fnRetType = str, fnBody = [Return {retValue = FunctionCall {fnCallName = ".", fnCallArgs = [VariableCall {varCallName = "p"},Lit "name"]}}]}]
+"""

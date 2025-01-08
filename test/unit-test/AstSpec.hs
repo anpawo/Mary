@@ -47,16 +47,18 @@ structureSpec :: SpecWith ()
 structureSpec = describe "structure parsing" $ do
   describe "valid cases" $ do
     it "parses a valid structure with multiple members" $ do
-      let input = "struct elem { data: any; next: null | elem; }"
-      pAst input ==>
+      let input = "struct elem { data: any, next: null | elem }"
+      ast <- pAst input
+      ast ==>
         [ Structure "elem"
             [ ("data", AnyType)
             , ("next", ConstraintType Nothing [NullType, StructType "elem"])
             ]
         ]
     it "parses a valid structure with a single member" $ do
-      let input = "struct node { value: int; }"
-      pAst input ==>
+      let input = "struct node { value: int }"
+      ast <- pAst input
+      ast ==>
         [ Structure "node"
             [ ("value", IntType)
             ]
@@ -65,15 +67,18 @@ structureSpec = describe "structure parsing" $ do
   describe "invalid cases" $ do
     it "fails on missing semicolon between members" $ do
       let input = "struct elem { data: any next: null | elem; }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
     it "fails on missing braces in structure definition" $ do
-      let input = "struct elem data: any; next: null | elem;"
-      pAst input `shouldSatisfy` isLeft
+      let input = "struct elem data: any, next: null | elem;"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
     it "fails on invalid type for a member" $ do
       let input = "struct elem { data: invalid_type; }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
 ifThenElseSpec :: SpecWith ()
 ifThenElseSpec = describe "if-then-else" $ do
