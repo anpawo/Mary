@@ -1,4 +1,8 @@
-function func (struct a, string b) -> int {
-    str | int abc = true; 
-    return a + b;
+function test_all_features() -> void {
+    // variables types base
+    int x = 5;
+    float y = 4.2;
+    bool b = true;
+    str message = "hello mary!";
+    char c = 'm';
 }
