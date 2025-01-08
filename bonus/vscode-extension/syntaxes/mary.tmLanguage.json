@@ -23,7 +23,7 @@
 		},
 		{
 			"name": "operator.mary",
-			"match": "[+\\-*/]"
+			"match": "[+\\-*/]|><!="
 		}
 	],
 	"fileTypes": ["mary"]
