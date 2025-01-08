@@ -17,6 +17,10 @@
 			]
 		},
 		{
+			"name": "string.quoted.double.mary",
+			"match": "\"(\\\\.|[^\"])*\""
+		},
+		{
 			"name": "keyword.control.mary",
 			"match": "\\b(function|return)\\b"
 		},
