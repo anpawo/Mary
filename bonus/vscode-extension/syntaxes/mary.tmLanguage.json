@@ -24,6 +24,21 @@
 		{
 			"name": "operator.mary",
 			"match": "[+\\-*/]|><!="
+		},
+		{
+			"name": "comment.line.double-slash.mary",
+			"match": "//.*"
+		},
+		{
+			"name": "comment.block.mary",
+			"begin": "/\\*",
+			"end": "\\*/",
+			"patterns": [
+				{
+					"match": "\\*\\*.*",
+					"name": "comment.block.documentation.mary"
+				}
+			]
 		}
 	],
 	"fileTypes": ["mary"]
