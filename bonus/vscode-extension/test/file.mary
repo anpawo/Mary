@@ -20,4 +20,12 @@ function test_all_features() -> void {
     } else {
         result = result - 1;
     }
+
+    // boucles
+    int sum = 0;
+    int i = sum;
+    while (i < 10) {
+        sum = sum + i;
+        i = i + 1;
+    }
 }
