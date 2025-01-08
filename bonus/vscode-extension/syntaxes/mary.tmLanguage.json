@@ -20,6 +20,10 @@
 		{
 			"name": "punctuation.mary",
 			"match": "[{}();,=]"
+		},
+		{
+			"name": "operator.mary",
+			"match": "[+\\-*/]"
 		}
 	],
 	"fileTypes": ["mary"]
