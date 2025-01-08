@@ -8,6 +8,10 @@
 		{
 			"name": "storage.type.mary",
 			"match": "\\b(int)\\b"
+		},
+		{
+			"name": "variable.name.mary",
+			"match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
 		}
 	],
 	"fileTypes": ["mary"]
