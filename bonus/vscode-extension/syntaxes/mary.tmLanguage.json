@@ -1,0 +1,10 @@
+{
+	"scopeName": "source.mary",
+	"patterns": [
+		{
+			"name": "keyword.control.mary",
+			"match": "\\b(function|return)\\b"
+		}
+	],
+	"fileTypes": ["mary"]
+  }
