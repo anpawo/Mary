@@ -25,7 +25,7 @@ module Bytecode.Display
 import Bytecode.Data (EnvVar, Instruction)
 
 formatEnvVar :: EnvVar -> String
-formatEnvVar (name, instructions) = name ++ " = \n" ++ unlines (map ("\t" ++) (map show instructions))
+formatEnvVar (name, instructions) = name ++ " = \n" ++ unlines (map (("\t" ++) . show) instructions)
 
 displayBytecode :: [Instruction] -> [EnvVar] -> IO ()
 displayBytecode [] env = putStrLn ("Program:\nThere is no main" ++ "\n\nEnv:\n" ++ concatMap formatEnvVar env)

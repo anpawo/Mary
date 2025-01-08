@@ -81,8 +81,8 @@ compileParams :: [(Type, String)] -> [Instruction]
 compileParams params = concatMap compileParam (reverse params)
 
 astToEnvVar :: Ast -> Either String EnvVar
-astToEnvVar (Function fnName fnArgs _ fnBody) = Right (fnName, (compileParams fnArgs ++ compileExpressions fnBody))
-astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right (opName, (compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody))
+astToEnvVar (Function fnName fnArgs _ fnBody) = Right (fnName, compileParams fnArgs ++ compileExpressions fnBody)
+astToEnvVar (Operator opName _ _ opArgLeft opArgRight opBody) = Right (opName, compileParams [opArgLeft,opArgRight] ++ compileExpressions opBody)
 astToEnvVar other = Left $ "Unsupported AST to bytecode: " ++ show other
 
 findMainFunc :: [EnvVar] -> Bool
