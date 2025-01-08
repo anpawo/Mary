@@ -9,4 +9,8 @@ function test_all_features() -> void {
     // tableaux structures
     int[2] numbers = [1, 2];
     person { name = "john", age = 30 } personStruct;
+
+    // operateurs
+    int result = x + 3 * (2 - 1);
+    float division = y / 2.0;
 }
