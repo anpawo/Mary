@@ -8,7 +8,3 @@ struct person {
     name: str,
     age: age_s
 }
-
-function getname(struct person p) -> str {
-    return p.name;
-}
