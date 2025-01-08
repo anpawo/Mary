@@ -43,7 +43,7 @@ structureSpec :: SpecWith ()
 structureSpec = describe "structure parsing" $ do
   describe "valid cases" $ do
     it "parses a valid structure with multiple members" $ do
-      let input = "struct elem { data: any; next: empty | elem; }"
+      let input = "struct elem { data: any; next: null | elem; }"
       pAst input ==>
         [ Structure "elem"
             [ ("data", AnyType)
@@ -60,11 +60,11 @@ structureSpec = describe "structure parsing" $ do
 
   describe "invalid cases" $ do
     it "fails on missing semicolon between members" $ do
-      let input = "struct elem { data: any next: empty | elem; }"
+      let input = "struct elem { data: any next: null | elem; }"
       pAst input `shouldSatisfy` isLeft
 
     it "fails on missing braces in structure definition" $ do
-      let input = "struct elem data: any; next: empty | elem;"
+      let input = "struct elem data: any; next: null | elem;"
       pAst input `shouldSatisfy` isLeft
 
     it "fails on invalid type for a member" $ do
