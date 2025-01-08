@@ -5,4 +5,8 @@ function test_all_features() -> void {
     bool b = true;
     str message = "hello mary!";
     char c = 'm';
+
+    // tableaux structures
+    int[2] numbers = [1, 2];
+    person { name = "john", age = 30 } personStruct;
 }
