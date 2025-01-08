@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errExpectedStartBody, errTodo, errExpectedEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bggray, errStructureFieldNotBound, errMissingRetT) where
+module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -16,8 +16,8 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set.Internal (elemAt)
 import Data.List (intercalate)
 
-errCondNotBool :: String -> String
-errCondNotBool name = printf "Condition in '%s' must evaluate to a boolean type" $ purple name
+errCondNotBool :: Int -> String
+errCondNotBool i = printf ":%sexpected a %s condition." (show i) (purple "boolean")
 
 errNameTaken :: String -> String
 errNameTaken name = printf "name '%s' already taken." $ purple name
@@ -27,11 +27,11 @@ errExpectedType canBeVoid
     | canBeVoid = printf "expected a %s (including void)." $ purple "type"
     | otherwise = printf "expected a %s (excluding void)." $ purple "type"
 
-errExpectedStartBody :: String
-errExpectedStartBody = printf "expected a '%s' representing the start of the body of the function." $ purple "{"
+errStartBody :: String
+errStartBody = printf "expected a '%s' representing the start of the body of the function." $ purple "{"
 
-errExpectedEndBody :: String
-errExpectedEndBody = printf "expected a '%s' representing the end of the body of the function." $ purple "}"
+errEndBody :: String
+errEndBody = printf "expected a '%s' representing the end of the body of the function." $ purple "}"
 
 errTodo :: String -> String
 errTodo = printf "todo: %s." . purple
@@ -47,6 +47,9 @@ errEmptyParen = printf ":2expected an expression inside the %s." $ purple "paren
 
 errEmptyExpr :: String
 errEmptyExpr = "expected an expression."
+
+errExpectedField :: String
+errExpectedField = "expected a structure field."
 
 errMissingRetT :: String
 errMissingRetT = printf "expected return type: '%s'." (purple "-> <type>")
@@ -150,7 +153,7 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
                     | otherwise = drop (len - 10) l
                     where len = length l
         (TrivialError offset unexpected expected :| _) ->
-            printf "This error should be transformed into a custom one:\n\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show $ tokens !! offset) (show unexpected) (show expected)
+            printf "This error should be transformed into a custom one:\nindex error: %s\nerror token: %s %s %s\nunexpected: %s\nexpected: %s\n" (show offset) (show $ tokens !! (offset - 1)) (red . show $ tokens !! offset) (show $ tokens !! (offset + 1)) (show unexpected) (show expected)
 
 red :: String -> String
 red s = "\ESC[91m" ++ s ++ reset
@@ -161,5 +164,5 @@ purple s = "\ESC[95m" ++ s ++ reset
 reset :: String
 reset = "\ESC[0m"
 
-bggray :: String -> String
-bggray s = "\ESC[48;2;10;10;10m" ++ s ++ reset
+bgBlack :: String -> String
+bgBlack s = "\ESC[48;2;10;10;10m" ++ s ++ reset

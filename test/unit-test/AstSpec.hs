@@ -19,6 +19,8 @@ import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
 import Utils.Lib
+import Utils.ArgParser
+import Ast.Import (resolveImports)
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -26,10 +28,12 @@ import Utils.Lib
 -- (==!) :: (Show a, Eq a, Show b, Eq b) => Either a b -> a -> Expectation
 -- (==!) got expected = got `shouldBe` Left expected
 
-pAst :: String -> Either (ParseErrorBundle [MyToken] Void) [Ast]
+pAst :: String -> IO (Either (ParseErrorBundle [MyToken] Void) [Ast])
 pAst s = case run tokenize s of
   Left _ -> error "pAst"
-  Right o -> run tokenToAst o
+  Right tokens -> do
+    (builtins, imports) <- resolveImports defaultArguments tokens
+    return $ run (tokenToAst builtins imports) tokens
 
 spec :: Spec
 spec = do
@@ -43,7 +47,8 @@ ifThenElseSpec = describe "if-then-else" $ do
   describe "valid cases" $ do
     it "parses a valid if-then-else statement" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x < 10 then { y = y + 1; } else { y = 0; } }"
-      pAst input ==>
+      ast <- pAst input
+      ast ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
             , Variable (IntType, "y") (Lit (IntLit 0))
@@ -54,7 +59,8 @@ ifThenElseSpec = describe "if-then-else" $ do
         ]
     it "parses a valid if-then statement without else" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x == 0 then { y = 1; } }"
-      pAst input ==>
+      ast <- pAst input
+      ast ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
             , Variable (IntType, "y") (Lit (IntLit 0))
@@ -66,11 +72,13 @@ ifThenElseSpec = describe "if-then-else" $ do
   describe "invalid cases" $ do
     it "fails on missing 'then' keyword in if-then-else" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x == 0 { y = 1; } else { y = 0; } }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
     it "fails on missing braces in if-then-else" $ do
       let input = "function main()  -> void { int x = 0; int y = 0; if x == 0 then y = 1; else y = 0; }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
 
 whileSpec :: SpecWith ()
@@ -78,7 +86,8 @@ whileSpec = describe "while loop" $ do
   describe "valid cases" $ do
     it "parses a valid while loop with one statement" $ do
       let input = "function main () -> void { int x = 0; while x < 10 then { x = x + 1; } }"
-      pAst input ==>
+      ast <- pAst input
+      ast ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
             ,  While (FunctionCall "<" [VariableCall "x", Lit (IntLit 10)])
@@ -87,7 +96,8 @@ whileSpec = describe "while loop" $ do
         ]
     it "parses a valid while loop with multiple statements" $ do
       let input = "function main () -> void { int x = 0; int y = 0; while x < 10 then { x = x + 1; y = y + 2; } }"
-      pAst input ==>
+      ast <- pAst input
+      ast ==>
         [ Function "main" [] VoidType
             [ Variable (IntType, "x") (Lit (IntLit 0))
             , Variable (IntType, "y") (Lit (IntLit 0))
@@ -100,11 +110,13 @@ whileSpec = describe "while loop" $ do
   describe "invalid cases" $ do
     it "fails on missing braces in while loop" $ do
       let input = "function main () -> void { int x = 0; while x < 10 then x = x + 1; }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
     it "fails on empty body for while loop" $ do
       let input = "function main () -> void { int x = 0; while x < 10 then {} }"
-      pAst input `shouldSatisfy` isLeft
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
 
 op0 :: String
@@ -124,8 +136,12 @@ operator ** precedence 8 (int a, int b) -> int {
 operatorSpec :: SpecWith ()
 operatorSpec = describe "operator" $ do
     describe "creation" $ do
-      it "basic" $ pAst op0 ==> [Operator {opName = "**", opPrecedence = 0, opRetType = IntType, opArgLeft = (IntType,"a"), opArgRight = (IntType,"b"), opBody = [Return {retValue = Lit (IntLit 0)}]}]
-      it "recursive" $ pAst opRec ==> [Operator {opName = "**", opPrecedence = 8, opRetType = IntType, opArgLeft = (IntType,"a"), opArgRight = (IntType,"b"), opBody = [Return {retValue = FunctionCall {fnCallName = "**", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "-", fnCallArgs = [VariableCall {varCallName = "b"},Lit $ IntLit 1]}]}}]}]
+      it "basic" $ do
+        ast <- pAst op0
+        ast ==> [Operator {opName = "**", opPrecedence = 0, opRetType = IntType, opArgLeft = (IntType,"a"), opArgRight = (IntType,"b"), opBody = [Return {retValue = Lit (IntLit 0)}]}]
+      it "recursive" $ do
+        ast <- pAst opRec
+        ast ==> [Operator {opName = "**", opPrecedence = 8, opRetType = IntType, opArgLeft = (IntType,"a"), opArgRight = (IntType,"b"), opBody = [Return {retValue = FunctionCall {fnCallName = "**", fnCallArgs = [VariableCall {varCallName = "a"},FunctionCall {fnCallName = "-", fnCallArgs = [VariableCall {varCallName = "b"},Lit $ IntLit 1]}]}}]}]
 
 fnNoParam :: String
 fnNoParam = [r|
@@ -144,5 +160,9 @@ function suc(int x) -> int {
 functionSpec :: SpecWith ()
 functionSpec = describe "function" $ do
     describe "creation" $ do
-      it "no param" $ pAst fnNoParam ==> [Function {fnName = "zero", fnArgs = [], fnRetType = IntType, fnBody = [Return {retValue = Lit (IntLit 0)}]}]
-      it "one param" $ pAst fnParam ==> [Function {fnName = "suc", fnArgs = [(IntType,"x")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "x"},Lit (IntLit 1)]}}]}]
+      it "no param" $ do
+        ast <- pAst fnNoParam
+        ast ==> [Function {fnName = "zero", fnArgs = [], fnRetType = IntType, fnBody = [Return {retValue = Lit (IntLit 0)}]}]
+      it "one param" $ do
+        ast <- pAst fnParam
+        ast ==> [Function {fnName = "suc", fnArgs = [(IntType,"x")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "x"},Lit (IntLit 1)]}}]}]

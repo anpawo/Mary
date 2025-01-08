@@ -1,0 +1,11 @@
+[test.if]
+cmd = "../../glados --ast --import ../../stdlib input/if/basic.txt"
+stdout = """
+[Function {fnName = "if_test", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}]}]
+"""
+
+[test.if_without_else]
+cmd = "../../glados --ast --import ../../stdlib input/if/no_else.txt"
+stdout = """
+[Function {fnName = "if_test", fnArgs = [(int,"a"),(int,"b")], fnRetType = int, fnBody = [IfThenElse {ifCond = FunctionCall {fnCallName = "<", fnCallArgs = [VariableCall {varCallName = "a"},VariableCall {varCallName = "b"}]}, thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}], elseExpr = []},Return {retValue = VariableCall {varCallName = "b"}}]}]
+"""

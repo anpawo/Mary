@@ -27,11 +27,16 @@ library
   exposed-modules:
       Ast.Ast
       Ast.Error
+      Ast.Import
+      Ast.TokenParser
+      Ast.TopLevelDeclaration
+      Ast.TreeBuilder
       Bytecode.Compiler
       Bytecode.Data
       Bytecode.Display
       Parser.Token
       Parser.Tokenizer
+      Utils.ArgParser
       Utils.Lib
       VM.VirtualMachine
   other-modules:
@@ -44,6 +49,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
     , megaparsec
     , raw-strings-qq >=1.0.0
   default-language: Haskell2010
@@ -60,6 +66,7 @@ executable glados-exe
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
     , glados
     , megaparsec
     , raw-strings-qq >=1.0.0
@@ -84,6 +91,7 @@ test-suite glados-test
       HUnit
     , base >=4.7 && <5
     , containers
+    , directory
     , glados
     , hspec
     , megaparsec

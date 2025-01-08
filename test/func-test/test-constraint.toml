@@ -1,11 +1,11 @@
 [test.type_creation]
-cmd = "../../glados --ast input/type/creation.txt"
+cmd = "../../glados --ast --import ../../stdlib input/type/creation.txt"
 stdout = """
 [Constraint {constrName = "number2", constrType = [int,float]},Function {fnName = "test", fnArgs = [(number2,"a"),(number2,"b")], fnRetType = number2, fnBody = [Return {retValue = VariableCall {varCallName = "a"}}]}]
 """
 
 [test.temporary_type]
-cmd = "../../glados --ast input/type/temp.txt"
+cmd = "../../glados --ast --import ../../stdlib input/type/temp.txt"
 stdout = """
 [Function {fnName = "test", fnArgs = [(number | int,"a"),(int | float,"b")], fnRetType = int | float, fnBody = [Variable {varMeta = (int | float,"c"), varValue = VariableCall {varCallName = "b"}},Return {retValue = VariableCall {varCallName = "c"}}]}]
 """

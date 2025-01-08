@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6.7
 - raw-strings-qq >= 1.0.0
+- directory
 
 ghc-options:
 - -Wall
@@ -43,6 +44,7 @@ library:
   dependencies:
     - megaparsec
     - containers
+    - directory
 
 executables:
   glados-exe:
@@ -56,6 +58,7 @@ executables:
     - glados
     - megaparsec
     - containers
+    - directory
 
 tests:
   glados-test:
@@ -74,3 +77,4 @@ tests:
     - megaparsec
     - hspec
     - containers
+    - directory
