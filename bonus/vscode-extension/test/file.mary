@@ -1,3 +1,7 @@
+function add(int a, int b) -> int {
+    return a + b;
+}
+
 function test_all_features() -> void {
     // variables types base
     int x = 5;
@@ -23,9 +27,10 @@ function test_all_features() -> void {
 
     // boucles
     int sum = 0;
-    int i = sum;
-    while (i < 10) {
+    for (int i = 0; i < 10; i = i + 1) {
         sum = sum + i;
-        i = i + 1;
     }
+
+    // fonctions retour
+    int additionResult = add(10, 20);
 }
