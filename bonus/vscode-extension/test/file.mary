@@ -11,7 +11,7 @@ function test_all_features() -> void {
     char c = 'm';
 
     // tableaux structures
-    int[2] numbers = [1, 2];
+    arr[int] numbers = [1, 2];
     person { name = "john", age = 30 } personStruct;
 
     // operateurs
@@ -27,10 +27,32 @@ function test_all_features() -> void {
 
     // boucles
     int sum = 0;
-    for (int i = 0; i < 10; i = i + 1) {
+    int i = sum;
+    while (i < 10) {
         sum = sum + i;
+        i = i + 1;
     }
 
     // fonctions retour
     int additionResult = add(10, 20);
+
+    // litteraux
+    str greeting = "hello world!";
+    bool isTrue = true;
+    int negNumber = -42;
+
+    // test structures
+    personStruct.name = "jane";
+    personStruct.age = 25;
+
+    // test tableaux
+    arr[int] moreNumbers = [numbers[0] + 1, numbers[1] + 2];
+
+    // retour resultats
+    print("test keywords : ", result);
+    print("test types litteraux : ", greeting, isTrue, negNumber);
+    print("test fonctions : ", additionResult);
+    print("test structures : ", personStruct.name, personStruct.age);
+    print("test tableaux : ", moreNumbers[0], moreNumbers[1]);
+    print("test boucles : ", sum);
 }
