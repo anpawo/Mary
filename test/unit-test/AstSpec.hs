@@ -112,6 +112,11 @@ ifThenElseSpec = describe "if-then-else" $ do
       let input = "function main() -> void { int x = 0; int y = 0; if x == 0 { y = 1; } else { y = 0; } }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
+    
+    it "fails not boolean condition" $ do
+      let input = "function main() -> void { int x = 0; int y = 0; if x + 0 then { y = 1; } else { y = 0; } }"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
     it "fails on missing braces in if-then-else" $ do
       let input = "function main()  -> void { int x = 0; int y = 0; if x == 0 then y = 1; else y = 0; }"

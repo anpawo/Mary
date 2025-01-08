@@ -5,7 +5,7 @@
 -- TokenParser
 -}
 
-module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral, tok) where 
+module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral, tok, importKw) where 
 
 import Parser.Token
 
@@ -51,6 +51,11 @@ isLiteral :: MyToken -> Bool
 isLiteral (Literal {}) = True
 isLiteral _            = False
 
+-- keyword check
+isImport :: MyToken -> Bool
+isImport (ImportKw _) = True
+isImport _            = False
+
 -- literal parser
 intLiteral :: Parser Int
 intLiteral = intLiteralValue . literal <$> satisfy isIntLiteral
@@ -92,3 +97,7 @@ floatType = typing <$> tok (Type FloatType)
 
 strType :: Parser Type
 strType = typing <$> tok (Type StrType)
+
+-- keyword parser
+importKw :: Parser MyToken
+importKw = satisfy isImport

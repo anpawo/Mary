@@ -45,9 +45,8 @@ operator builtin . precedence 10 (any a, any b) -> any
 // access array elements
 function builtin length(arr[any] a) -> int
 function builtin at(arr[any] a, int b) -> any
+
 function builtin append(arr[any] a, any b, int c) -> arr[any]
 function builtin pop(arr[any] a, int c) -> any
-function builtin sum(arr[int] a) -> int
-function builtin diff(arr[int] a) -> int
 
 // more to come

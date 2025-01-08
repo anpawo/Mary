@@ -51,7 +51,7 @@ data Ast
   deriving (Show, Eq)
 
 tokenToAst :: Ctx -> Ctx -> Parser Ctx
-tokenToAst builtins imports = drop (length builtins) <$> ast (builtins ++ imports)
+tokenToAst builtins imports = drop (length builtins) <$> (many importKw *> ast (builtins ++ imports))
 
 ast :: Ctx -> Parser Ctx
 ast ctx = (eof $> ctx) <|> ((function ctx <|> operator ctx <|> structure ctx <|> constraint ctx <|> failN errTopLevelDef) >>= (\x -> ast (ctx ++ [x])))
