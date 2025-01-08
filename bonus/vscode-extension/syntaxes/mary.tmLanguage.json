@@ -4,6 +4,10 @@
 		{
 			"name": "keyword.control.mary",
 			"match": "\\b(function|return)\\b"
+		},
+		{
+			"name": "storage.type.mary",
+			"match": "\\b(int)\\b"
 		}
 	],
 	"fileTypes": ["mary"]
