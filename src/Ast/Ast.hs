@@ -689,23 +689,18 @@ structure ctx = do
 parseMembers :: Ctx -> Parser [(String, Type)]
 parseMembers ctx = sepBy (parseMember ctx) (tok SemiColon)
 
-parseType :: Ctx -> Parser Type
-parseType ctx = choice
-  [ AnyType <$ tok (Type AnyType)
-  , NullType <$ tok (Type NullType)
-  , StructType <$> symbolIdentifier
-  , parseConstraintTypes ctx
-  ]
-
 parseMember :: Ctx -> Parser (String, Type)
 parseMember ctx =
   (,) <$> symbolIdentifier
       <*> (tok Colon *> parseType ctx)
 
-parseConstraintTypes :: Ctx -> Parser Type
-parseConstraintTypes ctx = do
-  typesList <- sepBy1 (parseSimpleType ctx) (tok Pipe)
-  return $ ConstraintType Nothing typesList
+parseType :: Ctx -> Parser Type
+parseType ctx = do
+  firstType <- parseSimpleType ctx
+  moreTypes <- optional (tok Pipe *> sepBy1 (parseSimpleType ctx) (tok Pipe))
+  case moreTypes of
+    Nothing -> return firstType
+    Just more -> return $ ConstraintType Nothing (firstType : more)
 
 parseSimpleType :: Ctx -> Parser Type
 parseSimpleType ctx = choice
@@ -718,4 +713,5 @@ parseSimpleType ctx = choice
   , StrType <$ tok (Type StrType)
   , ArrType <$> (tok BracketOpen *> parseType ctx <* tok BracketClose)
   , StructAnyType <$ tok (Type StructAnyType)
+  , StructType <$> symbolIdentifier
   ]
