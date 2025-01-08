@@ -56,11 +56,11 @@ data Value
   deriving (Eq)
 
 instance Show Value where
-  show (VmChar c)         = "'" ++ show c ++ "'"
+  show (VmChar c)         = show c
   show (VmBool b)         = show b
   show (VmInt i)          = show i
   show (VmFloat f)        = show f
-  show (VmString s)       = "\"" ++ show s ++ "\""
+  show (VmString s)       = show s
   show (VmArray instrs)   = "Array " ++ show instrs
   show (VmStruct fields)  = "Struct " ++ show fields
   show VmNull             = "Null"
