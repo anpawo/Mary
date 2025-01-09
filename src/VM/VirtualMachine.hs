@@ -88,13 +88,18 @@ type Env = [EnvVar]
 -- exec ind _ [] [] = Left "No value in stack at end of program"
 -- exec ind _ _ _ = Left "Invalid program"
 
+countParamFunc :: [Instruction] -> Int -> Int
+countParamFunc [] nb = nb
+countParamFunc (Store _: rest) nb = countParamFunc rest (nb + 1)
+countParamFunc (_: rest) nb = nb
+
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
-doCurrentInstr (Just Ret) ind _ is (x : _) = print "return:" >> print x >> pure x
+doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
-doCurrentInstr (Just (Push v)) ind env is stack = print "push:" >> print (v:stack) >> exec (ind + 1) env is (v : stack)
+doCurrentInstr (Just (Push v)) ind env is stack = exec (ind + 1) env is (v : stack)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
-  Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : stack)
+  Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
 doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = print v >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
@@ -115,14 +120,14 @@ doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = ca
 doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack
-  (VmFunc "*") -> print "*:" >> print stack >> operatorExec "*" (*) ind env is stack
+  (VmFunc "*") -> operatorExec "*" (*) ind env is stack
   (VmFunc "/") -> operatorExec "/" div ind env is stack
-  (VmFunc "<") -> print "<:" >> print stack >> boolOperatorExec "<" (<) ind env is stack
+  (VmFunc "<") -> boolOperatorExec "<" (<) ind env is stack
   (VmFunc "==") -> case stack of
     (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
     _ -> fail "Eq expects two VmInt on the stack"
   VmFunc name -> case lookup name env of
-    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : stack)
+    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
     Nothing -> fail ("Variable or function " ++ name ++ " not found")
   _ -> fail "Call expects an operator or a function on top of the stack"
 doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
