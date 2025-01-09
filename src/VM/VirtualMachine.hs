@@ -101,7 +101,7 @@ doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((nam
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
-doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint v >> exec (ind + 1) env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint v ind >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt 0:stack) = exitSuccess
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt status:stack) = exitWith $ ExitFailure status
@@ -153,15 +153,22 @@ boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> S
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
 
-vmPrint:: Value -> IO()
-vmPrint VmArray = recPrint
+isCallInstruction :: Instruction -> Bool
+isCallInstruction Call = True
+isCallInstruction _   = False
 
-recPrint :: Program -> IO()
-recPrint [VmBool b : rest] = print b >> recPrint rest
-recPrint [VmChar c : rest] = print c >> recPrint rest
-recPrint [VmString s : rest] = print s >> recPrint rest
-recPrint [VmFloat f : rest] = print f >> recPrint rest
-recPrint [VmInt i : rest] = print i >> recPrint rest
-recPrint [VmArray arr : rest] = recPrint arr >> recPrint rest
-recPrint [Push p : rest] = print p >> recPrint rest
-recPrint [_ : rest] = recPrint rest
+splitAtInstruction :: (Instruction -> Bool) -> Program -> (Program, Program)
+splitAtInstruction _ [] = ([], [])
+splitAtInstruction predicate (instr:rest)
+  | predicate instr = ([instr], rest)
+  | otherwise = let (before, after) = splitAtInstruction predicate rest
+                in (instr : before, after)
+
+splitProgramAtCall :: Program -> (Program, Program)
+splitProgramAtCall = splitAtInstruction isCallInstruction
+
+vmPrint :: Value -> Int -> IO Value
+vmPrint (VmArray instrs) ind = let (before, after) = splitProgramAtCall instrs
+                            in exec (ind+1) [] before [] >> exec (ind+1) [] after []
+vmPrint (VmStruct fields) ind = mapM_ (\(name, instrs) -> print name >> exec (ind+1) [] instrs []) fields >> pure VmNull
+vmPrint v ind = print v >> pure VmNull
