@@ -104,7 +104,7 @@ doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
 doCurrentInstr (Just Call) ind env is (VmFunc "is": VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "is": stack) = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint v ind >> exec (ind + 1) env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint v >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt 0:stack) = exitSuccess
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt status:stack) = exitWith $ ExitFailure status
@@ -156,22 +156,7 @@ boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> S
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
 
-isCallInstruction :: Instruction -> Bool
-isCallInstruction Call = True
-isCallInstruction _   = False
-
-splitAtInstruction :: (Instruction -> Bool) -> Program -> (Program, Program)
-splitAtInstruction _ [] = ([], [])
-splitAtInstruction predicate (instr:rest)
-  | predicate instr = ([instr], rest)
-  | otherwise = let (before, after) = splitAtInstruction predicate rest
-                in (instr : before, after)
-
-splitProgramAtCall :: Program -> (Program, Program)
-splitProgramAtCall = splitAtInstruction isCallInstruction
-
-vmPrint :: Value -> Int -> IO Value
-vmPrint (VmArray instrs) ind = let (before, after) = splitProgramAtCall instrs
-                            in exec (ind+1) [] before [] >> exec (ind+1) [] after []
-vmPrint (VmStruct fields) ind = mapM_ (\(name, instrs) -> print name >> exec (ind+1) [] instrs []) fields >> pure VmNull
-vmPrint v ind = print v >> pure VmNull
+vmPrint :: Value  -> IO ()
+vmPrint (VmArray _ instrs) = mapM_ (\instr -> exec 0 [] instr []) instrs
+vmPrint (VmStruct struc_name fields) = print struc_name >> mapM_ (\(name, instrs) -> print name >> exec 0 [] instrs []) fields
+vmPrint v = print v
