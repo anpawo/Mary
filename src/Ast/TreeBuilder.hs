@@ -67,8 +67,6 @@ getGroup ctx locVar = getOffset >>= (\offset -> choice
       if endFound
         then pure [GGr offset arg]
         else (GGr offset arg :) <$> getAllArgs offset
-        -- (tok ParenClose $> [arg]) <|> (tok Comma *> ((arg :) <$> getAllArgs))
-      -- (args, sep) -> (tok ParenClose $> [arg]) <|> (tok Comma *> ((arg :) <$> getAllArgs))
 
 mountGroup :: Ctx -> [Group] -> Parser Group
 mountGroup _ [] = fail errEmptyExpr
@@ -159,6 +157,7 @@ fixOp :: [Group] -> Parser [Group]
 fixOp [] = pure []
 fixOp (dot@(GOp _ "." []): GVar idx name:xs) = (dot:) . (GLit idx (StringLit name):) <$> fixOp xs
 fixOp (GOp index "." []: _:_) = failI (index + 1) errExpectedField
+fixOp (GFn index "is" [l, GGr _ [GVar idx name]]: xs) = (GFn index "is" [l, GLit idx (StringLit name)]:) <$> fixOp xs
 fixOp (x:xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
