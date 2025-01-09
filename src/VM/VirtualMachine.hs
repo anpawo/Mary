@@ -101,7 +101,7 @@ doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((nam
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
-doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = print v >> exec (ind + 1) env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint v >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt 0:stack) = exitSuccess
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt status:stack) = exitWith $ ExitFailure status
@@ -152,3 +152,16 @@ operatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
 boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> Stack -> IO Value
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
+
+vmPrint:: Value -> IO()
+vmPrint VmArray = recPrint
+
+recPrint :: Program -> IO()
+recPrint [VmBool b : rest] = print b >> recPrint rest
+recPrint [VmChar c : rest] = print c >> recPrint rest
+recPrint [VmString s : rest] = print s >> recPrint rest
+recPrint [VmFloat f : rest] = print f >> recPrint rest
+recPrint [VmInt i : rest] = print i >> recPrint rest
+recPrint [VmArray arr : rest] = recPrint arr >> recPrint rest
+recPrint [Push p : rest] = print p >> recPrint rest
+recPrint [_ : rest] = recPrint rest
