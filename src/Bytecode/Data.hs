@@ -63,7 +63,7 @@ instance Show Value where
   show (VmInt i)          = show i
   show (VmFloat f)        = show f
   show (VmString s)       = s
-  show (VmArray instrs)   = printf "[%s]" $ show instrs
+  show (VmArray instrs)   = printf "%s" $ show instrs
   show (VmStruct fields)  = printf "{%s}" $ show fields
   show VmNull             = "null"
   show (VmFunc name)      = printf "function %s" name

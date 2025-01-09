@@ -30,14 +30,14 @@ instructionSpec = describe "data Value" $ do
 
 valueSpec :: SpecWith ()
 valueSpec = describe "Value Show instance" $ do
-    it "shows VmChar correctly" $ show (VmChar 'a') `shouldBe` "'a'"
-    it "shows VmBool correctly" $ show (VmBool True) `shouldBe` "True"
+    it "shows VmChar correctly" $ show (VmChar 'a') `shouldBe` "a"
+    it "shows VmBool correctly" $ show (VmBool True) `shouldBe` "true"
     it "shows VmInt correctly" $ show (VmInt 42) `shouldBe` "42"
     it "shows VmFloat correctly" $ show (VmFloat 3.14) `shouldBe` "3.14"
-    it "shows VmString correctly" $ show (VmString "hello") `shouldBe` "\"hello\""
-    it "shows VmArray correctly" $ show (VmArray [Push (VmInt 1), Call]) `shouldBe` "Array [Push 1,Call]"
-    it "shows VmStruct correctly" $ show (VmStruct [("field1", [Push (VmInt 1)])]) `shouldBe` "Struct [(\"field1\",[Push 1])]"
-    it "shows VmNull correctly" $ show VmNull `shouldBe` "Null"
-    it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "Func \"myFunc\""
+    it "shows VmString correctly" $ show (VmString "hello") `shouldBe` "hello"
+    it "shows VmArray correctly" $ show (VmArray [Push (VmInt 1), Call]) `shouldBe` "[Push 1,Call]"
+    it "shows VmStruct correctly" $ show (VmStruct [("field1", [Push (VmInt 1)])]) `shouldBe` "{[(\"field1\",[Push 1])]}"
+    it "shows VmNull correctly" $ show VmNull `shouldBe` "null"
+    it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "function myFunc"
 
 
