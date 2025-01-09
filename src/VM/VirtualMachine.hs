@@ -153,16 +153,14 @@ exec :: Int -> Env -> Program -> Stack -> IO Value
 exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
 
 operatorExec :: String -> (forall a. Num a => a -> a -> a) -> Int -> Env -> Program -> Stack -> IO Value
-operatorExec "/" _ _ _ _(VmInt 0 : _) =  fail "Division by 0 is prohibited"
-operatorExec "%" _ _ _ _(VmInt 0 : _) =  fail "Division by 0 is prohibited"
 operatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmInt (func b a) : rest)
 operatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmFloat (func b a) : rest)
-operatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
+operatorExec name _ _ _ _ _ = fail $ name ++ " expects two numbers on the stack"
 
 boolOperatorExec :: String -> (forall a. Ord a => a -> a -> Bool) -> Int -> Env -> Program -> Stack -> IO Value
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
-boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
+boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two numbers on the stack"
 
 vmPrint :: Env -> Value  -> IO ()
 vmPrint env (VmArray _ instrs) = mapM_ (\instr -> exec 0 env instr []) instrs
