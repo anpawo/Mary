@@ -1,0 +1,62 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - list
+//
+
+import std
+
+struct empty {}
+
+struct elem {
+    data: any,
+    next: empty | elem
+}
+
+type list = empty | elem;
+
+operator ++ precedence 5 (list l, list r) -> list {
+    if is(l, empty) then
+    {
+        return r;
+    }
+    if is(r, empty) then
+    {
+        return l;
+    }
+    return elem { data = l.data, next = l.next ++ r };
+}
+
+operator :| precedence 5 (any d, list l) -> list {
+    return elem { data = d, next = l };
+}
+
+operator |: precedence 5 (list l, any d) -> list {
+    if is(l, empty) then
+    {
+        return elem { data = d, next = empty {} };
+    }
+    else
+    {
+        return elem { data = l.data, next = l.next |: d };
+    }
+}
+
+operator !! precedence 10 (list l, int index) -> null | any {
+    if index < 0 || is(l, empty) then
+    {
+        return NULL;
+    }
+    else
+    {
+        if index == 0 then
+        {
+            return l.data;
+        }
+        else
+        {
+            return l.next !! (index - 1);
+        }
+    }
+}

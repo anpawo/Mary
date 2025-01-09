@@ -49,4 +49,6 @@ function builtin at(arr[any] a, int b) -> any
 function builtin append(arr[any] a, any b, int c) -> arr[any]
 function builtin pop(arr[any] a, int c) -> any
 
-// more to come
+// conversion
+function builtin toInt(number | bool n) -> int
+function builtin toFloat(number | bool n) -> float
