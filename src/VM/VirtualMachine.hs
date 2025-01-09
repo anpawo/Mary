@@ -98,6 +98,8 @@ doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
       Right res -> exec (ind + 1) env is (res : stack)
       Left _    -> pure $ Left "Error loading instructions"
   Nothing -> pure $ Left ("Variable or function " ++ name ++ " not found")
+doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = print v >> exec (ind + 1) env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack

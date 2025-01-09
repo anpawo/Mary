@@ -23,6 +23,7 @@ module Bytecode.Data
     Value(..),
     EnvVar,
   ) where
+import Text.Printf (printf)
 
 data Instruction
   = Push Value
@@ -56,14 +57,15 @@ data Value
   deriving (Eq)
 
 instance Show Value where
-  show (VmChar c)         = show c
-  show (VmBool b)         = show b
+  show (VmChar c)         = [c]
+  show (VmBool True)      = "true"
+  show (VmBool False)     = "false"
   show (VmInt i)          = show i
   show (VmFloat f)        = show f
-  show (VmString s)       = show s
-  show (VmArray instrs)   = "Array " ++ show instrs
-  show (VmStruct fields)  = "Struct " ++ show fields
-  show VmNull             = "Null"
-  show (VmFunc name)      = "Func " ++ show name
+  show (VmString s)       = s
+  show (VmArray instrs)   = printf "[%s]" $ show instrs
+  show (VmStruct fields)  = printf "{%s}" $ show fields
+  show VmNull             = "null"
+  show (VmFunc name)      = printf "function %s" name
 
 type EnvVar = (String, [Instruction])
