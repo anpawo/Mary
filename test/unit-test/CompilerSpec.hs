@@ -40,7 +40,7 @@ convertLiteralSpec = describe "convertLiteral" $ do
   it "converts StringLit to VmString" $
     convertLiteral (StringLit "test") `shouldBe` VmString "test"
   it "converts ArrLit to VmArray" $
-    convertLiteral (ArrLit IntType [Lit $ IntLit 1, Lit $ IntLit 2]) `shouldBe` VmArray "int" [Push (VmInt 1), Push (VmInt 2)]
+    convertLiteral (ArrLit IntType [Lit $ IntLit 1, Lit $ IntLit 2]) `shouldBe` VmArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]
   it "converts StructLit to VmStruct" $
     convertLiteral (StructLit "person" [("name", Lit $ StringLit "marius"), ("age", Lit $ IntLit 1)]) `shouldBe` VmStruct "person" [("name", [Push $ VmString "marius"]), ("age", [Push $ VmInt 1])]
   it "converts NullLit to VmNull" $

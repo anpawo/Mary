@@ -35,7 +35,7 @@ valueSpec = describe "Value Show instance" $ do
     it "shows VmInt correctly" $ show (VmInt 42) `shouldBe` "42"
     it "shows VmFloat correctly" $ show (VmFloat 3.14) `shouldBe` "3.14"
     it "shows VmString correctly" $ show (VmString "hello") `shouldBe` "hello"
-    it "shows VmArray correctly" $ show (VmArray "int" [Push (VmInt 1), Call]) `shouldBe` "[Push 1,Call]"
+    it "shows VmArray correctly" $ show (VmArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]) `shouldBe` "[[Push 1],[Push 2]]"
     it "shows VmStruct correctly" $ show (VmStruct "test" [("field1", [Push (VmInt 1)])]) `shouldBe` "test{[(\"field1\",[Push 1])]}"
     it "shows VmNull correctly" $ show VmNull `shouldBe` "null"
     it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "function myFunc"

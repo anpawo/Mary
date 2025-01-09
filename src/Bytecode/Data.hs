@@ -52,7 +52,7 @@ data Value
   | VmInt Int
   | VmFloat Double
   | VmString String
-  | VmArray String [Instruction]
+  | VmArray String [[Instruction]]
   | VmStruct String [(String, [Instruction])]
   | VmNull
   | VmFunc String
