@@ -61,7 +61,7 @@ instance Show Type where
   show FloatType = "float"
   show StrType = "str"
   show (ArrType t) = printf "arr[%s]" $ show t
-  show (StructType n) = printf "struct %s" n
+  show (StructType n) = printf "%s" n
   show AnyType = "any"
   show StructAnyType = "struct any"
   show (ConstraintType (Just n) _) = n
