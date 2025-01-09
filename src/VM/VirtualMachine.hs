@@ -124,8 +124,11 @@ doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = ca
 doCurrentInstr (Just Call) ind env is (VmFunc "+" : stack) = operatorExec "+" (+) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "-" : stack) = operatorExec "-" (-) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "*" : stack) = operatorExec "*" (*) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt _ : VmInt _ : stack) = operatorExec "/" div ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat _ : VmFloat _ : stack) = operatorExec "/" (/) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt 0 : VmInt _ : stack) = fail "Division by 0 is prohibited for integers"
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat 0.0 : VmFloat _ : stack) = fail "Division by 0 is prohibited for floats"
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt a : VmInt b : stack) = exec (ind + 1) env is (VmInt (div b a) : stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : stack) = fail "The '/' operator expects two numbers (VmInt or VmFloat) on the stack"
 doCurrentInstr (Just Call) ind env is (VmFunc "<" : stack) = boolOperatorExec "<" (<) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc ">" : stack) = boolOperatorExec ">" (>) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "==" : stack) = case stack of
