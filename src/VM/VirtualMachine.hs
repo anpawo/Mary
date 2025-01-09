@@ -121,20 +121,21 @@ doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmInt v:stack) = exec 
 doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = case readMaybe v of
   Just f -> exec (ind + 1) env is (VmFloat f:stack)
   Nothing -> exec (ind + 1) env is (VmNull:stack)
-doCurrentInstr (Just Call) ind env is (v : stack) = case v of
-  (VmFunc "+") -> operatorExec "+" (+) ind env is stack
-  (VmFunc "-") -> operatorExec "-" (-) ind env is stack
-  (VmFunc "*") -> operatorExec "*" (*) ind env is stack
-  (VmFunc "<") -> boolOperatorExec "<" (<) ind env is stack
-  -- (VmFunc "/") -> operatorExec "/" div ind env is stack
-  (VmFunc "==") -> case stack of
-    (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-    (VmFloat a : VmFloat b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-    _ -> fail "Eq expects two numeric values on the stack"
-  VmFunc name -> case lookup name env of
+doCurrentInstr (Just Call) ind env is (VmFunc "+" : stack) = operatorExec "+" (+) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "-" : stack) = operatorExec "-" (-) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "*" : stack) = operatorExec "*" (*) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt _ : VmInt _ : stack) = operatorExec "/" div ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat _ : VmFloat _ : stack) = operatorExec "/" (/) ind env is stackoperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmFloat (func b a) : rest)
+doCurrentInstr (Just Call) ind env is (VmFunc "<" : stack) = boolOperatorExec "<" (<) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc ">" : stack) = boolOperatorExec ">" (>) ind env is stack
+doCurrentInstr (Just Call) ind env is (VmFunc "==" : stack) = case stack of
+  (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
+  (VmFloat a : VmFloat b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
+  _ -> fail "Eq expects two numeric values on the stack"
+doCurrentInstr(Just Call) ind env is (VmFunc name : stack) = case lookup name env of
     Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
     Nothing -> fail ("Variable or function " ++ name ++ " not found")
-  _ -> fail "Call expects an operator or a function on top of the stack"
+doCurrentInstr(Just Call) ind env is _ = fail "Call expects an operator or a function on top of the stack"
 doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
 doCurrentInstr (Just (JumpIfFalse _)) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
 doCurrentInstr (Just (JumpIfFalse _)) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
