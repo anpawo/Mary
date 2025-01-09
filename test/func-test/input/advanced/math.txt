@@ -1,6 +1,0 @@
-
-import math
-
-function main() -> int {
-    return 2 ** 3;
-}
