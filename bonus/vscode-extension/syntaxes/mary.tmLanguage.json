@@ -22,7 +22,7 @@
     },
     {
       "name": "keyword.control.mary",
-      "match": "\\b(precedence|operator|function|return|if|else|while|then)\\b"
+      "match": "\\b(type|builtin|precedence|operator|function|return|if|else|while|then)\\b"
     },
     {
       "name": "entity.name.function.mary",
