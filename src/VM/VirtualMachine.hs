@@ -4,6 +4,8 @@
 -- File description:
 -- Virtual machine
 -}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 module VM.VirtualMachine
   (
@@ -120,7 +122,7 @@ getcurrentInstr :: Int -> Program -> Maybe Instruction
 getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing
 
 exec :: Int -> Env -> Program -> Stack -> Either String Value
-exec ind env is stack = doCurrentInstr (getcurrentInstr ind is) ind env is stack
+exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
 
 operatorExec :: String -> (Int -> Int -> Int) -> Int -> Env -> Program -> Stack -> Either String Value
 operatorExec "/" _ _ _ _(VmInt 0 : _) =  Left "Division by 0 is prohibited"
