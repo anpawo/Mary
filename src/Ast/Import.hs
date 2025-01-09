@@ -20,14 +20,16 @@ import Data.Maybe (mapMaybe)
 import Utils.ArgParser
 import Data.List (intercalate)
 import Ast.Parser (tokenToAst)
+import Text.Megaparsec (errorBundlePretty)
+import Ast.Error (prettyPrintError, purple)
 
 errImport :: [String] -> String -> IO a
 errImport pathTried file = do
     cwd <- getCurrentDirectory
     putStrLn (printf "couldn't import the file '%s'. tried: " file (intercalate ", " $ map ((cwd ++ "/") ++) pathTried)) >> exitWith (ExitFailure 1)
 
-errInputFile :: String -> IO a
-errInputFile file = putStrLn (printf "the file '%s' contains errors." file) >> exitWith (ExitFailure 1)
+errInputFile :: String -> String -> IO a
+errInputFile file err = putStrLn (printf "the import '%s' contains errors:\n%s\n" (purple file) err) >> exitWith (ExitFailure 1)
 
 -- todo: should handle lib path
 getContent :: [String] -> [String] -> String -> IO String
@@ -41,11 +43,11 @@ importLib :: Arguments -> Ctx -> Ctx -> String -> IO Ctx
 importLib args builtins imports libname = do
     content <- getContent [] (argImportPath args) libname
     case run (comment &> tokenize) content of
-        Left _ -> errInputFile libname
+        Left tokErr -> errInputFile libname $ errorBundlePretty tokErr
         Right tokens -> do
             libImports <- importOtherLib args builtins imports (findImports tokens)
             case run (tokenToAst builtins imports) tokens of
-                Left _ -> errInputFile libname
+                Left astErr -> errInputFile libname $ prettyPrintError tokens astErr
                 Right newctx -> pure (libImports ++ newctx)
 
 isImportKw :: MyToken -> Maybe String
