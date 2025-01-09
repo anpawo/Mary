@@ -46,8 +46,8 @@ convertLiteral (BoolLit b) = VmBool b
 convertLiteral (IntLit i) = VmInt i
 convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
-convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
-convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
+convertLiteral (ArrLit t arr) = VmArray (show t) $ map compileSubExpression arr
+convertLiteral (StructLit name structMember) = VmStruct name $ concatMap convertLitStruct structMember
 convertLiteral NullLit = VmNull
 
 compileSubExpression :: SubExpression -> [Instruction]

@@ -17,11 +17,11 @@ struct elem {
 type list = empty | elem;
 
 operator ++ precedence 5 (list l, list r) -> list {
-    if is(l, empty) then
+    if is(l, "empty") then
     {
         return r;
     }
-    if is(r, empty) then
+    if is(r, "empty") then
     {
         return l;
     }
@@ -33,7 +33,7 @@ operator :| precedence 5 (any d, list l) -> list {
 }
 
 operator |: precedence 5 (list l, any d) -> list {
-    if is(l, empty) then
+    if is(l, "empty") then
     {
         return elem { data = d, next = empty {} };
     }
@@ -44,7 +44,7 @@ operator |: precedence 5 (list l, any d) -> list {
 }
 
 operator !! precedence 10 (list l, int index) -> null | any {
-    if index < 0 || is(l, empty) then
+    if index < 0 || is(l, "empty") then
     {
         return NULL;
     }

@@ -157,7 +157,6 @@ fixOp :: [Group] -> Parser [Group]
 fixOp [] = pure []
 fixOp (dot@(GOp _ "." []): GVar idx name:xs) = (dot:) . (GLit idx (StringLit name):) <$> fixOp xs
 fixOp (GOp index "." []: _:_) = failI (index + 1) errExpectedField
-fixOp (GFn index "is" [l, GGr _ [GVar idx name]]: xs) = (GFn index "is" [l, GLit idx (StringLit name)]:) <$> fixOp xs
 fixOp (x:xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
