@@ -89,9 +89,9 @@ type Env = [EnvVar]
 -- exec ind _ _ _ = Left "Invalid program"
 
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
-doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
+doCurrentInstr (Just Ret) ind _ is (x : _) = print "return:" >> print x >> pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
-doCurrentInstr (Just (Push v)) ind env is stack = exec (ind + 1) env is (v : stack)
+doCurrentInstr (Just (Push v)) ind env is stack = print "push:" >> print (v:stack) >> exec (ind + 1) env is (v : stack)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : stack)
@@ -115,9 +115,9 @@ doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = ca
 doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack
-  (VmFunc "*") -> operatorExec "*" (*) ind env is stack
+  (VmFunc "*") -> print "*:" >> print stack >> operatorExec "*" (*) ind env is stack
   (VmFunc "/") -> operatorExec "/" div ind env is stack
-  (VmFunc "<") -> boolOperatorExec "<" (<) ind env is stack
+  (VmFunc "<") -> print "<:" >> print stack >> boolOperatorExec "<" (<) ind env is stack
   (VmFunc "==") -> case stack of
     (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
     _ -> fail "Eq expects two VmInt on the stack"
@@ -125,7 +125,7 @@ doCurrentInstr (Just Call) ind env is (v : stack) = case v of
     Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : stack)
     Nothing -> fail ("Variable or function " ++ name ++ " not found")
   _ -> fail "Call expects an operator or a function on top of the stack"
-doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n) env is stack
+doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
 doCurrentInstr (Just (JumpIfFalse _)) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
 doCurrentInstr (Just (JumpIfFalse _)) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
