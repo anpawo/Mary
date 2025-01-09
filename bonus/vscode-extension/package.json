@@ -13,8 +13,13 @@
     "languages": [
       {
         "id": "mary",
-        "aliases": ["Mary", "mary"],
-        "extensions": [".mary"],
+        "aliases": [
+          "Mary",
+          "mary"
+        ],
+        "extensions": [
+          ".mary"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -25,5 +30,8 @@
         "path": "./syntaxes/mary.tmLanguage.json"
       }
     ]
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.2.1"
   }
 }
