@@ -15,7 +15,7 @@ import Utils.Lib
 import Ast.Error
 import Data.Maybe (fromJust)
 import Data.Foldable (find)
-import Text.Megaparsec (getOffset, choice, some)
+import Text.Megaparsec (getOffset, choice, some, try)
 import Ast.TokenParser
 import Control.Monad (void)
 import Control.Applicative ((<|>))
@@ -87,11 +87,10 @@ variableCreation ctx locVar = do
 
 variableAssignation :: Ctx -> LocalVariable -> Parser Expression
 variableAssignation ctx locVar = do
-  n <- textIdentifier
+  n <- try $ textIdentifier <* tok Assign
   t <- case find ((== n) . snd) locVar of
     Nothing -> fail $ errVariableNotBound n
     Just (t, _) -> pure t
-  void (tok Assign)
   x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
   if t == t'
