@@ -29,71 +29,68 @@ type Program = [Instruction]
 
 type Env = [EnvVar]
 
--- exec :: Int -> Env -> Program -> Stack -> Either String Value
-
--- -- return the value on top of the stack
--- exec ind _ (Ret : _) (x : _) =
---   Right x
--- exec ind _ (Ret : _) [] =
---   Left "Ret expects at least one value on the stack"
-
--- -- push the value on the stack
--- exec ind env (Push v : is) stack =
---   exec (ind + 1) env is (v : stack)
-
--- -- Store the value on top of the stack in the environment
--- exec ind env (Store name : is) (v : stack) =
---   exec (ind + 1) ((name, [Push v]) : env) is stack
-
--- -- Load the value from the environment and push it on the stack
--- exec ind env (Load name : is) stack = case lookup name env of
---     Just body  -> case exec 0 env body stack of
---         Right res -> exec (ind + 1) env is (res : stack)
---         Left _ -> Left "Error loading instructions"
---     Nothing -> Left ("Variable or function " ++ name ++ " not found")
-
--- -- -- call pop the function from the stack and execute it
--- exec ind env (Call : is) (v : stack) = case v of
---     (VmFunc "+") -> operatorExec "+" (+) env is stack
---     (VmFunc "-") -> operatorExec "-" (-) env is stack
---     (VmFunc "*") -> operatorExec "*" (*) env is stack
---     (VmFunc "/") -> operatorExec "/" div env is stack
---     (VmFunc "<") -> boolOperatorExec "<" (<) env is stack
---     (VmFunc "==") -> case stack of
---       (VmInt a : VmInt b : rest) ->
---         exec ind env is (VmBool (b == a) : rest)
---       _ -> Left "Eq expects two VmInt on the stack"
---     VmFunc name -> case lookup name env of
---       Just body  -> case exec 0 env body stack of
---         Right res -> exec (ind + 1) env is (res : stack)
---         Left _ -> Left "Error executing instructions"
---       Nothing -> Left ("Variable or function " ++ name ++ " not found")
---     _ -> Left " Call expects an operator or a function on top of the stack 2345678"
-
--- -- jump if the value on top of the stack is false
--- exec ind env (JumpIfFalse n : is) (VmBool False : stack) =
---   exec (ind + n) env is stack
-
--- -- jump if the value on top of the stack is true
--- exec ind env (JumpIfFalse _ : is) (VmBool True : stack) =
---   exec (ind + 1) env is stack
-
--- -- error case
--- exec ind _ (JumpIfFalse _ : _) (_ : _) =
---   Left "JumpIfFalse expects a boolean on the stack"
-
--- -- jump backward
--- exec ind env (JumpBackward n : is) stack =
---   exec (ind - n) env is stack -- TODO je sais meme pas comment faire ça, peut etre qu'on peut garder une copie de la pile avant le jump et la remettre après le jump ?
-
--- exec ind _ [] (x : _) = Right x
--- exec ind _ [] [] = Left "No value in stack at end of program"
--- exec ind _ _ _ = Left "Invalid program"
+handleDisplayArray :: [[Instruction]] -> Env -> IO [Value]
+handleDisplayArray [] _ = pure []
+handleDisplayArray (v:rest) env =
+    exec 0 env v [] >>= \value ->
+    handleDisplayArray rest env >>= \restValues ->
+    pure (value : restValues)
 
 countParamFunc :: [Instruction] -> Int -> Int
 countParamFunc [] nb = nb
 countParamFunc (Store _: rest) nb = countParamFunc rest (nb + 1)
 countParamFunc (_: rest) nb = nb
+
+jumpIfFalseInstr :: Instruction -> Int -> Env -> Program -> Stack -> IO Value
+jumpIfFalseInstr (JumpIfFalse n) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
+jumpIfFalseInstr (JumpIfFalse _) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
+jumpIfFalseInstr (JumpIfFalse _) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
+
+exitCallFunc :: Int -> Env -> Program -> Stack -> IO Value
+exitCallFunc ind env is (VmInt 0:stack) = exitSuccess
+exitCallFunc ind env is (VmInt status:stack) = exitWith $ ExitFailure status
+exitCallFunc ind env is _ = fail "error with exit func"
+
+toIntCallFunc :: Int -> Env -> Program -> Stack -> IO Value
+toIntCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
+toIntCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
+toIntCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
+toIntCallFunc ind env is (VmString v:stack) = case readMaybe v of
+  Just i -> exec (ind + 1) env is (VmInt i:stack)
+  Nothing -> exec (ind + 1) env is (VmNull:stack)
+toIntCallFunc ind env is _ = fail "error with toInt func"
+
+toFloatCallFunc :: Int -> Env -> Program -> Stack -> IO Value
+toFloatCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral $ fromEnum v):stack)
+toFloatCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmFloat v:stack)
+toFloatCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral v):stack)
+toFloatCallFunc ind env is (VmString v:stack) = case readMaybe v of
+  Just f -> exec (ind + 1) env is (VmFloat f:stack)
+  Nothing -> exec (ind + 1) env is (VmNull:stack)
+toFloatCallFunc ind env is _ = fail "error with toInt func"
+
+operatorCallFunc :: String -> Int -> Env -> Program -> Stack -> IO Value
+operatorCallFunc "+" ind env is stack = operatorExec "+" (+) ind env is stack
+operatorCallFunc "-" ind env is stack = operatorExec "-" (-) ind env is stack
+operatorCallFunc "*" ind env is stack = operatorExec "*" (*) ind env is stack
+operatorCallFunc "/" ind env is stack = operatorExec "/" div ind env is stack
+operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stack
+operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
+operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
+
+callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
+callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
+callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
+callInstr "print" ind env is ((VmArray _ arr) : stack) = handleDisplayArray arr env >>= \values -> print values  >> exec (ind + 1) env is stack
+callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
+callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
+callInstr "exit" ind env is stack = exitCallFunc ind env is stack
+callInstr "toInt" ind env is stack = toIntCallFunc ind env is stack
+callInstr "toFloat" ind env is stack = toFloatCallFunc ind env is stack
+callInstr name ind env is stack = case lookup name env of
+    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
+    Nothing -> operatorCallFunc name ind env is stack
 
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
 doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
@@ -103,45 +100,8 @@ doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((nam
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
-doCurrentInstr (Just Call) ind env is (VmFunc "is": VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "is": stack) = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = vmPrint env v >> exec (ind + 1) env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt 0:stack) = exitSuccess
-doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt status:stack) = exitWith $ ExitFailure status
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmString v:stack) = case readMaybe v of
-  Just i -> exec (ind + 1) env is (VmInt i:stack)
-  Nothing -> exec (ind + 1) env is (VmNull:stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmBool v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral $ fromEnum v):stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmFloat v:stack) = exec (ind + 1) env is (VmFloat v:stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmInt v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral v):stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = case readMaybe v of
-  Just f -> exec (ind + 1) env is (VmFloat f:stack)
-  Nothing -> exec (ind + 1) env is (VmNull:stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "+" : stack) = operatorExec "+" (+) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "-" : stack) = operatorExec "-" (-) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "*" : stack) = operatorExec "*" (*) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt 0 : VmInt _ : stack) = fail "Division by 0 is prohibited for integers"
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat 0.0 : VmFloat _ : stack) = fail "Division by 0 is prohibited for floats"
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt a : VmInt b : stack) = exec (ind + 1) env is (VmInt (div b a) : stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : stack) = fail "The '/' operator expects two numbers (VmInt or VmFloat) on the stack"
-doCurrentInstr (Just Call) ind env is (VmFunc "<" : stack) = boolOperatorExec "<" (<) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc ">" : stack) = boolOperatorExec ">" (>) ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "==" : stack) = case stack of
-  (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-  (VmFloat a : VmFloat b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-  _ -> fail "Eq expects two numeric values on the stack"
-doCurrentInstr(Just Call) ind env is (VmFunc name : stack) = case lookup name env of
-    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
-    Nothing -> fail ("Variable or function " ++ name ++ " not found")
-doCurrentInstr(Just Call) ind env is _ = fail "Call expects an operator or a function on top of the stack"
-doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
-doCurrentInstr (Just (JumpIfFalse _)) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
-doCurrentInstr (Just (JumpIfFalse _)) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
+doCurrentInstr (Just Call) ind env is (VmFunc name: stack) = callInstr name ind env is stack
+doCurrentInstr (Just (JumpIfFalse n)) ind env is stack = jumpIfFalseInstr (JumpIfFalse n) ind env is stack
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
 doCurrentInstr Nothing ind _ is (x : _) = pure x
 doCurrentInstr Nothing ind _ is [] = fail "No value in stack at end of program"
@@ -162,7 +122,3 @@ boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) e
 boolOperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two numbers on the stack"
 
-vmPrint :: Env -> Value  -> IO ()
-vmPrint env (VmArray _ instrs) = mapM_ (\instr -> exec 0 env instr []) instrs
-vmPrint env (VmStruct struc_name fields) = print struc_name >> mapM_ (\(name, instrs) -> print name >> exec 0 env instrs []) fields
-vmPrint env v = print v
