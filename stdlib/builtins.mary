@@ -50,5 +50,5 @@ function builtin append(arr[any] a, any b, int c) -> arr[any]
 function builtin pop(arr[any] a, int c) -> any
 
 // conversion
-function builtin toInt(number | bool n) -> int
-function builtin toFloat(number | bool n) -> float
+function builtin toInt(number | bool | str n) -> int
+function builtin toFloat(number | bool | str n) -> float

@@ -23,6 +23,7 @@ import Bytecode.Compiler (compiler)
 import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
 import Ast.Import (resolveImports)
+import Control.Monad (void)
 
 
 glados :: Arguments -> String ->  IO ()
@@ -48,11 +49,7 @@ glados args = toToken
                 | bytecodeTy $ argOutputType args -> displayBytecode instr env
                 | otherwise -> runVm env instr
 
-        runVm env instr = do
-            result <- exec 0 env instr []
-            case result of
-                Left err -> print err >> exitWith (ExitFailure 1)
-                Right res -> print res
+        runVm env instr = void $ exec 0 env instr []
 
 helper :: String
 helper =

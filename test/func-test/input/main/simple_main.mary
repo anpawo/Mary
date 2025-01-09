@@ -3,7 +3,8 @@
 // 
 // 
 
-function main() -> int {
-    print(getline());
-    return 1;
+function main() -> void {
+    str line = getline();
+    print(line);
+    exit(toInt(line));
 }
