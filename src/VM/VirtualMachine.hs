@@ -6,6 +6,7 @@
 -}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# LANGUAGE RankNTypes #-}
 
 module VM.VirtualMachine
   (
@@ -124,11 +125,12 @@ doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack
   (VmFunc "*") -> operatorExec "*" (*) ind env is stack
-  (VmFunc "/") -> operatorExec "/" div ind env is stack
   (VmFunc "<") -> boolOperatorExec "<" (<) ind env is stack
+  -- (VmFunc "/") -> operatorExec "/" div ind env is stack
   (VmFunc "==") -> case stack of
     (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-    _ -> fail "Eq expects two VmInt on the stack"
+    (VmFloat a : VmFloat b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
+    _ -> fail "Eq expects two numeric values on the stack"
   VmFunc name -> case lookup name env of
     Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
     Nothing -> fail ("Variable or function " ++ name ++ " not found")
@@ -146,14 +148,16 @@ getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing
 exec :: Int -> Env -> Program -> Stack -> IO Value
 exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
 
-operatorExec :: String -> (Int -> Int -> Int) -> Int -> Env -> Program -> Stack -> IO Value
+operatorExec :: String -> (forall a. Num a => a -> a -> a) -> Int -> Env -> Program -> Stack -> IO Value
 operatorExec "/" _ _ _ _(VmInt 0 : _) =  fail "Division by 0 is prohibited"
 operatorExec "%" _ _ _ _(VmInt 0 : _) =  fail "Division by 0 is prohibited"
 operatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmInt (func b a) : rest)
+operatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmFloat (func b a) : rest)
 operatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
 
-boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> Stack -> IO Value
+boolOperatorExec :: String -> (forall a. Ord a => a -> a -> Bool) -> Int -> Env -> Program -> Stack -> IO Value
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
+boolOperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
 boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two VmInt on the stack"
 
 vmPrint :: Env -> Value  -> IO ()
