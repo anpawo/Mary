@@ -14,7 +14,6 @@ module VM.VirtualMachine
     Program,
     Env,
     exec,
-    -- , compile
   )
 where
 
@@ -73,9 +72,14 @@ operatorCallFunc :: String -> Int -> Env -> Program -> Stack -> IO Value
 operatorCallFunc "+" ind env is stack = operatorExec "+" (+) ind env is stack
 operatorCallFunc "-" ind env is stack = operatorExec "-" (-) ind env is stack
 operatorCallFunc "*" ind env is stack = operatorExec "*" (*) ind env is stack
-operatorCallFunc "/" ind env is stack = operatorExec "/" div ind env is stack
+operatorCallFunc "/" ind env is (VmInt 0 : VmInt _ : stack) = fail "Division by 0 is prohibited for integers"
+operatorCallFunc "/" ind env is (VmFloat 0.0 : VmFloat _ : stack) = fail "Division by 0 is prohibited for floats"
+operatorCallFunc "/" ind env is (VmInt a : VmInt b : stack) = exec (ind + 1) env is (VmInt (div b a) : stack)
+operatorCallFunc "/" ind env is (VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
 operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stack
+operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
 operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
 operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
 operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
 
