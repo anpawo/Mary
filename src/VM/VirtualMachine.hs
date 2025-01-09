@@ -125,7 +125,7 @@ doCurrentInstr (Just Call) ind env is (VmFunc "+" : stack) = operatorExec "+" (+
 doCurrentInstr (Just Call) ind env is (VmFunc "-" : stack) = operatorExec "-" (-) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "*" : stack) = operatorExec "*" (*) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmInt _ : VmInt _ : stack) = operatorExec "/" div ind env is stack
-doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat _ : VmFloat _ : stack) = operatorExec "/" (/) ind env is stackoperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmFloat (func b a) : rest)
+doCurrentInstr (Just Call) ind env is (VmFunc "/" : VmFloat _ : VmFloat _ : stack) = operatorExec "/" (/) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "<" : stack) = boolOperatorExec "<" (<) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc ">" : stack) = boolOperatorExec ">" (>) ind env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "==" : stack) = case stack of
