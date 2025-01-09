@@ -86,16 +86,18 @@ type Env = [EnvVar]
 -- exec ind _ [] [] = Left "No value in stack at end of program"
 -- exec ind _ _ _ = Left "Invalid program"
 
-doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> Either String Value
-doCurrentInstr (Just Ret) ind _ is (x : _) = Right x
-doCurrentInstr (Just Ret) ind _ is [] = Left "Ret expects at least one value on the stack"
+doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO (Either String Value)
+doCurrentInstr (Just Ret) ind _ is (x : _) = pure $ Right x
+doCurrentInstr (Just Ret) ind _ is [] = pure $ Left "Ret expects at least one value on the stack"
 doCurrentInstr (Just (Push v)) ind env is stack = exec (ind + 1) env is (v : stack)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
-  Just body -> case exec 0 env body stack of
-    Right res -> exec (ind + 1) env is (res : stack)
-    Left _    -> Left "Error loading instructions"
-  Nothing -> Left ("Variable or function " ++ name ++ " not found")
+  Just body -> do
+    result <- exec 0 env body stack
+    case result of
+      Right res -> exec (ind + 1) env is (res : stack)
+      Left _    -> pure $ Left "Error loading instructions"
+  Nothing -> pure $ Left ("Variable or function " ++ name ++ " not found")
 doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack
@@ -104,32 +106,34 @@ doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "<") -> boolOperatorExec "<" (<) ind env is stack
   (VmFunc "==") -> case stack of
     (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
-    _ -> Left "Eq expects two VmInt on the stack"
+    _ -> pure $ Left "Eq expects two VmInt on the stack"
   VmFunc name -> case lookup name env of
-    Just body -> case exec 0 env body stack of
-      Right res -> exec (ind + 1) env is (res : stack)
-      Left _    -> Left "Error executing instructions"
-    Nothing -> Left ("Variable or function " ++ name ++ " not found")
-  _ -> Left "Call expects an operator or a function on top of the stack"
+    Just body -> do
+      result <- exec 0 env body stack
+      case result of
+        Right res -> exec (ind + 1) env is (res : stack)
+        Left _    -> pure $ Left "Error executing instructions"
+    Nothing -> pure $ Left ("Variable or function " ++ name ++ " not found")
+  _ -> pure $ Left "Call expects an operator or a function on top of the stack"
 doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n) env is stack
 doCurrentInstr (Just (JumpIfFalse _)) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
-doCurrentInstr (Just (JumpIfFalse _)) ind env is (_ : _) = Left "JumpIfFalse expects a boolean on the stack"
+doCurrentInstr (Just (JumpIfFalse _)) ind env is (_ : _) = pure $ Left "JumpIfFalse expects a boolean on the stack"
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
-doCurrentInstr Nothing ind _ is (x : _) = Right x
-doCurrentInstr Nothing ind _ is [] = Left "No value in stack at end of program"
+doCurrentInstr Nothing ind _ is (x : _) = pure $ Right x
+doCurrentInstr Nothing ind _ is [] = pure $ Left "No value in stack at end of program"
 
 getcurrentInstr :: Int -> Program -> Maybe Instruction
 getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing
 
-exec :: Int -> Env -> Program -> Stack -> Either String Value
+exec :: Int -> Env -> Program -> Stack -> IO (Either String Value)
 exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
 
-operatorExec :: String -> (Int -> Int -> Int) -> Int -> Env -> Program -> Stack -> Either String Value
-operatorExec "/" _ _ _ _(VmInt 0 : _) =  Left "Division by 0 is prohibited"
-operatorExec "%" _ _ _ _(VmInt 0 : _) =  Left "Division by 0 is prohibited"
+operatorExec :: String -> (Int -> Int -> Int) -> Int -> Env -> Program -> Stack -> IO (Either String Value)
+operatorExec "/" _ _ _ _(VmInt 0 : _) =  pure $ Left "Division by 0 is prohibited"
+operatorExec "%" _ _ _ _(VmInt 0 : _) =  pure $ Left "Division by 0 is prohibited"
 operatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmInt (func b a) : rest)
-operatorExec name _ _ _ _ _ = Left $ name ++ " expects two VmInt on the stack"
+operatorExec name _ _ _ _ _ = pure $ Left $ name ++ " expects two VmInt on the stack"
 
-boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> Stack -> Either String Value
+boolOperatorExec :: String -> (Int -> Int -> Bool) -> Int -> Env -> Program -> Stack -> IO (Either String Value)
 boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
-boolOperatorExec name _ _ _ _ _ =  Left $ name ++ " expects two VmInt on the stack"
+boolOperatorExec name _ _ _ _ _ = pure $ Left $ name ++ " expects two VmInt on the stack"
