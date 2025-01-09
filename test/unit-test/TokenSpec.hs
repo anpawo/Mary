@@ -89,7 +89,7 @@ typeSpec = describe "type" $ do
     it "float" $ show FloatType ==> "float"
     it "str" $ show StrType ==> "str"
     it "arr[int]" $ show (ArrType IntType) ==> "arr[int]"
-    it "struct person" $ show (StructType "person") ==> "struct person"
+    it "struct person" $ show (StructType "person") ==> "person"
     it "any" $ show AnyType ==> "any"
     it "struct any" $ show StructAnyType ==> "struct any"
     it "constraint number = int | float" $ show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
