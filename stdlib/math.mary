@@ -1,0 +1,28 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - math
+//
+
+operator ** precedence 8 (number n, number power) -> number {
+    if power == 0 then
+    {
+        return 1;
+    }
+    else
+    {
+        return n * n ** (power - 1);
+    }
+}
+
+function factorial(int n) -> int {
+    if n < 2 then
+    {
+        return 1;
+    }
+    else
+    {
+        return n * factorial(n - 1);
+    }
+}

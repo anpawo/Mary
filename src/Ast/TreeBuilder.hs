@@ -76,7 +76,7 @@ mountGroup _ [x@(GLit {})] = pure x
 mountGroup ctx [GFn index name args] = GFn index name <$> mapM (mountGroup ctx . singleton) args
 mountGroup _ [x@(GVar {})] = pure x
 mountGroup _ [x@(GOp _ _ [_, _])] = pure x
-mountGroup ctx (GGr _ group: rst) = mountGroup ctx group >>= mountGroup ctx . (:rst)
+mountGroup ctx [GGr _ group] = mountGroup ctx group
 mountGroup ctx group = calcPrec ctx Nothing (-1) 1 group >>= \case
     Nothing -> let errIdx = getGrIdx (head group) in (getOffset >>= (failI errIdx . errTooManyExpr) . subtract errIdx)
     (Just (x, name))
@@ -129,10 +129,10 @@ getGrType _ locVar (GVar index name) expected = case find ((== name) . snd) locV
   Nothing -> failI index $ errVariableNotBound name
   Just a -> let t = fst a in when (t /= expected) (failI index $ errInvalidVarType name (show expected) (show t))
 getGrType _ _ (GLit index lit) expected = unless (isType expected lit) $ failI index $ errInvalidLitType (show expected) (show $ getLitType lit)
-getGrType _ _ (GGr index _) _ = failI index $ errImpossibleCase "getGrType GGr"
+getGrType ctx locVar g@(GGr _ _) expected = mountGroup ctx [g] >>= \m -> getGrType ctx locVar m expected
 
 validateMount :: Ctx -> LocalVariable -> Group -> Parser ()
-validateMount _ _ (GGr index _) = failI index $ errImpossibleCase "validateMount"
+validateMount ctx locVar g@(GGr _ _) = mountGroup ctx [g] >>= \m -> validateMount ctx locVar m
 validateMount _ locVar (GVar index name) = when (isNothing $ find ((== name) . snd) locVar) (failI index $ errVariableNotBound name)
 validateMount _ _ (GLit {}) = pure ()
 validateMount ctx locVar (GFn index name args) = case find (\a -> isFn a && getName a == name) ctx of
@@ -148,12 +148,12 @@ validateMount ctx locVar (GOp index name [l, r]) = case find (\a -> isOp a && ge
   _ -> failI index $ errOperatorNotBound name
 validateMount _ _ (GOp index _ _) = failI index $ errImpossibleCase "validateMount GOp"
 
-toSubexpr :: Group -> Parser SubExpression
-toSubexpr (GGr _ _) = fail $ errImpossibleCase "toSubexpr GGr"
-toSubexpr (GLit _ lit) = pure $ Lit lit
-toSubexpr (GFn _ name body) = FunctionCall name <$> traverse toSubexpr body
-toSubexpr (GVar _ name) = pure $ VariableCall name
-toSubexpr (GOp _ name body) = FunctionCall name <$> traverse toSubexpr body
+toSubexpr :: Ctx -> Group -> Parser SubExpression
+toSubexpr ctx (GGr _ group) = mountGroup ctx group >>= \m -> toSubexpr ctx m
+toSubexpr _ (GLit _ lit) = pure $ Lit lit
+toSubexpr ctx (GFn _ name body) = FunctionCall name <$> traverse (toSubexpr ctx) body
+toSubexpr _ (GVar _ name) = pure $ VariableCall name
+toSubexpr ctx (GOp _ name body) = FunctionCall name <$> traverse (toSubexpr ctx) body
 
 fixOp :: [Group] -> Parser [Group]
 fixOp [] = pure []
@@ -163,4 +163,4 @@ fixOp (x:xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
 subexpression ctx locVar endSubexpr =
-  someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>= mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr m
+  someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>= mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr ctx m
