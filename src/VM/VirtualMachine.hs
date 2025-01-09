@@ -20,6 +20,7 @@ where
 import Bytecode.Data
 import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
+import Text.Printf (printf)
 
 type Stack = [Value]
 
@@ -99,24 +100,26 @@ doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on 
 doCurrentInstr (Just (Push v)) ind env is stack = exec (ind + 1) env is (v : stack)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
-  Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
+  Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
+doCurrentInstr (Just Call) ind env is (VmFunc "is": VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "is": stack) = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "print": v : stack) = print v >> exec (ind + 1) env is stack
 doCurrentInstr (Just Call) ind env is (VmFunc "getline": stack) = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt 0:stack) = exitSuccess
 doCurrentInstr (Just Call) ind env is (VmFunc "exit":  VmInt status:stack) = exitWith $ ExitFailure status
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack) 
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack) 
-doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack) 
+doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "toInt":  VmString v:stack) = case readMaybe v of
-  Just i -> exec (ind + 1) env is (VmInt i:stack) 
-  Nothing -> exec (ind + 1) env is (VmNull:stack) 
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmBool v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral $ fromEnum v):stack) 
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmFloat v:stack) = exec (ind + 1) env is (VmFloat v:stack) 
-doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmInt v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral v):stack) 
+  Just i -> exec (ind + 1) env is (VmInt i:stack)
+  Nothing -> exec (ind + 1) env is (VmNull:stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmBool v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral $ fromEnum v):stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmFloat v:stack) = exec (ind + 1) env is (VmFloat v:stack)
+doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmInt v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral v):stack)
 doCurrentInstr (Just Call) ind env is (VmFunc "toFloat":  VmString v:stack) = case readMaybe v of
-  Just f -> exec (ind + 1) env is (VmFloat f:stack) 
-  Nothing -> exec (ind + 1) env is (VmNull:stack) 
+  Just f -> exec (ind + 1) env is (VmFloat f:stack)
+  Nothing -> exec (ind + 1) env is (VmNull:stack)
 doCurrentInstr (Just Call) ind env is (v : stack) = case v of
   (VmFunc "+") -> operatorExec "+" (+) ind env is stack
   (VmFunc "-") -> operatorExec "-" (-) ind env is stack
@@ -127,7 +130,7 @@ doCurrentInstr (Just Call) ind env is (v : stack) = case v of
     (VmInt a : VmInt b : rest) -> exec (ind + 1) env is (VmBool (b == a) : rest)
     _ -> fail "Eq expects two VmInt on the stack"
   VmFunc name -> case lookup name env of
-    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : (drop (countParamFunc body 0) stack))
+    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
     Nothing -> fail ("Variable or function " ++ name ++ " not found")
   _ -> fail "Call expects an operator or a function on top of the stack"
 doCurrentInstr (Just (JumpIfFalse n)) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
