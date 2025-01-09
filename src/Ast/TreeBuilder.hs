@@ -123,7 +123,7 @@ getGrIdx (GVar index _) = index
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = let t = opRetType $ fromJust $ find (\a -> isOp a && getName a == name) ctx in
   when (t /= expected) (failI index $ errInvalidOpType name (show expected) (show t))
-getGrType ctx _ (GFn index name _) expected = let t = opRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
+getGrType ctx _ (GFn index name _) expected = let t = fnRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
   when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
 getGrType _ locVar (GVar index name) expected = case find ((== name) . snd) locVar of
   Nothing -> failI index $ errVariableNotBound name
