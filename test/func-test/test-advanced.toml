@@ -1,0 +1,12 @@
+[test.factorial_and_power]
+cmd = "../../glados --import ../../stdlib input/main/math.mary"
+stdout = """
+8
+720
+"""
+
+[test.simple_list_display]
+cmd = "../../glados --import ../../stdlib input/main/list.mary"
+stdout = """
+elem{5, empty{}}
+"""
