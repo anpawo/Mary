@@ -47,7 +47,7 @@ validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a &
     kv'
       | kv == kv' -> pure st
       | otherwise -> fail $ errInvalidStructure name kv
-  _ -> failN $ errStructureNotBound name
+  _ -> fail $ errStructureNotBound name
 validLit ctx locVar arr@(ArrLit t subexp) = any (/= t) <$> mapM (getType ctx locVar) subexp $> arr
 validLit _ _ lit = pure lit
 
