@@ -28,13 +28,10 @@ data Type
   | ArrType Type --                                                    \| arr [ <type> ]
   | AnyType --                                                         \| any
   | StructType { stTyName :: String} --                                \| struct <name> (the real parsing of the structure is done in the Ast)
-  | StructAnyType --                                                   \| struct any (only for builtins)
   | ConstraintType { crTyName :: Maybe String, crTyTypes :: [Type]} -- \| int | float
   deriving (Ord)
 
 instance Eq Type where
-  StructAnyType == (StructType _) = True
-  (StructType _) == StructAnyType = True
   (StructType n) == (StructType n') = n == n'
   (ArrType t) == (ArrType t') = t == t'
   AnyType == _ = True
@@ -63,7 +60,6 @@ instance Show Type where
   show (ArrType t) = printf "arr[%s]" $ show t
   show (StructType n) = printf "%s" n
   show AnyType = "any"
-  show StructAnyType = "struct any"
   show (ConstraintType (Just n) _) = n
   show (ConstraintType Nothing t) = intercalate " | " (map show t)
 
