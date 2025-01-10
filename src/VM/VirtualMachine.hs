@@ -134,7 +134,7 @@ doCurrentInstr (Just Call) ind env is (VmFunc name: stack) = callInstr name ind 
 doCurrentInstr (Just (JumpIfFalse n)) ind env is stack = jumpIfFalseInstr (JumpIfFalse n) ind env is stack
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
 doCurrentInstr Nothing ind _ is (x : _) = pure x
-doCurrentInstr Nothing ind _ is [] = fail "No value in stack at end of program"
+doCurrentInstr Nothing ind _ is [] = pure VmVoid
 
 getcurrentInstr :: Int -> Program -> Maybe Instruction
 getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing

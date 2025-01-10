@@ -57,6 +57,7 @@ data Value
   | VmStruct String [(String, [Instruction])]
   | VmNull
   | VmFunc String
+  | VmVoid
   deriving (Eq)
 
 instance Show Value where
