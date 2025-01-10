@@ -9,4 +9,6 @@ stdout = """
 cmd = "../../glados --import ../../stdlib input/main/list.mary"
 stdout = """
 elem{5, empty{}}
+elem{1, elem{2, elem{3, empty{}}}}
+3
 """

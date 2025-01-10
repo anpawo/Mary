@@ -5,13 +5,14 @@
 
 import list
 
-function print_recursive_list() -> int {
-    print(empty {} |: 1 |: 2);
-    return 0;
+function recursive_list() -> list {
+    return empty {} |: 1 |: 2 |: 3;
 }
 
 function main() -> int {
     print(5 :| empty {} ++ empty {});
-    print_recursive_list();
+    list a = recursive_list();
+    print(a);
+    print(a.next.next.data);
     return 0;
 }
