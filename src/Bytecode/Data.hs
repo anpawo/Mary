@@ -26,6 +26,7 @@ module Bytecode.Data
     TypeCheck(..),
   ) where
 import Text.Printf (printf)
+import Data.List (intercalate)
 
 data Instruction
   = Push Value
@@ -59,16 +60,16 @@ data Value
   deriving (Eq)
 
 instance Show Value where
-  show (VmChar c)         = [c]
-  show (VmBool True)      = "true"
-  show (VmBool False)     = "false"
-  show VmNull             = "null"
-  show (VmInt i)          = show i
-  show (VmFloat f)        = show f
-  show (VmString s)       = s
-  show (VmArray typeName instrs)   = show instrs
-  show (VmStruct structName fields)  = printf "%s{%s}" structName $ show fields
-  show (VmFunc name)      = printf "function %s" name
+  show (VmChar c)                   = [c]
+  show (VmBool True)                = "true"
+  show (VmBool False)               = "false"
+  show VmNull                       = "null"
+  show (VmInt i)                    = show i
+  show (VmFloat f)                  = show f
+  show (VmString s)                 = s
+  show (VmArray typeName instrs)    = show instrs
+  show (VmStruct structName fields) = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
+  show (VmFunc name)                = printf "function %s" name
 
 type EnvVar = (String, [Instruction])
 
