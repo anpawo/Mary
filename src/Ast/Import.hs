@@ -21,7 +21,7 @@ import Utils.ArgParser
 import Data.List (intercalate)
 import Ast.Parser (tokenToAst)
 import Text.Megaparsec (errorBundlePretty)
-import Ast.Error (prettyPrintError, purple)
+import Ast.Error (prettyPrintError, blue, colorblindMode)
 
 errImport :: [String] -> String -> IO a
 errImport pathTried file = do
@@ -29,7 +29,7 @@ errImport pathTried file = do
     putStrLn (printf "couldn't import the file '%s'. tried: " file (intercalate ", " $ map ((cwd ++ "/") ++) pathTried)) >> exitWith (ExitFailure 1)
 
 errInputFile :: String -> String -> IO a
-errInputFile file err = putStrLn (printf "the import '%s' contains errors:\n%s\n" (purple file) err) >> exitWith (ExitFailure 1)
+errInputFile file err = putStrLn (printf "the import '%s' contains errors:\n%s\n" (blue file) err) >> exitWith (ExitFailure 1)
 
 -- todo: should handle lib path
 getContent :: [String] -> [String] -> String -> IO String
@@ -50,7 +50,7 @@ importLib args builtins ctx importedLib (libname:xs)
             Right tokens -> do
                 (importedLib', ctx') <- importLib args builtins ctx importedLib (findImports tokens)
                 case run (tokenToAst builtins ctx') tokens of
-                    Left astErr -> errInputFile libname $ prettyPrintError tokens astErr
+                    Left astErr -> errInputFile libname $ (if argColorblind args then colorblindMode else id) $ prettyPrintError tokens astErr
                     Right ctx'' -> importLib args builtins ctx'' (importedLib' ++ [libname]) xs
 
 isImportKw :: MyToken -> Maybe String

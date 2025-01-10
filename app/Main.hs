@@ -18,7 +18,7 @@ import Utils.Lib ((&>), run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize, comment)
 import Ast.Parser (tokenToAst)
-import Ast.Error (prettyPrintError, bgBlack)
+import Ast.Error (prettyPrintError, bgBlack, colorblindMode)
 import Bytecode.Compiler (compiler)
 import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
@@ -38,7 +38,7 @@ glados args = toToken
         toAst tokens = do
             (builtins, imports) <- resolveImports args tokens
             case run (tokenToAst builtins imports) tokens of
-                Left err -> putStrLn (prettyPrintError tokens err) >> exitWith (ExitFailure 1)
+                Left err -> putStrLn ((if argColorblind args then colorblindMode else id) $ prettyPrintError tokens err) >> exitWith (ExitFailure 1)
                 Right ast
                     | astTy $ argOutputType args -> print ast
                     | otherwise -> toBytecode ast
