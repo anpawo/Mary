@@ -53,11 +53,13 @@ data Value
   | VmInt Int
   | VmFloat Double
   | VmString String
-  | VmArray String [[Instruction]]
-  | VmStruct String [(String, [Instruction])]
+  | VmPreArray String [[Instruction]]
+  | VmPreStruct String [(String, [Instruction])]
   | VmNull
   | VmFunc String
   | VmVoid
+  | VmArray String [Value]
+  | VmStruct String [(String, Value)]
   deriving (Eq)
 
 instance Show Value where
@@ -68,9 +70,11 @@ instance Show Value where
   show (VmInt i)                    = show i
   show (VmFloat f)                  = show f
   show (VmString s)                 = s
+  show (VmPreArray typeName instrs)    = show instrs
+  show (VmPreStruct structName fields) = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
+  show (VmFunc name)                = printf "function %s" name
   show (VmArray typeName instrs)    = show instrs
   show (VmStruct structName fields) = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
-  show (VmFunc name)                = printf "function %s" name
 
 type EnvVar = (String, [Instruction])
 

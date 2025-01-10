@@ -21,7 +21,6 @@ import Bytecode.Data
 import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
 import Text.Printf (printf)
-import Data.List (intercalate)
 
 type Stack = [Value]
 
@@ -29,39 +28,30 @@ type Program = [Instruction]
 
 type Env = [EnvVar]
 
-handleDisplayArray :: [[Instruction]] -> Env -> IO [Value]
-handleDisplayArray [] _ = pure []
-handleDisplayArray (v:rest) env =
+convArrInstrToVal :: [[Instruction]] -> Env -> IO [Value]
+convArrInstrToVal [] _ = pure []
+convArrInstrToVal (v:rest) env =
     exec 0 env v [] >>= \value ->
-    handleDisplayArray rest env >>= \restValues ->
+    convArrInstrToVal rest env >>= \restValues ->
     pure (value : restValues)
 
-handleDisplayStruct :: String -> [(String, [Instruction])] -> Env -> IO String
-handleDisplayStruct structName fields env = printf "%s{%s}" structName . intercalate ", " . map show <$> getFields fields
-  where
-    getFields [] = pure []
-    getFields ((_, x): xs) =
-      exec 0 env x [] >>= \v ->
-      getFields xs >>= \vs ->
-      pure (v : vs)
+-- handleDisplayStruct :: String -> [(String, [Instruction])] -> Env -> IO String
+-- handleDisplayStruct structName fields env = printf "%s{%s}" structName . intercalate ", " . map show <$> getFields fields
+--   where
+--     getFields [] = pure []
+--     getFields ((_, x): xs) =
+--       exec 0 env x [] >>= \v ->
+--       getFields xs >>= \vs ->
+--       pure (v : vs)
 
-computeStruct :: String -> [(String, [Instruction])] -> Env -> IO Value
-computeStruct structName fields env = VmStruct structName <$> computeFields fields
-  where
-    computeFields [] = pure []
-    computeFields ((fieldName, x):xs) =
-      exec 0 env x [] >>= \v ->
-        computeFields xs >>= \vs ->
-          pure ((fieldName, [Push v]) : vs)
-
-computeArray :: String -> [[Instruction]] -> Env -> IO Value
-computeArray typeName values env = VmArray typeName <$> computeValues values
-  where
-    computeValues [] = pure []
-    computeValues (x:xs) =
-      exec 0 env x [] >>= \v ->
-        computeValues xs >>= \vs ->
-          pure ([Push v] : vs)
+-- computeStruct :: String -> [(String, [Instruction])] -> Env -> IO Value
+-- computeStruct structName fields env = VmStruct structName <$> computeFields fields
+--   where
+--     computeFields [] = pure []
+--     computeFields ((fieldName, x):xs) =
+--       exec 0 env x [] >>= \v ->
+--         computeFields xs >>= \vs ->
+--           pure ((fieldName, [Push v]) : vs)
 
 countParamFunc :: [Instruction] -> Int -> Int
 countParamFunc [] nb = nb
@@ -109,8 +99,7 @@ operatorCallFunc name ind env is _ = fail "Call expects an operator or a functio
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
 callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
 callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
-callInstr "print" ind env is ((VmArray _ arr) : stack) = handleDisplayArray arr env >>= \values -> print values  >> exec (ind + 1) env is stack
-callInstr "print" ind env is ((VmStruct name fields) : stack) = handleDisplayStruct name fields env >>= putStrLn >> exec (ind + 1) env is stack
+-- callInstr "print" ind env is ((VmStruct name fields) : stack) = handleDisplayStruct name fields env >>= putStrLn >> exec (ind + 1) env is stack
 callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
 callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 callInstr "exit" ind env is stack = exitCallFunc ind env is stack
@@ -123,8 +112,8 @@ callInstr name ind env is stack = case lookup name env of
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
 doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
-doCurrentInstr (Just (Push (VmStruct name fields))) ind env is stack = computeStruct name fields env >>= \struct -> exec (ind + 1) env is (struct : stack)
-doCurrentInstr (Just (Push (VmArray typeName values))) ind env is stack = computeArray typeName values env >>= \array -> exec (ind + 1) env is (array : stack)
+-- doCurrentInstr (Just (Push (VmStruct name fields))) ind env is stack = computeStruct name fields env >>= \struct -> exec (ind + 1) env is (struct : stack)
+doCurrentInstr (Just (Push (VmPreArray typeName arr))) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is ((VmArray typeName values) : stack)
 doCurrentInstr (Just (Push v)) ind env is stack = exec (ind + 1) env is (v : stack)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
