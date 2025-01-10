@@ -87,6 +87,9 @@ operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stac
 operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
 operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
 operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
+  Just x -> exec (ind + 1) env is (x : rest)
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
 operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = case lookup name env of
     Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
       Just val -> exec (ind + 1) env is (val : rest)
