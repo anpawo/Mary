@@ -52,6 +52,9 @@ convertLiteral NullLit = VmNull
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
+compileSubExpression (FunctionCall "." [VariableCall varCallName, nameField]) = [Push (VmString varCallName)] ++ res ++ [Push (VmFunc "."), Call]
+  where
+    res = compileSubExpression nameField
 compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [Push $ VmFunc fnName, Call]
 compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 

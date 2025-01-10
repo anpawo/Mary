@@ -12,6 +12,6 @@ function print_recursive_list() -> int {
 
 function main() -> int {
     print(5 :| empty {} ++ empty {});
-    // print_recursive_list();
+    print_recursive_list();
     return 0;
 }

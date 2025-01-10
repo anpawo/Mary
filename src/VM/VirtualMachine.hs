@@ -87,6 +87,10 @@ operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stac
 operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
 operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
 operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = case lookup name env of
+    Just [Push (VmStruct name fields)] -> case lookup fieldName fields of
+      Just val -> exec (ind + 1) env is (val : rest)
+    _ -> fail ". expected a structure to access value"
 operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
 operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
 
