@@ -22,6 +22,8 @@ import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import Data.List (find)
+import System.IO (stderr, hPrint)
+import Data.Char (ord, chr)
 
 type Stack = [Value]
 
@@ -59,6 +61,7 @@ exitCallFunc ind env is (VmInt status:stack) = exitWith $ ExitFailure status
 exitCallFunc ind env is _ = fail "error with exit func"
 
 toIntCallFunc :: Int -> Env -> Program -> Stack -> IO Value
+toIntCallFunc ind env is (VmChar c:stack) = exec (ind + 1) env is (VmInt (ord c):stack)
 toIntCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
 toIntCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
 toIntCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
@@ -99,9 +102,27 @@ operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
 operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
 
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
+callInstr "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." field name
+  _ -> exec (ind + 1) env is (VmStruct name (map (\(n, v') -> if n == field then (n, v) else (n, v')) fields):stack)
 callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
--- callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
 callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
+-- arr and str
+callInstr "length" ind env is (VmString str : stack) = exec (ind + 1) env is (VmInt (length str):stack)
+callInstr "length" ind env is (VmArray _ arr : stack) = exec (ind + 1) env is (VmInt (length arr):stack)
+callInstr "insert" ind env is (VmChar c : VmInt i :VmString str : stack) = exec (ind + 1) env is (VmString (take i str ++ [c] ++ drop i str):stack)
+callInstr "insert" ind env is (x : VmInt i :VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (take i arr ++ [x] ++ drop i arr):stack) -- type is not checked
+callInstr "append" ind env is (VmChar c : VmString str : stack) = exec (ind + 1) env is (VmString (str ++ [c]):stack)
+callInstr "append" ind env is (x : VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (arr ++ [x]):stack) -- type is not checked
+callInstr "at" ind env is (VmInt i : VmString str : stack) = exec (ind + 1) env is (VmChar (str !! i):stack) -- bounds not checked
+callInstr "at" ind env is (VmInt i : VmArray typeName arr : stack) = exec (ind + 1) env is (arr !! i:stack) -- bounds not checked
+callInstr "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str ++ str'):stack)
+callInstr "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr ++ arr'):stack) else fail "Cannot concat two arrays of different type"
+--
+callInstr "toString" ind env is (v : stack) = exec (ind + 1) env is (VmString (show v):stack)
+callInstr "toChar" ind env is (VmChar c : stack) = exec (ind + 1) env is (VmChar c:stack)
+callInstr "toChar" ind env is (VmInt c : stack) = exec (ind + 1) env is (VmChar (chr c):stack)
+callInstr "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
 callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 callInstr "exit" ind env is stack = exitCallFunc ind env is stack
 callInstr "toInt" ind env is stack = toIntCallFunc ind env is stack

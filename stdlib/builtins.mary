@@ -41,15 +41,17 @@ function builtin exit(int a) -> void
 
 // struct
 operator builtin . precedence 10 (any a, any b) -> any
+function builtin set(any a, str b, any c) -> any
 
-// array
-function builtin length(arr[any] a) -> int
-function builtin insert(arr[any] a, int i, any b) -> arr[any]
-function builtin append(arr[any] a, any b) -> arr[any]
-function builtin pop(arr[any] a, int i) -> any
-function builtin del(arr[any] a, int i) -> void
+// array and string
+function builtin length(arr[any] | str a) -> int
+function builtin insert(arr[any] | str a, int i, any | char b) -> arr[any] | str
+function builtin append(arr[any] | str a, any | char b) -> arr[any] | str
 function builtin at(arr[any] | str a, int b) -> any | char
 function builtin concat(arr[any] | str a, arr[any] | str b) -> arr[any] | str
+
+// function builtin pop(arr[any] | str a, int i) -> any | char
+// function builtin del(arr[any]  a, int i) -> void
 
 // conversion
 type __convertibleToInt__   = int | float | bool | str | char;
