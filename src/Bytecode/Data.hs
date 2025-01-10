@@ -33,6 +33,7 @@ data Instruction
   | Call
   | Ret
   | Store String
+  | Update String
   | Load String
   | JumpIfFalse Int
   | JumpBackward Int

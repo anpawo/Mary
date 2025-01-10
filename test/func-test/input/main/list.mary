@@ -14,5 +14,7 @@ function main() -> int {
     list a = recursive_list();
     print(a);
     print(a.next.next.data);
+    a.next = empty {};
+    print(a);
     return 0;
 }

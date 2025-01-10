@@ -46,7 +46,8 @@ type Ctx = [Ast]
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varMeta :: (Type, String), varValue :: SubExpression } -- variable creation and modification inside a function
+  | Variable { varMeta :: (Type, String), varValue :: SubExpression }                   -- variable creation and modification inside a function
+  | StructField { varName :: String, fieldName :: String, fieldValue :: SubExpression } -- modify struct field of a variable
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: [Expression], elseExpr :: [Expression] }
   | While { whileCond :: SubExpression, whileExpr :: [Expression] }

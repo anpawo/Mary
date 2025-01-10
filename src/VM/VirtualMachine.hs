@@ -21,6 +21,7 @@ import Bytecode.Data
 import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
 import Text.Printf (printf)
+import Data.List (find)
 
 type Stack = [Value]
 
@@ -99,7 +100,7 @@ operatorCallFunc name ind env is _ = fail "Call expects an operator or a functio
 
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
 callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
-callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
+-- callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
 callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
 callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 callInstr "exit" ind env is stack = exitCallFunc ind env is stack
@@ -110,14 +111,22 @@ callInstr name ind env is stack = case lookup name env of
     Nothing -> operatorCallFunc name ind env is stack
 
 pushInstr :: Value -> Int -> Env -> Program -> Stack -> IO Value
-pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is ((VmStruct structName values) : stack)
-pushInstr (VmPreArray typeName arr) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is ((VmArray typeName values) : stack)
+pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is (VmStruct structName values : stack)
+pushInstr (VmPreArray typeName arr) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is (VmArray typeName values : stack)
 pushInstr v ind env is stack = exec (ind + 1) env is (v : stack)
 
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
 doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
 doCurrentInstr (Just (Push v)) ind env is stack = pushInstr v ind env is stack
+doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = case find ((== name) . fst) env of
+  Just (_, x) -> case x of
+    [Push (VmStruct name' value)] -> case find ((== field) . fst) value of
+      Just (fieldName, currValue) -> exec (ind + 1) ((name, [Push (VmStruct name' (map (\(n, currV) -> if n == field then (n, v) else (n, currV)) value))]) : env) is stack
+      Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
+    _ -> fail ("Variable " ++ name ++ " is not a structure")
+  Nothing -> fail ("Variable " ++ name ++ " not found")
+  -- exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
