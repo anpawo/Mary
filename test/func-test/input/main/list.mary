@@ -1,0 +1,17 @@
+//
+//
+//
+//
+
+import list
+
+function print_recursive_list() -> int {
+    print(empty {} |: 1 |: 2);
+    return 0;
+}
+
+function main() -> int {
+    print(5 :| empty {} ++ empty {});
+    // print_recursive_list();
+    return 0;
+}

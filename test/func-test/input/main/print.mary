@@ -1,0 +1,10 @@
+function test_loop() -> void {
+    // print(int[1 + 2, 6]);
+    // print(1);
+    1 + 2;
+}
+
+function main () -> int {
+    test_loop();
+    return 0;
+}
