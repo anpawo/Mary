@@ -39,16 +39,24 @@ function builtin eprint(any a) -> void
 function builtin getline() -> str
 function builtin exit(int a) -> void
 
-// access struct field
+// struct
 operator builtin . precedence 10 (any a, any b) -> any
 
-// access array elements
+// array
 function builtin length(arr[any] a) -> int
-function builtin at(arr[any] a, int b) -> any
-
-function builtin append(arr[any] a, any b, int c) -> arr[any]
-function builtin pop(arr[any] a, int c) -> any
+function builtin insert(arr[any] a, int i, any b) -> arr[any]
+function builtin append(arr[any] a, any b) -> arr[any]
+function builtin pop(arr[any] a, int i) -> any
+function builtin del(arr[any] a, int i) -> void
+function builtin at(arr[any] | str a, int b) -> any | char
+function builtin concat(arr[any] | str a, arr[any] | str b) -> arr[any] | str
 
 // conversion
-function builtin toInt(number | bool | str n) -> int
-function builtin toFloat(number | bool | str n) -> float
+type __convertibleToInt__   = int | float | bool | str | char;
+type __convertibleToFloat__ = int | float | bool | str;
+type __convertibleToChar__  = int | char;
+
+function builtin toInt(__convertibleToInt__ n) -> int
+function builtin toFloat(__convertibleToFloat__ n) -> float
+function builtin toChar(__convertibleToChar__ n) -> char
+function builtin toString(any n) -> str

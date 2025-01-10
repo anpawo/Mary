@@ -1,8 +1,10 @@
 [test.factorial_and_power]
 cmd = "../../glados --import ../../stdlib input/main/math.mary"
 stdout = """
-8
+27
 720
+13
+81
 """
 
 [test.simple_list_display]
