@@ -71,7 +71,7 @@ Download the latest release by clicking on `Releases` then `Assets` and download
 
 Save the following code in a file named `hello.mary`:
 
-```mary
+```
 function main () -> void {
     print("Hello, World!");
 }
@@ -128,7 +128,7 @@ Some built-in functions include:
 
 The `if` construct evaluates a condition:
 
-```glados
+```
 if (x < 5) then {
     print("Less than 5");
 } else {
@@ -177,7 +177,7 @@ print(factorial(5)); // Outputs 120
 
 Define a function using the `function` keyword:
 
-```glados
+```
 function add_two(int x) -> int {
     return x + 2;
 }
@@ -189,7 +189,7 @@ print(add_two(5)); // Outputs 7
 
 Functions can be passed as arguments:
 
-```glados
+```
 function apply(function f, int x) -> int {
     return f(x);
 }
@@ -205,7 +205,7 @@ print(apply(add_two, 10)); // Outputs 12
 
 Define custom operators using `operator`:
 
-```glados
+```
 operator !! precedence 10 (list l, int index) -> null | any {
     if (index < 0) then {
         return NULL;
@@ -246,7 +246,7 @@ print(c()); // Outputs 2
 
 - **Undefined Variable**:
 
-  ```glados
+  ```
   let y = x + 5; // Error: Variable x is not defined
   ```
 
