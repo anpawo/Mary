@@ -115,8 +115,8 @@ print(y); // Outputs 15
 Some built-in functions include:
 
 - Arithmetic: `+`, `-`, `*`, `/`
-- Comparisons: `<`, `>`, `=`, `<=`, `>=`
-- Logical: `and`, `or`, `not`
+- Comparisons: `<`, `>`, `==`, `<=`, `>=`
+- Logical: `is`, `or`, `not`
 
 ---
 
