@@ -138,26 +138,35 @@ if (x < 5) then {
 
 ---
 
-The `cond` construct evaluates multiple conditions:
-
-```lisp
-(cond
-  ((= x 0) (print "Zero"))
-  ((> x 0) (print "Positive"))
-  (else (print "Negative")))
-```
-
 ### Loops and Recursion
 
-GLaDOS encourages recursion instead of loops. Example:
+GLaDOS allows for both recursion and loops. Example:
 
-```lisp
-(defun factorial (n)
-  (if (= n 0)
-      1
-      (* n (factorial (- n 1)))))
+An example of a loop:
+```
+function my_add(int a, int b) -> int {
+    int i = 0;
 
-(print (factorial 5))  ; Outputs 120
+    while i < b then {
+        a = a + 1;
+        i = i + 1;
+    }
+    return a;
+}
+
+print(my_add(2, 5)); // Outputs 7
+```
+
+And recursion looks like this :
+```
+function factorial(int n) -> int {
+    if (n == 0) then {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print(factorial(5)); // Outputs 120
 ```
 
 ---
