@@ -252,7 +252,7 @@ print(c()); // Outputs 2
 
 - **Malformed Expression**:
 
-  ```glados
+  ```
   let z = 1 + ; // Error: Syntax error
   ```
 
@@ -267,11 +267,13 @@ print(c()); // Outputs 2
 
 ### Factorial Function
 
-```lisp
-(defun factorial (n)
-  (if (= n 0)
-      1
-      (* n (factorial (- n 1)))))
+```
+function factorial(int n) -> int {
+    if (n == 0) then {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
 ```
 
 ### Fibonacci Sequence
