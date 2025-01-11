@@ -220,17 +220,22 @@ operator !! precedence 10 (list l, int index) -> null | any {
 
 ### Closures
 
+This part is currently underway
+
 Functions can close over variables:
 
-```lisp
-(let counter (lambda ()
-  (let count 0)
-  (lambda ()
-    (let count (+ count 1)))))
+```
+function counter() -> function {
+    let count = 0;
+    return function() -> int {
+        count = count + 1;
+        return count;
+    };
+}
 
-(let c (counter))
-(print (c))  ; Outputs 1
-(print (c))  ; Outputs 2
+let c = counter();
+print(c()); // Outputs 1
+print(c()); // Outputs 2
 ```
 
 ---
