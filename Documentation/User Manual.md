@@ -93,20 +93,7 @@ Hello, World!
 
 ## 2. Syntax and Basics
 
-### S-Expressions
-
-GLaDOS uses S-expressions (Symbolic Expressions) as its primary syntax. An S-expression is written as:
-
-```lisp
-(function arg1 arg2 ... argN)
-```
-
-Examples:
-
-```lisp
-(+ 1 2)   ; Adds 1 and 2
-(* 3 4)   ; Multiplies 3 and 4
-```
+Our language is iterative, and takes direct inspiration from Python, JavaScript as well as C. In the following chapters we will see how to write our language.
 
 ### Variables and Bindings
 
