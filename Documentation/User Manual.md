@@ -289,14 +289,22 @@ function fibonacci(int n) -> int {
 
 ### Custom Data Structures
 
-Using lists:
+Using lists and structures:
 
-```lisp
-(let my-list '(1 2 3 4 5))
-(print (car my-list))   ; Outputs 1
-(print (cdr my-list))   ; Outputs (2 3 4 5)
+```
+import list;
+
+struct kv(k, v) {
+    k key;
+    v val;
+}
+
+type dict(k, v) = list kv(k, v);
+
+let my_dict = list kv(int, string);
 ```
 
 ---
 
 Thank you for using GLaDOS !
+
