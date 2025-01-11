@@ -278,12 +278,13 @@ function factorial(int n) -> int {
 
 ### Fibonacci Sequence
 
-```lisp
-(defun fibonacci (n)
-  (if (<= n 1)
-      n
-      (+ (fibonacci (- n 1))
-         (fibonacci (- n 2)))))
+```
+function fibonacci(int n) -> int {
+    if (n <= 1) then {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
 ```
 
 ### Custom Data Structures
