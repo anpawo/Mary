@@ -175,24 +175,26 @@ print(factorial(5)); // Outputs 120
 
 ### Defining Functions
 
-Use `defun` to define a function:
+Define a function using the `function` keyword:
 
-```lisp
-(defun add-two (x)
-  (+ x 2))
+```glados
+function add_two(int x) -> int {
+    return x + 2;
+}
 
-(print (add-two 5))  ; Outputs 7
+print(add_two(5)); // Outputs 7
 ```
 
 ### Higher-Order Functions
 
 Functions can be passed as arguments:
 
-```lisp
-(defun apply (f x)
-  (f x))
+```glados
+function apply(function f, int x) -> int {
+    return f(x);
+}
 
-(print (apply add-two 10))  ; Outputs 12
+print(apply(add_two, 10)); // Outputs 12
 ```
 
 ---
