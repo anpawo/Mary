@@ -246,19 +246,20 @@ print(c()); // Outputs 2
 
 - **Undefined Variable**:
 
-  ```lisp
-  (+ x 5)  ; Error: Variable x is not defined
+  ```glados
+  let y = x + 5; // Error: Variable x is not defined
   ```
 
 - **Malformed Expression**:
 
-  ```lisp
-  (+ 1)    ; Error: Insufficient arguments
+  ```glados
+  let z = 1 + ; // Error: Syntax error
   ```
 
 ### Debugging Tips
 
-- Check for mismatched parentheses.
+- Check for mismatched brackets.
+- Ensure all variables are defined before use.
 
 ---
 
