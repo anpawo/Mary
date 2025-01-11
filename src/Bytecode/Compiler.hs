@@ -52,11 +52,15 @@ convertLiteral NullLit = VmNull
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
+compileSubExpression (FunctionCall "." [VariableCall varCallName, nameField]) = [Push (VmString varCallName)] ++ res ++ [Push (VmFunc "."), Call]
+  where
+    res = compileSubExpression nameField
 compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [Push $ VmFunc fnName, Call]
 compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 
 compileExpression :: Expression -> [Instruction]
 compileExpression (SubExpression subExpr) = compileSubExpression subExpr
+compileExpression (StructField name field value) = [Push $ VmString field] ++ compileSubExpression value ++ [Update name]
 compileExpression (Variable (_, name) value) = compileSubExpression value ++ [Store name]
 compileExpression (Return value) = compileSubExpression value ++ [Ret]
 compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse nbInstructionsTrue] ++ instructionsTrue ++ instructionsFalse

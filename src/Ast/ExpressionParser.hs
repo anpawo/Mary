@@ -72,7 +72,7 @@ exprReturn ctx locVar retT = tok ReturnKw *> getOffset >>= \offset -> subexpress
       | otherwise -> failI offset $ errRetType (show retT) (show $ getLitType x)
 
 exprVariable :: Ctx -> LocalVariable -> Parser Expression
-exprVariable ctx locVar = variableCreation ctx locVar <|> variableAssignation ctx locVar
+exprVariable ctx locVar = variableCreation ctx locVar <|> variableAssignation ctx locVar <|> modifyStructField ctx locVar
 
 variableCreation :: Ctx -> LocalVariable -> Parser Expression
 variableCreation ctx locVar = do
@@ -96,6 +96,16 @@ variableAssignation ctx locVar = do
   if t == t'
     then return $ Variable (t, n) x
     else failP $ errAssignType n (show t) (show t')
+
+modifyStructField :: Ctx -> LocalVariable -> Parser Expression
+modifyStructField ctx locVar = try $ do
+  varName <- textIdentifier
+  case find ((== varName) . snd) locVar of
+    Just (_, _) -> pure ()
+    _ -> fail $ errVariableNotBound varName
+  structField <- ((\op -> if op == "." then pure () else failP errExpectedField :: Parser ()) <$> operatorIdentifier) *> textIdentifier <* tok Assign
+  subexpr <- subexpression ctx locVar (tok SemiColon)
+  return $ StructField varName structField subexpr
 
 exprSubexpr :: Ctx -> LocalVariable -> Type -> Parser Expression
 exprSubexpr ctx locVar _ = SubExpression <$> subexpression ctx locVar (tok SemiColon)

@@ -46,7 +46,8 @@ type Ctx = [Ast]
 
 data Expression
   = SubExpression SubExpression
-  | Variable { varMeta :: (Type, String), varValue :: SubExpression } -- variable creation and modification inside a function
+  | Variable { varMeta :: (Type, String), varValue :: SubExpression }                   -- variable creation and modification inside a function
+  | StructField { varName :: String, fieldName :: String, fieldValue :: SubExpression } -- modify struct field of a variable
   | Return { retValue :: SubExpression }
   | IfThenElse { ifCond :: SubExpression, thenExpr :: [Expression], elseExpr :: [Expression] }
   | While { whileCond :: SubExpression, whileExpr :: [Expression] }
@@ -142,7 +143,6 @@ isType StrType (StringLit _) = True
 isType (ArrType AnyType) (ArrLit _ _) = True
 isType (ArrType t) (ArrLit t' _) = t == t'
 isType (StructType n) (StructLit n' _) = n == n'
-isType StructAnyType (StructLit _ _) = True
 isType (ConstraintType _ t) lit = any (`isType` lit) t
 isType VoidType _ = False
 isType AnyType _ = True

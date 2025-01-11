@@ -1,12 +1,17 @@
 [test.factorial_and_power]
 cmd = "../../glados --import ../../stdlib input/main/math.mary"
 stdout = """
-8
+27
 720
+13
+81
 """
 
-[test.simple_list_display]
+[test.struct_display_and_field_modification]
 cmd = "../../glados --import ../../stdlib input/main/list.mary"
 stdout = """
 elem{5, empty{}}
+elem{1, elem{2, elem{3, empty{}}}}
+3
+elem{1, empty{}}
 """

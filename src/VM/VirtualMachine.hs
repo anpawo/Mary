@@ -21,6 +21,9 @@ import Bytecode.Data
 import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
 import Text.Printf (printf)
+import Data.List (find)
+import System.IO (stderr, hPrint)
+import Data.Char (ord, chr)
 
 type Stack = [Value]
 
@@ -58,6 +61,7 @@ exitCallFunc ind env is (VmInt status:stack) = exitWith $ ExitFailure status
 exitCallFunc ind env is _ = fail "error with exit func"
 
 toIntCallFunc :: Int -> Env -> Program -> Stack -> IO Value
+toIntCallFunc ind env is (VmChar c:stack) = exec (ind + 1) env is (VmInt (ord c):stack)
 toIntCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
 toIntCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
 toIntCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
@@ -87,13 +91,38 @@ operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stac
 operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
 operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
 operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
+  Just x -> exec (ind + 1) env is (x : rest)
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
+operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = case lookup name env of
+    Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
+      Just val -> exec (ind + 1) env is (val : rest)
+    _ -> fail ". expected a structure to access value"
 operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
 operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
 
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
+callInstr "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." field name
+  _ -> exec (ind + 1) env is (VmStruct name (map (\(n, v') -> if n == field then (n, v) else (n, v')) fields):stack)
 callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
-callInstr "is" ind env is stack = putStrLn (printf "stack: %s\nind: %s\nenv: %s\ninsts: %s\n" (show stack) (show ind) (show env) (show is) :: String) >> exec (ind + 1) env is stack
 callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
+-- arr and str
+callInstr "length" ind env is (VmString str : stack) = exec (ind + 1) env is (VmInt (length str):stack)
+callInstr "length" ind env is (VmArray _ arr : stack) = exec (ind + 1) env is (VmInt (length arr):stack)
+callInstr "insert" ind env is (VmChar c : VmInt i :VmString str : stack) = exec (ind + 1) env is (VmString (take i str ++ [c] ++ drop i str):stack)
+callInstr "insert" ind env is (x : VmInt i :VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (take i arr ++ [x] ++ drop i arr):stack) -- type is not checked
+callInstr "append" ind env is (VmChar c : VmString str : stack) = exec (ind + 1) env is (VmString (str ++ [c]):stack)
+callInstr "append" ind env is (x : VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (arr ++ [x]):stack) -- type is not checked
+callInstr "at" ind env is (VmInt i : VmString str : stack) = exec (ind + 1) env is (VmChar (str !! i):stack) -- bounds not checked
+callInstr "at" ind env is (VmInt i : VmArray typeName arr : stack) = exec (ind + 1) env is (arr !! i:stack) -- bounds not checked
+callInstr "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str ++ str'):stack)
+callInstr "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr ++ arr'):stack) else fail "Cannot concat two arrays of different type"
+--
+callInstr "toString" ind env is (v : stack) = exec (ind + 1) env is (VmString (show v):stack)
+callInstr "toChar" ind env is (VmChar c : stack) = exec (ind + 1) env is (VmChar c:stack)
+callInstr "toChar" ind env is (VmInt c : stack) = exec (ind + 1) env is (VmChar (chr c):stack)
+callInstr "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
 callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
 callInstr "exit" ind env is stack = exitCallFunc ind env is stack
 callInstr "toInt" ind env is stack = toIntCallFunc ind env is stack
@@ -103,14 +132,22 @@ callInstr name ind env is stack = case lookup name env of
     Nothing -> operatorCallFunc name ind env is stack
 
 pushInstr :: Value -> Int -> Env -> Program -> Stack -> IO Value
-pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is ((VmStruct structName values) : stack)
-pushInstr (VmPreArray typeName arr) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is ((VmArray typeName values) : stack)
+pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is (VmStruct structName values : stack)
+pushInstr (VmPreArray typeName arr) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is (VmArray typeName values : stack)
 pushInstr v ind env is stack = exec (ind + 1) env is (v : stack)
 
 doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
 doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
 doCurrentInstr (Just (Push v)) ind env is stack = pushInstr v ind env is stack
+doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = case find ((== name) . fst) env of
+  Just (_, x) -> case x of
+    [Push (VmStruct name' value)] -> case find ((== field) . fst) value of
+      Just (fieldName, currValue) -> exec (ind + 1) ((name, [Push (VmStruct name' (map (\(n, currV) -> if n == field then (n, v) else (n, currV)) value))]) : env) is stack
+      Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
+    _ -> fail ("Variable " ++ name ++ " is not a structure")
+  Nothing -> fail ("Variable " ++ name ++ " not found")
+  -- exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
