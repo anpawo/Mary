@@ -203,11 +203,19 @@ print(apply(add_two, 10)); // Outputs 12
 
 ### Custom Operators
 
-Define custom operators using `let-op` (if supported):
+Define custom operators using `operator`:
 
-```lisp
-(let-op ** (lambda (x y) (* x x y y)))
-(print (** 2 3))  ; Outputs 13
+```glados
+operator !! precedence 10 (list l, int index) -> null | any {
+    if (index < 0) then {
+        return NULL;
+    } else {
+        if (index == 0) then {
+            return l.data;
+        }
+        return l.next !! (index - 1);
+    }
+}
 ```
 
 ### Closures
