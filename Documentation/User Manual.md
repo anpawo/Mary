@@ -128,13 +128,15 @@ Some built-in functions include:
 
 The `if` construct evaluates a condition:
 
-```lisp
-(if (< x 5)
-    (print "Less than 5")
-    (print "Greater or equal to 5"))
+```glados
+if (x < 5) then {
+    print("Less than 5");
+} else {
+    print("Greater or equal to 5");
+}
 ```
 
-#### `cond`
+---
 
 The `cond` construct evaluates multiple conditions:
 
