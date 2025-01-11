@@ -97,16 +97,17 @@ Our language is iterative, and takes direct inspiration from Python, JavaScript 
 
 ### Variables and Bindings
 
-Create variables using `let`:
+Create variables using the syntax:
 
-```lisp
-(let x 10)
+```
+let x = 10;
 ```
 
-Access the variable:
+Access and manipulate the variable:
 
-```lisp
-(+ x 5)  ; Outputs 15
+```
+let y = x + 5;
+print(y); // Outputs 15
 ```
 
 ### Built-in Functions
