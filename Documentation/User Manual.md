@@ -6,43 +6,32 @@ Welcome to the user manual for the GLaDOS programming language. This document wi
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-
-   - Installation
-   - Running GLaDOS
-   - Hello, World!
-
-2. [Syntax and Basics](#syntax-and-basics)
-
-   - S-Expressions
-   - Variables and Bindings
-   - Built-in Functions
-
-3. [Control Structures](#control-structures)
-
-   - Conditionals (`if`, `cond`)
-   - Loops and Recursion
-
-4. [Functions](#functions)
-
-   - Defining Functions
-   - Higher-Order Functions
-
-5. [Advanced Features](#advanced-features)
-
-   - Custom Operators
-   - Closures
-
-6. [Error Handling](#error-handling)
-
-   - Common Errors
-   - Debugging Tips
-
-7. [Examples](#examples)
-
-   - Factorial Function
-   - Fibonacci Sequence
-   - Custom Data Structures
+- [User Manual for GLaDOS Programming Language](#user-manual-for-glados-programming-language)
+  - [Table of Contents](#table-of-contents)
+  - [1. Getting Started](#1-getting-started)
+    - [Installation](#installation)
+    - [Running GLaDOS](#running-glados)
+    - [Hello, World!](#hello-world)
+  - [2. Syntax and Basics](#2-syntax-and-basics)
+    - [Variables and Bindings](#variables-and-bindings)
+    - [Built-in Functions](#built-in-functions)
+  - [3. Control Structures](#3-control-structures)
+    - [Conditionals](#conditionals)
+      - [`if`](#if)
+    - [Loops and Recursion](#loops-and-recursion)
+  - [4. Functions](#4-functions)
+    - [Defining Functions](#defining-functions)
+    - [Higher-Order Functions](#higher-order-functions)
+  - [5. Advanced Features](#5-advanced-features)
+    - [Custom Operators](#custom-operators)
+    - [Closures](#closures)
+  - [6. Error Handling](#6-error-handling)
+    - [Common Errors](#common-errors)
+    - [Debugging Tips](#debugging-tips)
+  - [7. Examples](#7-examples)
+    - [Factorial Function](#factorial-function)
+    - [Fibonacci Sequence](#fibonacci-sequence)
+    - [Custom Data Structures](#custom-data-structures)
 
 ---
 
@@ -93,20 +82,20 @@ Hello, World!
 
 ## 2. Syntax and Basics
 
-Our language is iterative, and takes direct inspiration from Python, JavaScript as well as C. In the following chapters we will see how to write our language.
+Our language is iterative, and takes direct inspiration from Python, TypeScript as well as C. In the following chapters we will see how to write our language.
 
 ### Variables and Bindings
 
 Create variables using the syntax:
 
 ```
-let x = 10;
+x: int = 10;
 ```
 
 Access and manipulate the variable:
 
 ```
-let y = x + 5;
+y: int = x + 5;
 print(y); // Outputs 15
 ```
 
@@ -144,8 +133,8 @@ GLaDOS allows for both recursion and loops. Example:
 
 An example of a loop:
 ```
-function my_add(int a, int b) -> int {
-    int i = 0;
+function my_add(a: int, b: int) -> int {
+    i: int = 0;
 
     while i < b then {
         a = a + 1;
@@ -159,7 +148,7 @@ print(my_add(2, 5)); // Outputs 7
 
 And recursion looks like this :
 ```
-function factorial(int n) -> int {
+function factorial(n: int) -> int {
     if (n == 0) then {
         return 1;
     }
@@ -178,7 +167,7 @@ print(factorial(5)); // Outputs 120
 Define a function using the `function` keyword:
 
 ```
-function add_two(int x) -> int {
+function add_two(x: int) -> int {
     return x + 2;
 }
 
@@ -190,11 +179,11 @@ print(add_two(5)); // Outputs 7
 Functions can be passed as arguments:
 
 ```
-function apply(function f, int x) -> int {
+function apply(f: (int) -> int, x: int) -> int {
     return f(x);
 }
 
-print(apply(add_two, 10)); // Outputs 12
+print(apply((add_two), 10)); // Outputs 12
 ```
 
 ---
@@ -206,11 +195,11 @@ print(apply(add_two, 10)); // Outputs 12
 Define custom operators using `operator`:
 
 ```
-operator !! precedence 10 (list l, int index) -> null | any {
-    if (index < 0) then {
+operator !! precedence 10 (l: list, index: int) -> null | any {
+    if index < 0 then {
         return NULL;
     } else {
-        if (index == 0) then {
+        if index == 0 then {
             return l.data;
         }
         return l.next !! (index - 1);
@@ -226,16 +215,9 @@ Functions can close over variables:
 
 ```
 function counter() -> function {
-    let count = 0;
-    return function() -> int {
-        count = count + 1;
-        return count;
-    };
+    plus: (int, int) -> int = (+);
+    plus(1, 2); // 3
 }
-
-let c = counter();
-print(c()); // Outputs 1
-print(c()); // Outputs 2
 ```
 
 ---
@@ -247,13 +229,13 @@ print(c()); // Outputs 2
 - **Undefined Variable**:
 
   ```
-  let y = x + 5; // Error: Variable x is not defined
+  y: int = x + 5; // Error: Variable x is not defined
   ```
 
 - **Malformed Expression**:
 
   ```
-  let z = 1 + ; // Error: Syntax error
+  z: int = 1 + ; // Error: Syntax error
   ```
 
 ### Debugging Tips
@@ -268,8 +250,8 @@ print(c()); // Outputs 2
 ### Factorial Function
 
 ```
-function factorial(int n) -> int {
-    if (n == 0) then {
+function factorial(n: int) -> int {
+    if n == 0 then {
         return 1;
     }
     return n * factorial(n - 1);
@@ -279,8 +261,8 @@ function factorial(int n) -> int {
 ### Fibonacci Sequence
 
 ```
-function fibonacci(int n) -> int {
-    if (n <= 1) then {
+function fibonacci(n: int) -> int {
+    if n <= 1 then {
         return n;
     }
     return fibonacci(n - 1) + fibonacci(n - 2);
@@ -294,14 +276,7 @@ Using lists and structures:
 ```
 import list;
 
-struct kv(k, v) {
-    k key;
-    v val;
-}
-
-type dict(k, v) = list kv(k, v);
-
-let my_dict = list kv(int, string);
+print(1..5) // [1, 2, 3, 4, 5]
 ```
 
 ---
