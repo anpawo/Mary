@@ -40,6 +40,7 @@ import Parser.Token
 import Ast.Error
 import Ast.TokenParser
 import Utils.Lib
+import Control.Monad (liftM2)
 
 type Parser = Parsec Void [MyToken]
 type Ctx = [Ast]
@@ -105,6 +106,7 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
     existingTypes = [charType, boolType, nullType, intType, floatType, strType, arrayType,
       structType     >>= loadStructure . stTyName,
       constraintType >>= loadConstraint . fromJust . crTyName,
+      closureType,
       textIdentifier >>= loadStructure,
       textIdentifier >>= loadConstraint
       ] ++ ([voidType | canBeVoid])
@@ -119,12 +121,19 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
       | name `elem` getCtxName [isStruct] ctx = pure $ StructType name
       | otherwise                             = fail $ errStructureNotBound name
 
+    closureType :: Parser Type
+    closureType = liftM2 ClosureType (tok ParenOpen *> ((tok ParenClose $> []) <|> args)) (tok Arrow *> types ctx True True)
+      where args = types ctx False True >>= \t -> (tok ParenClose $> [t]) <|> (tok Comma *> ((t :) <$> args))
+
+
 getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
 getType _ locVar (VariableCall name) = maybe (fail $ errVariableNotBound name) (pure . fst) (find ((== name) . snd) locVar)
-getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
+getType ctx locVar (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
   Just (Function {..}) -> pure fnRetType
   Just (Operator {..}) -> pure opRetType
-  _ -> fail $ errFunctionNotBound name
+  _ -> case find ((== name) . snd) locVar of
+    Just (ClosureType _ retType, _) -> pure retType
+    _ -> fail $ errFunctionNotBound name
 getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case
     kv'
@@ -145,8 +154,10 @@ isType (ArrType t) (ArrLit t' _) = t == t'
 isType (StructType n) (StructLit n' _) = n == n'
 isType (ConstraintType _ t) lit = any (`isType` lit) t
 isType VoidType _ = False
-isType AnyType _ = True
 isType NullType NullLit = True
+isType (ClosureType argsTy retTy) (ClosureLit _ argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+isType AnyType (ClosureLit {}) = False
+isType AnyType _ = True
 isType _ _ = False -- any other combination
 
 getLitType :: Literal -> Type
@@ -159,6 +170,7 @@ getLitType (ArrLit t _) = t
 getLitType (StructLit n _) = StructType n
 getLitType (StructLitPre n _) = StructType n
 getLitType (ArrLitPre t _) = t
+getLitType (ClosureLit _ argsTy retTy) = ClosureType argsTy retTy
 getLitType NullLit = NullType
 
 notTaken :: [String] -> String -> Parser String

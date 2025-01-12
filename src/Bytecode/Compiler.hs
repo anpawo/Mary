@@ -41,6 +41,7 @@ convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
 convertLitStruct (key, value) = [(key , compileSubExpression value)]
 
 convertLiteral :: Literal -> Value
+convertLiteral (ClosureLit name argsTy retTy) = VmClosure name
 convertLiteral (CharLit c) = VmChar c
 convertLiteral (BoolLit b) = VmBool b
 convertLiteral (IntLit i) = VmInt i

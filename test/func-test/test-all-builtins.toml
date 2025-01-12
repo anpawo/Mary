@@ -11,7 +11,7 @@ true
 stdout
 getline
 1
-elem{5, empty{}}
+[5]
 3
 5
 hello!
@@ -37,7 +37,7 @@ A
 1.0
 true
 [1, 2]
-empty{}
+[]
 null
 """
 stderr = """stderr

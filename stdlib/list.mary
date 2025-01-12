@@ -6,6 +6,12 @@
 //
 
 import std
+import math
+
+/*
+add macro [x] = !! x
+or smth
+*/
 
 struct empty {}
 
@@ -48,15 +54,117 @@ operator !! precedence 10 (list l, int index) -> null | any {
     {
         return NULL;
     }
+    if index == 0 then
+    {
+        return l.data;
+    }
     else
     {
-        if index == 0 then
-        {
-            return l.data;
-        }
-        else
-        {
-            return l.next !! (index - 1);
-        }
+        return l.next !! (index - 1);
     }
+}
+
+// ranges inclusive
+operator .. precedence 10 (int lowerBound, int upperBound) -> list {
+    if lowerBound > upperBound then
+    {
+        return empty {};
+    }
+    if lowerBound == upperBound then
+    {
+        return elem { data = upperBound, next = empty {} };
+    }
+    return elem { data = lowerBound, next = (lowerBound + 1)..upperBound };
+}
+
+function map((any) -> any f, list l) -> list {
+    if is(l, "empty") then
+    {
+        return l;
+    }
+    return elem { data = f(l.data), next = map(f, l.next) };
+}
+
+function filter((any) -> bool p, list l) -> list {
+    if is(l, "empty") then
+    {
+        return l;
+    }
+    if p(l.data) then
+    {
+        return elem { data = l.data, next = filter(p, l.next) };
+    }
+    return filter(p, l.next);
+}
+
+function foldl((any, any) -> any f, any acc, list l) -> any {
+    if is(l, "empty") then
+    {
+        return acc;
+    }
+    foldl(f, f(l.data, acc), l.next);
+}
+
+function foldr((any, any) -> any f, any acc, list l) -> any {
+    if is(l, "empty") then
+    {
+        return acc;
+    }
+    return f(foldr(f, acc, l.next), l.data);
+}
+
+function sum(list l) -> number {
+    return foldl((+), 0, l);
+}
+
+function minimum(list l) -> number {
+    return foldl((min), l.data, l);
+}
+
+function maximum(list l) -> number {
+    return foldl((max), l.data, l);
+}
+
+function all((any) -> bool f, list l) -> bool {
+    if is(l, "empty") then
+    {
+        return true;
+    }
+    if f(l.data) then
+    {
+        return all(f, l.next);
+    }
+    return false;
+}
+
+function anyP((any) -> bool f, list l) -> bool {
+    if is(l, "empty") then
+    {
+        return false;
+    }
+    if f(l.data) then
+    {
+        return true;
+    }
+    return anyP(f, l.next);
+}
+
+function in(any x, list l) -> bool {
+    if is(l, "empty") then
+    {
+        return false;
+    }
+    if x == l.data then
+    {
+        return true;
+    }
+    return in(x, l.next);
+}
+
+function len(list l) -> int {
+    if is(l, "empty") then
+    {
+        return 0;
+    }
+    return 1 + len(l.next);
 }

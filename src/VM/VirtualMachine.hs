@@ -89,8 +89,7 @@ operatorCallFunc "/" ind env is (VmInt a : VmInt b : stack) = exec (ind + 1) env
 operatorCallFunc "/" ind env is (VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
 operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stack
 operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
-operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
-operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "==" ind env is (a : b : rest) = exec (ind + 1) env is (VmBool (a == b) : rest)
 operatorCallFunc "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
   Just x -> exec (ind + 1) env is (x : rest)
   Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
@@ -98,8 +97,7 @@ operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = ca
     Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
       Just val -> exec (ind + 1) env is (val : rest)
     _ -> fail ". expected a structure to access value"
-operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
-operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
+operatorCallFunc name ind env is _ = fail "Invalid function/operator call."
 
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
 callInstr "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
@@ -128,8 +126,10 @@ callInstr "exit" ind env is stack = exitCallFunc ind env is stack
 callInstr "toInt" ind env is stack = toIntCallFunc ind env is stack
 callInstr "toFloat" ind env is stack = toFloatCallFunc ind env is stack
 callInstr name ind env is stack = case lookup name env of
+    Just [Push (VmClosure closureName)] -> callInstr closureName ind env is stack -- may not be the move
     Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
     Nothing -> operatorCallFunc name ind env is stack
+
 
 pushInstr :: Value -> Int -> Env -> Program -> Stack -> IO Value
 pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is (VmStruct structName values : stack)
@@ -147,7 +147,6 @@ doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = cas
       Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
     _ -> fail ("Variable " ++ name ++ " is not a structure")
   Nothing -> fail ("Variable " ++ name ++ " not found")
-  -- exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
