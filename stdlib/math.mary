@@ -5,6 +5,8 @@
 // Mary Standard library - math
 //
 
+import std
+
 operator ** precedence 8 (number n, number power) -> number {
     if power == 0 then
     {
@@ -26,6 +28,38 @@ function abs(number n) -> number {
         return 0 - n;
     }
     return n;
+}
+
+function even(number n) -> bool {
+    if n % 2 == 0 then
+    {
+        return true;
+    }
+    return false;
+}
+
+function odd(number n) -> bool {
+    if n % 2 == 1 then
+    {
+        return true;
+    }
+    return false;
+}
+
+function min(number a, number b) -> number {
+    if a <= b then
+    {
+        return a;
+    }
+    return b;
+}
+
+function max(number a, number b) -> number {
+    if a >= b then
+    {
+        return a;
+    }
+    return b;
 }
 
 function factorial(int n) -> int {
