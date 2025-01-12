@@ -15,3 +15,12 @@ elem{1, elem{2, elem{3, empty{}}}}
 3
 elem{1, empty{}}
 """
+
+[test.closures]
+cmd = "../../glados --import ../../stdlib input/main/closures.mary"
+stdout = """
+5
+5
+3
+lol
+"""
