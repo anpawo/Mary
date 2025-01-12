@@ -89,8 +89,7 @@ operatorCallFunc "/" ind env is (VmInt a : VmInt b : stack) = exec (ind + 1) env
 operatorCallFunc "/" ind env is (VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
 operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stack
 operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
-operatorCallFunc "==" ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
-operatorCallFunc "==" ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (b == a) : rest)
+operatorCallFunc "==" ind env is (a : b : rest) = exec (ind + 1) env is (VmBool (a == b) : rest)
 operatorCallFunc "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
   Just x -> exec (ind + 1) env is (x : rest)
   Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
@@ -98,8 +97,7 @@ operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = ca
     Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
       Just val -> exec (ind + 1) env is (val : rest)
     _ -> fail ". expected a structure to access value"
-operatorCallFunc "==" ind env is _ = fail "Eq expects two VmInt on the stack"
-operatorCallFunc name ind env is _ = fail "Call expects an operator or a function on top of the stack"
+operatorCallFunc name ind env is _ = fail "Invalid function/operator call."
 
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
 callInstr "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
