@@ -76,8 +76,13 @@ instance Show Value where
   show (VmPreStruct structName fields) = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
   show (VmFunc name)                   = printf "function %s" name
   show (VmArray typeName instrs)       = printf "[%s]" $ intercalate ", " $ map show instrs
-  show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
   show (VmClosure n)                   = printf "closure (%s)" n
+  show (VmStruct "empty" [])           = "[]"
+  show (VmStruct "elem" l)             = printf "[%s]" $ formatList l
+    where
+      formatList [("data", d), ("next", VmStruct "empty" [])] = show d
+      formatList [("data", d), ("next", VmStruct "elem" l)] = printf "%s, %s" (show d) (formatList l)
+  show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
 
 type EnvVar = (String, [Instruction])
 
