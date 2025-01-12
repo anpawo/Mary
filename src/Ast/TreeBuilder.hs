@@ -19,9 +19,10 @@ import Data.Foldable (find, traverse_)
 import Ast.TokenParser
 import Data.Functor (($>))
 import Control.Applicative ((<|>))
-import Data.List (singleton)
+import Data.List (singleton, intercalate)
 import Data.Maybe (fromJust, isNothing)
 import Control.Monad (when, unless)
+import Text.Printf (printf)
 
 data Group
   = GGr { getIndex :: Int, ggValue :: [Group]}
@@ -34,13 +35,15 @@ data Group
 validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
 validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
   where
+    tosub :: (String, [MyToken]) -> Parser (String, SubExpression)
     tosub (n, v) = case (,) n <$> run (subexpression ctx locVar eof) v of
-      Left err -> fail $ ";" ++ prettyPrintError v err
+      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError v err) (intercalate "  " $ map show v)
       Right suc -> pure suc
 validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
   where
+    tosub :: [MyToken] -> Parser SubExpression
     tosub v = case run (subexpression ctx locVar eof) v of
-      Left err -> fail $ ";" ++ prettyPrintError v err
+      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError v err) (intercalate "  " $ map show v)
       Right suc -> pure suc
 validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr >>= \case
