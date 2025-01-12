@@ -29,12 +29,16 @@ data Type
   | AnyType --                                                         \| any
   | StructType { stTyName :: String} --                                \| struct <name> (the real parsing of the structure is done in the Ast)
   | ConstraintType { crTyName :: Maybe String, crTyTypes :: [Type]} -- \| int | float
+  | ClosureType { fnTyArgs :: [Type], fnTyRet :: Type }
   deriving (Ord)
 
 instance Eq Type where
   (StructType n) == (StructType n') = n == n'
   (ArrType t) == (ArrType t') = t == t'
+  (ClosureType argsTy retTy) == (ClosureType argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+  AnyType == (ClosureType {}) = False
   AnyType == _ = True
+  (ClosureType {}) == AnyType = False
   _ == AnyType = True
   (ConstraintType (Just n) _) == (ConstraintType (Just n') _) | n == n' = True
   c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
@@ -50,6 +54,7 @@ instance Eq Type where
   _ == _ = False
 
 instance Show Type where
+  show (ClosureType argsTy retTy) = printf "(%s) -> %s" (intercalate ", " $ map show argsTy) (show retTy)
   show CharType = "char"
   show NullType = "null"
   show VoidType = "void"
@@ -74,9 +79,11 @@ data Literal
   | StructLitPre String [(String, [MyToken])] --                    \| before computation of the elements
   | StructLit String [(String, SubExpression)] --                   \| {name: "marius", age: 19}
   | NullLit --                                                      \| null
+  | ClosureLit String [Type] Type --                               \| (+)
   deriving (Eq, Ord)
 
 instance Show Literal where
+  show (ClosureLit x _ _) = printf "(%s)" x
   show (CharLit x) = show x
   show (BoolLit True) = "true"
   show (BoolLit False) = "false"

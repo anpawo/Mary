@@ -20,6 +20,14 @@ function pow(number n, number power) -> number {
     return n ** power;
 }
 
+function abs(number n) -> number {
+    if n < 0 then
+    {
+        return 0 - n;
+    }
+    return n;
+}
+
 function factorial(int n) -> int {
     if n < 2 then
     {

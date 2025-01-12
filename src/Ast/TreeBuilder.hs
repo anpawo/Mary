@@ -11,7 +11,7 @@
 module Ast.TreeBuilder (subexpression) where
 
 import Ast.Ast
-import Parser.Token (Type, Literal (..), MyToken (..))
+import Parser.Token (Type(..), Literal (..), MyToken (..))
 import Text.Megaparsec (getOffset, eof, choice, someTill, satisfy, notFollowedBy, someTill_, try)
 import Ast.Error
 import Utils.Lib
@@ -74,6 +74,12 @@ mountGroup _ [x@(GLit {})] = pure x
 mountGroup ctx [GFn index name args] = GFn index name <$> mapM (mountGroup ctx . singleton) args
 mountGroup _ [x@(GVar {})] = pure x
 mountGroup _ [x@(GOp _ _ [_, _])] = pure x
+mountGroup ctx [GGr idx [GOp idx' n []]] = case find (\a -> isOp a && getName a == n) ctx of
+  (Just (Operator {..})) -> pure $ GLit idx $ ClosureLit opName [fst opArgLeft, fst opArgRight] opRetType
+  _ -> failI idx' $ errOperatorNotBound n
+mountGroup ctx [GGr idx [x@(GVar _ n)]] = case find (\a -> isFn a && getName a == n) ctx of
+  (Just (Function {..})) -> pure $ GLit idx $ ClosureLit fnName (map fst fnArgs) fnRetType
+  _ -> pure x
 mountGroup ctx [GGr _ group] = mountGroup ctx group
 mountGroup ctx group = calcPrec ctx Nothing (-1) 1 group >>= \case
     Nothing -> let errIdx = getGrIdx (head group) in (getOffset >>= (failI errIdx . errTooManyExpr) . subtract errIdx)
@@ -121,8 +127,10 @@ getGrIdx (GVar index _) = index
 getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = let t = opRetType $ fromJust $ find (\a -> isOp a && getName a == name) ctx in
   when (t /= expected) (failI index $ errInvalidOpType name (show expected) (show t))
-getGrType ctx _ (GFn index name _) expected = let t = fnRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
-  when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+getGrType ctx locVar (GFn index name _) expected = case find ((== name) . snd) locVar of
+  Just (ClosureType _ t, _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+  _ -> let t = fnRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
+    when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
 getGrType _ locVar (GVar index name) expected = case find ((== name) . snd) locVar of
   Nothing -> failI index $ errVariableNotBound name
   Just a -> let t = fst a in when (t /= expected) (failI index $ errInvalidVarType name (show expected) (show t))
@@ -140,7 +148,14 @@ validateMount ctx locVar (GFn index name args) = case find (\a -> isFn a && getN
     where
       expected = length args'
       found = length args
-  _ -> failI index $ errFunctionNotBound name
+  _ -> case find ((== name) . snd) locVar of
+    Just (ClosureType args' _, _)
+      | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
+      | otherwise -> mapM_ (\(t, g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
+      where
+        expected = length args'
+        found = length args
+    _ -> failI index $ errFunctionNotBound name
 validateMount ctx locVar (GOp index name [l, r]) = case find (\a -> isOp a && getName a == name) ctx of
   Just (Operator _ _ _ (tl, _) (tr, _) _) -> getGrType ctx locVar l tl >> getGrType ctx locVar r tr >> validateMount ctx locVar l >> validateMount ctx locVar r
   _ -> failI index $ errOperatorNotBound name
@@ -164,5 +179,5 @@ fixOp ((GFn idx name gr):xs) = ((:) . GFn idx name <$> fixOp gr) <*> fixOp xs
 fixOp (x@(GLit {}):xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
-subexpression ctx locVar endSubexpr =
-  someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>= mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr ctx m
+subexpression ctx locVar endSubexpr = someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>=
+  mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr ctx m

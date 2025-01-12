@@ -59,13 +59,18 @@ exprReturn ctx locVar retT = tok ReturnKw *> getOffset >>= \offset -> subexpress
         (t, _)
           | t == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show t)
-    (FunctionCall {fnCallName = name}) -> case fromJust $ find (\a -> (isOp a || isFn a) && getName a == name) ctx of
-        (Operator {..})
+    (FunctionCall {fnCallName = name}) -> case find (\a -> (isOp a || isFn a) && getName a == name) ctx of
+        Just (Operator {..})
           | opRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
-        (Function {..})
+        Just (Function {..})
           | fnRetType == retT -> return $ Return subexpr
           | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
+        Nothing -> case fromJust $ find ((== name) . snd) locVar of
+          (ClosureType _ closureRetType, _)
+            | closureRetType == retT -> return $ Return subexpr
+            | otherwise -> failI offset $ errRetType (show retT) (show closureRetType)
+          _ -> failN $ errImpossibleCase "exprReturn function call"
         _ -> failN $ errImpossibleCase "exprReturn function call"
     (Lit x)
       | getLitType x == retT -> return $ Return subexpr
@@ -78,16 +83,18 @@ variableCreation :: Ctx -> LocalVariable -> Parser Expression
 variableCreation ctx locVar = do
   t <- types ctx False True
   n <- textIdentifier
+  offset <- getOffset
   void (tok Assign)
   x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
   if t == t'
     then return $ Variable (t, n) x
-    else failP $ errAssignType n (show t) (show t')
+    else failI offset $ errAssignType n (show t) (show t')
 
 variableAssignation :: Ctx -> LocalVariable -> Parser Expression
 variableAssignation ctx locVar = do
   n <- try $ textIdentifier <* tok Assign
+  offset <- getOffset
   t <- case find ((== n) . snd) locVar of
     Nothing -> fail $ errVariableNotBound n
     Just (t, _) -> pure t
@@ -95,7 +102,7 @@ variableAssignation ctx locVar = do
   t' <- getType ctx locVar x
   if t == t'
     then return $ Variable (t, n) x
-    else failP $ errAssignType n (show t) (show t')
+    else failI offset $ errAssignType n (show t) (show t')
 
 modifyStructField :: Ctx -> LocalVariable -> Parser Expression
 modifyStructField ctx locVar = try $ do

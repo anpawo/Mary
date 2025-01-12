@@ -40,6 +40,7 @@ import Parser.Token
 import Ast.Error
 import Ast.TokenParser
 import Utils.Lib
+import Control.Monad (liftM2)
 
 type Parser = Parsec Void [MyToken]
 type Ctx = [Ast]
@@ -105,6 +106,7 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
     existingTypes = [charType, boolType, nullType, intType, floatType, strType, arrayType,
       structType     >>= loadStructure . stTyName,
       constraintType >>= loadConstraint . fromJust . crTyName,
+      closureType,
       textIdentifier >>= loadStructure,
       textIdentifier >>= loadConstraint
       ] ++ ([voidType | canBeVoid])
@@ -118,6 +120,11 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
     loadStructure name
       | name `elem` getCtxName [isStruct] ctx = pure $ StructType name
       | otherwise                             = fail $ errStructureNotBound name
+
+    closureType :: Parser Type
+    closureType = liftM2 ClosureType (tok ParenOpen *> ((tok ParenClose $> []) <|> args)) (tok Arrow *> types ctx True True)
+      where args = types ctx False True >>= \t -> (tok ParenClose $> [t]) <|> (tok Comma *> ((t :) <$> args))
+
 
 getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
 getType _ locVar (VariableCall name) = maybe (fail $ errVariableNotBound name) (pure . fst) (find ((== name) . snd) locVar)
@@ -145,8 +152,10 @@ isType (ArrType t) (ArrLit t' _) = t == t'
 isType (StructType n) (StructLit n' _) = n == n'
 isType (ConstraintType _ t) lit = any (`isType` lit) t
 isType VoidType _ = False
-isType AnyType _ = True
 isType NullType NullLit = True
+isType (ClosureType argsTy retTy) (ClosureLit _ argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+isType AnyType (ClosureLit {}) = False
+isType AnyType _ = True
 isType _ _ = False -- any other combination
 
 getLitType :: Literal -> Type
@@ -159,6 +168,7 @@ getLitType (ArrLit t _) = t
 getLitType (StructLit n _) = StructType n
 getLitType (StructLitPre n _) = StructType n
 getLitType (ArrLitPre t _) = t
+getLitType (ClosureLit _ argsTy retTy) = ClosureType argsTy retTy
 getLitType NullLit = NullType
 
 notTaken :: [String] -> String -> Parser String

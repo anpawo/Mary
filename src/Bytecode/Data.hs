@@ -61,6 +61,7 @@ data Value
   | VmVoid
   | VmArray String [Value]
   | VmStruct String [(String, Value)]
+  | VmClosure String
   deriving (Eq)
 
 instance Show Value where
@@ -76,6 +77,7 @@ instance Show Value where
   show (VmFunc name)                   = printf "function %s" name
   show (VmArray typeName instrs)       = printf "[%s]" $ intercalate ", " $ map show instrs
   show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
+  show (VmClosure n)                   = printf "closure (%s)" n
 
 type EnvVar = (String, [Instruction])
 
