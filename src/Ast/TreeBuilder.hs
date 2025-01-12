@@ -132,8 +132,9 @@ getGrType ctx _ (GOp index name _) expected = let t = opRetType $ fromJust $ fin
   when (t /= expected) (failI index $ errInvalidOpType name (show expected) (show t))
 getGrType ctx locVar (GFn index name _) expected = case find ((== name) . snd) locVar of
   Just (ClosureType _ t, _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
-  _ -> let t = fnRetType $ fromJust $ find (\a -> isFn a && getName a == name) ctx in
-    when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+  _ -> case find (\a -> isFn a && getName a == name) ctx of
+    Just (Function _ _ t _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+    _ -> failI index $ errFunctionNotBound name
 getGrType _ locVar (GVar index name) expected = case find ((== name) . snd) locVar of
   Nothing -> failI index $ errVariableNotBound name
   Just a -> let t = fst a in when (t /= expected) (failI index $ errInvalidVarType name (show expected) (show t))
