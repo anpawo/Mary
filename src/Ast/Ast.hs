@@ -128,10 +128,12 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
 
 getType :: Ctx -> LocalVariable -> SubExpression -> Parser Type
 getType _ locVar (VariableCall name) = maybe (fail $ errVariableNotBound name) (pure . fst) (find ((== name) . snd) locVar)
-getType ctx _ (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
+getType ctx locVar (FunctionCall name _) = case find (\a -> (isFn a || isOp a) && getName a == name) ctx of
   Just (Function {..}) -> pure fnRetType
   Just (Operator {..}) -> pure opRetType
-  _ -> fail $ errFunctionNotBound name
+  _ -> case find ((== name) . snd) locVar of
+    Just (ClosureType _ retType, _) -> pure retType
+    _ -> fail $ errFunctionNotBound name
 getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case
     kv'
