@@ -1,4 +1,4 @@
-function add_mul(int a, int b, arr[int] c) -> int {
+function add_mul(a: int, b: int, c: arr[int]) -> int {
     return a + b * 4;
 }
 

@@ -9,6 +9,6 @@ struct person {
     age: age_s
 }
 
-function getname(struct person p) -> str {
+function getname(p: struct person) -> str {
     return p.name;
 }

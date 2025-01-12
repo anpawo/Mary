@@ -22,7 +22,7 @@ struct elem {
 
 type list = empty | elem;
 
-operator ++ precedence 5 (list l, list r) -> list {
+operator ++ precedence 5 (l: list, r: list) -> list {
     if is(l, "empty") then
     {
         return r;
@@ -34,11 +34,11 @@ operator ++ precedence 5 (list l, list r) -> list {
     return elem { data = l.data, next = l.next ++ r };
 }
 
-operator :| precedence 5 (any d, list l) -> list {
+operator :| precedence 5 (d: any, l: list) -> list {
     return elem { data = d, next = l };
 }
 
-operator |: precedence 5 (list l, any d) -> list {
+operator |: precedence 5 (l: list, d: any) -> list {
     if is(l, "empty") then
     {
         return elem { data = d, next = empty {} };
@@ -49,7 +49,7 @@ operator |: precedence 5 (list l, any d) -> list {
     }
 }
 
-operator !! precedence 10 (list l, int index) -> null | any {
+operator !! precedence 10 (l: list, index: int) -> null | any {
     if index < 0 || is(l, "empty") then
     {
         return NULL;
@@ -65,7 +65,7 @@ operator !! precedence 10 (list l, int index) -> null | any {
 }
 
 // ranges inclusive
-operator .. precedence 10 (int lowerBound, int upperBound) -> list {
+operator .. precedence 10 (lowerBound: int, upperBound: int) -> list {
     if lowerBound > upperBound then
     {
         return empty {};
@@ -77,7 +77,7 @@ operator .. precedence 10 (int lowerBound, int upperBound) -> list {
     return elem { data = lowerBound, next = (lowerBound + 1)..upperBound };
 }
 
-function map((any) -> any f, list l) -> list {
+function map(f: (any) -> any, l: list) -> list {
     if is(l, "empty") then
     {
         return l;
@@ -85,7 +85,7 @@ function map((any) -> any f, list l) -> list {
     return elem { data = f(l.data), next = map(f, l.next) };
 }
 
-function filter((any) -> bool p, list l) -> list {
+function filter(p: (any) -> bool, l: list) -> list {
     if is(l, "empty") then
     {
         return l;
@@ -97,7 +97,7 @@ function filter((any) -> bool p, list l) -> list {
     return filter(p, l.next);
 }
 
-function foldl((any, any) -> any f, any acc, list l) -> any {
+function foldl(f: (any, any) -> any, acc: any, l: list) -> any {
     if is(l, "empty") then
     {
         return acc;
@@ -105,7 +105,7 @@ function foldl((any, any) -> any f, any acc, list l) -> any {
     foldl(f, f(l.data, acc), l.next);
 }
 
-function foldr((any, any) -> any f, any acc, list l) -> any {
+function foldr(f: (any, any) -> any, acc: any, l: list) -> any {
     if is(l, "empty") then
     {
         return acc;
@@ -113,19 +113,19 @@ function foldr((any, any) -> any f, any acc, list l) -> any {
     return f(foldr(f, acc, l.next), l.data);
 }
 
-function sum(list l) -> number {
+function sum(l: list) -> number {
     return foldl((+), 0, l);
 }
 
-function minimum(list l) -> number {
+function minimum(l: list) -> number {
     return foldl((min), l.data, l);
 }
 
-function maximum(list l) -> number {
+function maximum(l: list) -> number {
     return foldl((max), l.data, l);
 }
 
-function all((any) -> bool f, list l) -> bool {
+function all(f: (any) -> bool, l: list) -> bool {
     if is(l, "empty") then
     {
         return true;
@@ -137,7 +137,7 @@ function all((any) -> bool f, list l) -> bool {
     return false;
 }
 
-function anyP((any) -> bool f, list l) -> bool {
+function anyP(f: (any) -> bool, l: list) -> bool {
     if is(l, "empty") then
     {
         return false;
@@ -149,7 +149,7 @@ function anyP((any) -> bool f, list l) -> bool {
     return anyP(f, l.next);
 }
 
-function in(any x, list l) -> bool {
+function in(x: any, l: list) -> bool {
     if is(l, "empty") then
     {
         return false;
@@ -161,7 +161,7 @@ function in(any x, list l) -> bool {
     return in(x, l.next);
 }
 
-function len(list l) -> int {
+function len(l: list) -> int {
     if is(l, "empty") then
     {
         return 0;

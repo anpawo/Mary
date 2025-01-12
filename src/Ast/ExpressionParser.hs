@@ -17,7 +17,6 @@ import Data.Maybe (fromJust)
 import Data.Foldable (find)
 import Text.Megaparsec (getOffset, choice, some, try)
 import Ast.TokenParser
-import Control.Monad (void)
 import Control.Applicative ((<|>))
 import Ast.TreeBuilder
 
@@ -81,10 +80,9 @@ exprVariable ctx locVar = variableCreation ctx locVar <|> variableAssignation ct
 
 variableCreation :: Ctx -> LocalVariable -> Parser Expression
 variableCreation ctx locVar = do
+  n <- try $ textIdentifier <* tok Colon
   t <- types ctx False True
-  n <- textIdentifier
-  offset <- getOffset
-  void (tok Assign)
+  offset <- getOffset <* tok Assign
   x <- subexpression ctx locVar (tok SemiColon)
   t' <- getType ctx locVar x
   if t == t'

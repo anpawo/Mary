@@ -1,5 +1,5 @@
 type number2 = int | float;
 
-function test(number2 a, type number2 b) -> number2 {
+function test(a: number2, b: type number2) -> number2 {
     return a;
 }

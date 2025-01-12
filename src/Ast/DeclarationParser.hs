@@ -34,7 +34,7 @@ structure ctx = do
 getFnArgs :: Ctx -> [String] -> Parser [(Type, String)]
 getFnArgs ctx names = tok ParenOpen *> (tok ParenClose $> [] <|> args names)
   where
-    args n = (,) <$> types ctx False True <*> (textIdentifier >>= notTaken n) >>= \a -> (tok ParenClose $> [a]) <|> (tok Comma *> ((a :) <$> args (snd a : n)))
+    args n = (\n' t -> (t, n')) <$> (textIdentifier >>= notTaken n) <*> (tok Colon *> types ctx False True) >>= \a -> (tok ParenClose $> [a]) <|> (tok Comma *> ((a :) <$> args (snd a : n)))
 
 function :: Ctx -> Parser Ast
 function ctx = do

@@ -12,7 +12,7 @@ function test_range() -> void {
     print(1..0);
 }
 
-function twice(int a) -> int {
+function twice(a: int) -> int {
     return a * 2;
 }
 
@@ -41,7 +41,7 @@ function test_in() -> void {
 }
 
 // if only we could do lambdas
-function equal5(number a) -> bool {
+function equal5(a: number) -> bool {
     return a == 5;
 }
 

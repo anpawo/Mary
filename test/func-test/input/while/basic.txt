@@ -1,4 +1,4 @@
-function while_test(int a, int b) -> int {
+function while_test(a: int, b: int) -> int {
     while a < b then {
         return a;
     }

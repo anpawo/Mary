@@ -23,7 +23,7 @@ function main() -> int {
     eprint("stderr");
     
     // struct
-    list a = elem{data = 1, next = empty {}};
+    a: list = elem{data = 1, next = empty {}};
     print(a.data);
     print(set(a, "data", 5));
 
