@@ -11,7 +11,7 @@ function recursive_list() -> list {
 
 function main() -> int {
     print(5 :| empty {} ++ empty {});
-    list a = recursive_list();
+    a: list = recursive_list();
     print(a);
     print(a.next.next.data);
     a.next = empty {};

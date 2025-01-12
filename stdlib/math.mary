@@ -7,7 +7,7 @@
 
 import std
 
-operator ** precedence 8 (number n, number power) -> number {
+operator ** precedence 8 (n: number, power: number) -> number {
     if power == 0 then
     {
         return 1;
@@ -18,11 +18,11 @@ operator ** precedence 8 (number n, number power) -> number {
     }
 }
 
-function pow(number n, number power) -> number {
+function pow(n: number, power: number) -> number {
     return n ** power;
 }
 
-function abs(number n) -> number {
+function abs(n: number) -> number {
     if n < 0 then
     {
         return 0 - n;
@@ -30,7 +30,7 @@ function abs(number n) -> number {
     return n;
 }
 
-function even(number n) -> bool {
+function even(n: number) -> bool {
     if n % 2 == 0 then
     {
         return true;
@@ -38,7 +38,7 @@ function even(number n) -> bool {
     return false;
 }
 
-function odd(number n) -> bool {
+function odd(n: number) -> bool {
     if n % 2 == 1 then
     {
         return true;
@@ -46,7 +46,7 @@ function odd(number n) -> bool {
     return false;
 }
 
-function min(number a, number b) -> number {
+function min(a: number, b: number) -> number {
     if a <= b then
     {
         return a;
@@ -54,7 +54,7 @@ function min(number a, number b) -> number {
     return b;
 }
 
-function max(number a, number b) -> number {
+function max(a: number, b: number) -> number {
     if a >= b then
     {
         return a;
@@ -62,7 +62,7 @@ function max(number a, number b) -> number {
     return b;
 }
 
-function factorial(int n) -> int {
+function factorial(n: int) -> int {
     if n < 2 then
     {
         return 1;
@@ -73,7 +73,7 @@ function factorial(int n) -> int {
     }
 }
 
-function fibonacci(int n) -> int {
+function fibonacci(n: int) -> int {
     if n == 0 then
     {
         return 0;

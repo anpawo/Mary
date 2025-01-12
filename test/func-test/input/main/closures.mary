@@ -7,11 +7,11 @@ function closure_plus() -> (int, int) -> int {
     return (+);
 }
 
-function return_closure((int, int) -> int c) -> (int, int) -> int {
+function return_closure(c: (int, int) -> int) -> (int, int) -> int {
     return c;
 }
 
-function use_closure((int, int) -> int f) -> int {
+function use_closure(f: (int, int) -> int) -> int {
     return f(1, 4);
 }
 
@@ -19,11 +19,11 @@ function main() -> void {
     // inside
     print(use_closure((+)));
     print(use_closure(closure_plus()));
-    (int, int) -> int plus = (+);
+    plus: (int, int) -> int = (+);
     print(plus(1, 2));
 
     // call
-    (any) -> void print2 = (print);
+    print2: (any) -> void = (print);
     print2("lol");
 
     exit(0);
