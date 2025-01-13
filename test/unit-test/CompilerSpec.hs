@@ -45,6 +45,8 @@ convertLiteralSpec = describe "convertLiteral" $ do
     convertLiteral (StructLit "person" [("name", Lit $ StringLit "marius"), ("age", Lit $ IntLit 1)]) `shouldBe` VmPreStruct "person" [("name", [Push $ VmString "marius"]), ("age", [Push $ VmInt 1])]
   it "converts NullLit to VmNull" $
     convertLiteral NullLit `shouldBe` VmNull
+  it "converts ClosureLit to VmClosure" $
+    convertLiteral (ClosureLit "myClosure" [IntType] IntType) `shouldBe` VmClosure "myClosure"
 
 compileSubExpressionSpec :: SpecWith ()
 compileSubExpressionSpec = describe "compileSubExpression" $ do
