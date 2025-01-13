@@ -80,6 +80,13 @@ compileExpressionSpec = describe "compileExpression" $ do
     thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}],
     elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
     compileExpression cond `shouldBe` [Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]
+  it "compiles a StructField" $
+    compileExpression (StructField "person" "name" (Lit (StringLit "John")))
+      `shouldBe`
+      [ Push (VmString "name")
+      , Push (VmString "John")
+      , Update "person"
+      ]
 
 compileExpressionsSpec :: SpecWith ()
 compileExpressionsSpec = describe "compileExpressions" $ do
