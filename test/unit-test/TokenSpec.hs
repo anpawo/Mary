@@ -96,6 +96,10 @@ typeSpec = describe "type" $ do
     it "struct person" $ show (StructType "person") ==> "person"
     it "any" $ show AnyType ==> "any"
     it "constraint number = int | float" $ show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
+    it "constraint with the same name (Just n) == (Just n)" $ do
+    let c1 = ConstraintType (Just "number") [IntType, FloatType]
+        c2 = ConstraintType (Just "number") [BoolType] 
+    (c1 == c2) ==> True
 
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do
