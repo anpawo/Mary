@@ -130,3 +130,9 @@ derivingSpec = describe "deriving Eq" $ do
     (VmPreStruct "test" [("f1", [Push (VmInt 1)])] == VmPreStruct "test" [("f1", [Push (VmInt 2)])]) `shouldBe` False
     (VmClosure "c1" == VmClosure "c1") `shouldBe` True
     (VmClosure "c1" == VmClosure "c2") `shouldBe` False
+  it "checks equality of two VmStruct with multiple fields" $ 
+    (VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)] 
+    == VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)]) `shouldBe` True
+  it "checks inequality of two VmStruct with multiple fields" $ 
+    (VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)] 
+    == VmStruct "multi" [("f1", VmInt 2), ("f2", VmBool True)]) `shouldBe` False
