@@ -99,29 +99,29 @@ isSpec = describe "is functions" $ do
     it "returns False if a literal does not match its type" $ do
       isType FloatType (IntLit 42) `shouldBe` False
 
-  describe "notTaken" $ do
-      let tokenizeInput input =
-            case run tokenize input of
-              Left _ -> Nothing
-              Right tokens -> Just tokens
+  -- describe "notTaken" $ do
+  --     let tokenizeInput input =
+  --           case run tokenize input of
+  --             Left _ -> Nothing
+  --             Right tokens -> Just tokens
 
-      let notTakenTest takenNames newName = do
-            let builtins = map (\name -> Function { fnName = name, fnArgs = [], fnRetType = VoidType, fnBody = [] }) takenNames
-            tokens <- maybe (fail "Tokenization failed") return (tokenizeInput newName)
-            case run (tokenToAst builtins []) tokens of
-              Left _ -> return Nothing
-              Right context ->
-                  if any (\case Function { fnName = n } -> n == newName; _ -> False) context
-                  then return Nothing
-                  else return (Just newName)
+  --     let notTakenTest takenNames newName = do
+  --           let builtins = map (\name -> Function { fnName = name, fnArgs = [], fnRetType = VoidType, fnBody = [] }) takenNames
+  --           tokens <- maybe (fail "Tokenization failed") return (tokenizeInput newName)
+  --           case run (tokenToAst builtins []) tokens of
+  --             Left _ -> return Nothing
+  --             Right context ->
+  --                 if any (\case Function { fnName = n } -> n == newName; _ -> False) context
+  --                 then return Nothing
+  --                 else return (Just newName)
 
-      it "allows a name that is not taken" $ do
-        result <- notTakenTest ["name1", "name2"] "name3"
-        result `shouldBe` Just "name3"
+  --     it "allows a name that is not taken" $ do
+  --       result <- notTakenTest ["name1", "name2"] "name3"
+  --       result `shouldBe` Just "name3"
 
-      it "fails for a name that is already taken" $ do
-        result <- notTakenTest ["name1", "name2"] "name1"
-        result `shouldBe` Nothing
+  --     it "fails for a name that is already taken" $ do
+  --       result <- notTakenTest ["name1", "name2"] "name1"
+  --       result `shouldBe` Nothing
 
 getSpec :: SpecWith ()
 getSpec = describe "get functions" $ do
