@@ -55,6 +55,12 @@ valueSpec = describe "Value Show instance" $ do
           ])
       ])
       `shouldBe` "[1, 2]"
+  it "shows VmPreStruct with multiple fields correctly" $
+    show (VmPreStruct "myStruct"
+      [ ("field1", [Push (VmInt 1)])
+      , ("field2", [Push (VmInt 2)])
+      ])
+      `shouldBe` "myStruct{[Push 1], [Push 2]}"
 
 typeSpec :: SpecWith ()
 typeSpec = describe "typeCheck for Value" $ do
