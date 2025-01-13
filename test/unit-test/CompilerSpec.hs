@@ -58,6 +58,14 @@ compileSubExpressionSpec = describe "compileSubExpression" $ do
       compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), Push $ VmFunc "double", Call]
     it "compiles a Literal" $
       compileSubExpression (Lit (StringLit "hello")) `shouldBe` [Push (VmString "hello")]
+    it "compiles a FunctionCall with '.' operator" $
+      compileSubExpression (FunctionCall "." [VariableCall "myStruct", VariableCall "myField"])
+        `shouldBe`
+        [ Push (VmString "myStruct")
+        , Load "myField"
+        , Push (VmFunc ".")
+        , Call
+        ]
 
 compileExpressionSpec :: SpecWith ()
 compileExpressionSpec = describe "compileExpression" $ do
