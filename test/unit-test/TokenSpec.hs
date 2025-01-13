@@ -37,6 +37,8 @@ tokenSpec = describe "token" $ do
       it "then" $ show ThenKw ==> "then"
       it "else" $ show ElseKw ==> "else"
       it "return" $ show ReturnKw ==> "return"
+      it "while" $ show WhileKw ==> "while"
+
     describe "symbols" $ do
       it "{" $ show CurlyOpen ==> "{"
       it "}" $ show CurlyClose ==> "}"
