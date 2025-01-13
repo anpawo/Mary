@@ -187,6 +187,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             , elseKw
             , whileKw
             , returnKw
+            , atomKw
 
             -- Literal
             , Literal <$> parseLit
@@ -289,6 +290,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
         elseKw = try $ keyword "else" $> ElseKw
         whileKw = try $ keyword "while" $> WhileKw
         returnKw = try $ keyword "return" $> ReturnKw
+        atomKw = try $ keyword "atom" $> AtomKw
 
         -- Type
         parseType = choicetry [

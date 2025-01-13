@@ -18,7 +18,7 @@ import Utils.Lib
 import Data.Foldable (find, traverse_)
 import Ast.TokenParser
 import Data.Functor (($>))
-import Control.Applicative ((<|>))
+import Control.Applicative ((<|>), Alternative (empty))
 import Data.List (singleton, intercalate)
 import Data.Maybe (fromJust, isNothing)
 import Control.Monad (when, unless)
@@ -60,6 +60,9 @@ getGroup ctx locVar = getOffset >>= (\offset -> choice
     [ eof *> fail errEndSubexpr
     , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
     , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
+    , try $ GLit offset <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of
+      Just (Structure _ []) -> pure $ StructLit atom []
+      _ -> empty)
     , try $ GVar offset <$> textIdentifier <* notFollowedBy (tok ParenOpen)
     , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs offset))
     , GOp offset <$> operatorIdentifier <*> pure []

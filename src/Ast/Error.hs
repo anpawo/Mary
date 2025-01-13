@@ -138,9 +138,9 @@ prettyPrintError fileName tokensPos tokens (ParseErrorBundle {bundleErrors = err
                 (ErrorFail (';': err)) -> err
                 (ErrorFail (':': input)) -> do
                     (n, err) <- (reads input :: [(Int, String)])
-                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos pos) tokCons (red (tokErr2 n)) (tokLeft2 n) (red (pointer2 n)) (red "error") err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos (pos - 1)) tokCons (red (tokErr2 n)) (tokLeft2 n) (red (pointer2 n)) (red "error") err
                 (ErrorFail err) ->
-                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos pos) tokCons (red tokErr)       tokLeft     (red pointer)      (red "error") err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos (pos - 1)) tokCons (red tokErr)       tokLeft     (red pointer)      (red "error") err
                 x -> "This error should be transformed into a custom one:\n" ++ show x
             where
                 tokCons = unwords $ show <$> suffix (take (pos - 1) tokens)

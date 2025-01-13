@@ -119,6 +119,7 @@ data MyToken
   | ElseKw --            \| else         -> else
   | WhileKw --           \| while        -> while
   | ReturnKw --          \| return       -> return
+  | AtomKw --            \| atom         -> empty structure
   -- Symbol
   | CurlyOpen --         \|  {   -> struct definition and creation start
   | CurlyClose --        \|  }   -> struct definition and creation end
@@ -152,6 +153,7 @@ instance Show MyToken where
   show ElseKw = "else"
   show WhileKw = "while"
   show ReturnKw = "return"
+  show AtomKw = "atom"
 
   show CurlyOpen = "{"
   show CurlyClose = "}"

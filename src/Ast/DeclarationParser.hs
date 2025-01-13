@@ -6,7 +6,7 @@
 -}
 {-# LANGUAGE LambdaCase #-}
 
-module Ast.DeclarationParser (structure, function, operator, constraint) where
+module Ast.DeclarationParser (structure, function, operator, constraint, atom) where
 
 import Parser.Token
 import Ast.Ast
@@ -23,6 +23,9 @@ getMembers :: Ctx -> [String] -> Parser [(String, Type)]
 getMembers ctx names = tok CurlyOpen *> (tok CurlyClose $> [] <|> fields names)
   where
     fields n = (,) <$> (textIdentifier >>= notTaken n) <*> (tok Colon *> types ctx False True) >>= \a -> (tok CurlyClose $> [a]) <|> (tok Comma *> ((a :) <$> fields (fst a : n)))
+
+atom :: Ctx -> Parser Ast
+atom ctx = (`Structure` []) <$> ((tok AtomKw *> textIdentifier >>= notTaken (getNames ctx)) <* tok SemiColon)
 
 structure :: Ctx -> Parser Ast
 structure ctx = do
