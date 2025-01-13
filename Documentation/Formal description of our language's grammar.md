@@ -40,24 +40,26 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <body> ::= <statement>+
 
-<statement> ::= <declaration> | <expression> | <control_structure> | <return_statement>
+<statement> ::= <declaration> | <binary_expression> | <control_structure> | <return_statement>
 
-<declaration> ::= <variable> "=" <expression> ";"
+<declaration> ::= <variable> "=" <value> ";"
 
-<expression> ::= <identifier> | <function_call> | <string> | <number> | <float> | <bool>
+<value> ::= <identifier> | <function_call> | <string> | <number> | <float> | <bool>
 
-<return_statement> ::= "return" <expression>? ";"
+<binary_expression> ::= <binary_operation> | <bool> | <number> | <float> | <identifier>
 
-//todo -----------------------------------------
+<binary_operation> ::= <binary_expression> <binary_operator> <binary_expression>
 
-<binary_operation> ::= <expression> <operator> <expression>
+<control_structure> ::= <if_statement> | <while_loop>
+
+<if_statement> ::= "if" <binary_expression> "then" "{" <body> "}" ("else" "{" <body> "}")?
+
+<while_loop> ::= "while" <binary_expression> "then" "{" <body> "}"
+
+<return_statement> ::= "return" <value>? ";"
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
 
-<control_structure> ::= <if_statement> | <while_loop> | <for_loop>
-
-<if_statement> ::= "if" <expression> "{" <body> "}" [ "else" "{" <body> "}" ]
-
-<while_loop> ::= "while" <expression> "{" <body> "}"
-
+<binary_operator> ::= "==" | "<" | ">" | "<=" | ">="
 ```
+<!-- todo ajouter les constraints dans tout les types -->
