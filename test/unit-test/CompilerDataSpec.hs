@@ -39,5 +39,6 @@ valueSpec = describe "Value Show instance" $ do
     it "shows VmPreStruct correctly" $ show (VmPreStruct "test" [("field1", [Push (VmInt 1)])]) `shouldBe` "test{[Push 1]}"
     it "shows VmNull correctly" $ show VmNull `shouldBe` "null"
     it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "function myFunc"
+    it "shows VmBool False correctly" $ show (VmBool False) `shouldBe` "false"
 
 
