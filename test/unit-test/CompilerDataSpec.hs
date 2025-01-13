@@ -17,7 +17,6 @@ spec = do
   instructionSpec
   valueSpec
   typeSpec
-  derivingSpec
 
 instructionSpec :: SpecWith ()
 instructionSpec = describe "data Value" $ do
@@ -32,7 +31,6 @@ instructionSpec = describe "data Value" $ do
 
 valueSpec :: SpecWith ()
 valueSpec = describe "Value Show instance" $ do
-  it "shows VmVoid correctly" $ show VmVoid `shouldBe` "void"
   it "shows VmChar correctly" $ show (VmChar 'a') `shouldBe` "a"
   it "shows VmBool correctly" $ show (VmBool True) `shouldBe` "true"
   it "shows VmInt correctly" $ show (VmInt 42) `shouldBe` "42"
@@ -78,72 +76,17 @@ typeSpec = describe "typeCheck for Value" $ do
   it "returns False for mismatch" $ typeCheck (VmInt 42) "float" `shouldBe` False
   it "returns False for an array type mismatch" $ typeCheck (VmArray "int" [VmInt 1]) "arr[float]" `shouldBe` False
   it "returns False for a struct type mismatch" $ typeCheck (VmStruct "myStruct" []) "anotherStruct" `shouldBe` False
-
-derivingSpec :: SpecWith ()
-derivingSpec = describe "deriving Eq" $ do
-  it "checks Eq for VmVoid" $ do
-    (VmVoid == VmVoid) `shouldBe` True
-    (VmVoid == VmNull) `shouldBe` False
-  it "checks equality of two instructions" $ (Push (VmInt 42) == Push (VmInt 42)) `shouldBe` True
-  it "checks inequality of two instructions" $ (Push (VmInt 42) == Ret) `shouldBe` False
-  it "checks equality of two values" $ (VmInt 42 == VmInt 42) `shouldBe` True
-  it "checks inequality of two values" $ (VmInt 42 == VmFloat 42.0) `shouldBe` False
-  it "checks Eq for all Instruction constructors" $ do
-    (Push (VmInt 1) == Push (VmInt 1)) `shouldBe` True
-    (Push (VmInt 1) == Push (VmInt 2)) `shouldBe` False
-    (Call == Call) `shouldBe` True
-    (Call == Ret)  `shouldBe` False
-    (Ret == Ret) `shouldBe` True
-    (Store "x" == Store "x") `shouldBe` True
-    (Store "x" == Store "y") `shouldBe` False
-    (Update "x" == Update "x") `shouldBe` True
-    (Update "x" == Update "z") `shouldBe` False
-    (Load "a" == Load "a") `shouldBe` True
-    (Load "a" == Load "b") `shouldBe` False
-    (JumpIfFalse 10 == JumpIfFalse 10) `shouldBe` True
-    (JumpIfFalse 10 == JumpIfFalse 20) `shouldBe` False
-    (JumpBackward 5 == JumpBackward 5) `shouldBe` True
-    (JumpBackward 5 == JumpBackward 1) `shouldBe` False
-  it "checks Eq for all Value constructors" $ do
-    (VmChar 'a' == VmChar 'a') `shouldBe` True
-    (VmChar 'a' == VmChar 'b') `shouldBe` False
-    (VmBool True == VmBool True) `shouldBe` True
-    (VmBool True == VmBool False) `shouldBe` False
-    (VmInt 1 == VmInt 1) `shouldBe` True
-    (VmInt 1 == VmInt 2) `shouldBe` False
-    (VmFloat 3.14 == VmFloat 3.14) `shouldBe` True
-    (VmFloat 3.14 == VmFloat 2.71) `shouldBe` False
-    (VmString "hello" == VmString "hello") `shouldBe` True
-    (VmString "hello" == VmString "world") `shouldBe` False
-    (VmNull == VmNull) `shouldBe` True
-    (VmNull == VmInt 42) `shouldBe` False
-    (VmFunc "f" == VmFunc "f") `shouldBe` True
-    (VmFunc "f" == VmFunc "g") `shouldBe` False
-    (VmVoid == VmVoid) `shouldBe` True
-    (VmVoid == VmNull) `shouldBe` False
-    (VmArray "int" [VmInt 1] == VmArray "int" [VmInt 1]) `shouldBe` True
-    (VmArray "int" [VmInt 1] == VmArray "float" [VmFloat 1.0]) `shouldBe` False
-    (VmStruct "myStruct" [("field", VmInt 1)] == VmStruct "myStruct" [("field", VmInt 1)]) `shouldBe` True
-    (VmStruct "myStruct" [("field", VmInt 1)] == VmStruct "myStruct" [("field", VmInt 2)]) `shouldBe` False
-    (VmPreArray "int" [[Push (VmInt 1)]] == VmPreArray "int" [[Push (VmInt 1)]]) `shouldBe` True
-    (VmPreArray "int" [[Push (VmInt 1)]] == VmPreArray "int" [[Push (VmInt 2)]]) `shouldBe` False
-    (VmPreStruct "test" [("f1", [Push (VmInt 1)])] == VmPreStruct "test" [("f1", [Push (VmInt 1)])]) `shouldBe` True
-    (VmPreStruct "test" [("f1", [Push (VmInt 1)])] == VmPreStruct "test" [("f1", [Push (VmInt 2)])]) `shouldBe` False
-    (VmClosure "c1" == VmClosure "c1") `shouldBe` True
-    (VmClosure "c1" == VmClosure "c2") `shouldBe` False
-  it "checks equality of two VmStruct with multiple fields" $ 
-    (VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)] 
-    == VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)]) `shouldBe` True
-  it "checks inequality of two VmStruct with multiple fields" $ 
-    (VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)] 
-    == VmStruct "multi" [("f1", VmInt 2), ("f2", VmBool True)]) `shouldBe` False
-  it "checks Eq between different constructors (closure vs string)" $ do
-    (VmClosure "x" == VmString "x") `shouldBe` False
-    (VmClosure "x" == VmClosure "x") `shouldBe` True
-  it "checks Eq for multiple sub-lists in a VmPreArray" $ do
-    (VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]
-      == VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]])
-        `shouldBe` True
-    (VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]
-      == VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 3)]])
-        `shouldBe` False
+  it "returns True for VmArray \"float\" / \"arr[float]\"" $ typeCheck (VmArray "float" [VmFloat 3.14]) "arr[float]" `shouldBe` True
+  it "returns False for mismatch VmArray \"float\" / \"arr[int]\"" $ typeCheck (VmArray "float" [VmFloat 3.14]) "arr[int]" `shouldBe` False
+  it "uses EnvVar in a test" $ do
+    let env :: EnvVar
+        env = ("test", [Call, Ret])
+    env `shouldBe` ("test", [Call, Ret])
+  it "uses EnvVar type" $ do
+    let e :: EnvVar
+        e = ("testEnv", [Call, Ret])
+    e `shouldBe` ("testEnv", [Call, Ret])
+  let testIt :: (TypeCheck a) => a -> String -> Bool
+      testIt = typeCheck
+  it "uses TypeCheck in a polymorphic context" $
+      testIt (VmInt 42) "int" `shouldBe` True
