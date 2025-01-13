@@ -129,17 +129,19 @@ typeSpec = describe "type" $ do
     it "arr[int]" $ show (ArrType IntType) ==> "arr[int]"
     it "struct person" $ show (StructType "person") ==> "person"
     it "any" $ show AnyType ==> "any"
-    it "constraint number = int | float" $ show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
-    it "constraint with the same name (Just n) == (Just n)" $ do
-      let c1 = ConstraintType (Just "number") [IntType, FloatType]
-          c2 = ConstraintType (Just "number") [BoolType] 
-      (c1 == c2) ==> True
-    it "constraint c in list ts" $ do
-      let c = ConstraintType Nothing [IntType]
-          big = ConstraintType Nothing [c, FloatType]
-      (c == big) ==> True
-    it "(ConstraintType _ ts) == t => t in ts" $ do (ConstraintType Nothing [IntType, BoolType] == IntType) ==> True
-    it "t == (ConstraintType _ ts) => t in ts" $ do (FloatType == ConstraintType Nothing [FloatType, BoolType]) ==> True
+    it "ClosureType [IntType,BoolType] -> float" $
+      show (ClosureType [IntType, BoolType] FloatType) ==> "(int, bool) -> float"
+    it "ConstraintType (Just \"number\") [IntType, FloatType]" $
+      show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
+    it "ConstraintType Nothing [IntType, BoolType]" $
+      show (ConstraintType Nothing [IntType, BoolType]) ==> "int | bool"
+    it "field usage crTyTypes" $ do
+      let c = ConstraintType Nothing [StrType, NullType]
+      crTyTypes c ==> [StrType, NullType]
+    it "field usage fnTyArgs/fnTyRet" $ do
+      let clos = ClosureType [IntType, FloatType] StrType
+      fnTyArgs clos ==> [IntType, FloatType]
+      fnTyRet clos ==> StrType
 
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do
