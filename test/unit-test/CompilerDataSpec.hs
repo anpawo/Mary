@@ -80,6 +80,9 @@ typeSpec = describe "typeCheck for Value" $ do
 
 derivingSpec :: SpecWith ()
 derivingSpec = describe "deriving Eq" $ do
+  it "checks Eq for VmVoid" $ do
+    (VmVoid == VmVoid) `shouldBe` True
+    (VmVoid == VmNull) `shouldBe` False
   it "checks equality of two instructions" $ (Push (VmInt 42) == Push (VmInt 42)) `shouldBe` True
   it "checks inequality of two instructions" $ (Push (VmInt 42) == Ret) `shouldBe` False
   it "checks equality of two values" $ (VmInt 42 == VmInt 42) `shouldBe` True
