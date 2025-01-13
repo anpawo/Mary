@@ -126,3 +126,5 @@ subexpressionSpec = describe "subexpression" $ do
         f3 = FunctionCall "g" []
     (f1 == f2) ==> True
     (f1 == f3) ==> False
+  it "SubExpression Ord" $ do
+    VariableCall "a" < VariableCall "b" `shouldBe` True
