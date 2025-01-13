@@ -33,7 +33,8 @@ tokenSpec = describe "token" $ do
       it "precedence" $ show PrecedenceKw ==> "precedence"
       it "import" $ show (ImportKw "std") ==> "import std"
       it "if" $ show IfKw ==> "if"
-      -- it "then" $ (show $ ThenKw) ==> "then"
+      it "builtin" $ show BuiltinKw ==> "builtin"
+      it "then" $ show ThenKw ==> "then"
       it "else" $ show ElseKw ==> "else"
       it "return" $ show ReturnKw ==> "return"
     describe "symbols" $ do
