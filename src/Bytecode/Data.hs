@@ -83,7 +83,6 @@ instance Show Value where
       formatList [("data", d), ("next", VmStruct "empty" [])] = show d
       formatList [("data", d), ("next", VmStruct "elem" l)] = printf "%s, %s" (show d) (formatList l)
   show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
-  show VmVoid                          = "void"
 
 type EnvVar = (String, [Instruction])
 
@@ -100,6 +99,8 @@ instance TypeCheck Value where
   typeCheck (VmString {}) "str" = True
   typeCheck (VmArray typeName _) expected
     | printf "arr[%s]" typeName == expected = True
+    | otherwise = False
   typeCheck (VmStruct structName _) expected
     | structName == expected = True
+    | otherwise = False
   typeCheck _ _ = False
