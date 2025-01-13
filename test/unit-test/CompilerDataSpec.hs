@@ -137,3 +137,13 @@ derivingSpec = describe "deriving Eq" $ do
   it "checks inequality of two VmStruct with multiple fields" $ 
     (VmStruct "multi" [("f1", VmInt 1), ("f2", VmBool True)] 
     == VmStruct "multi" [("f1", VmInt 2), ("f2", VmBool True)]) `shouldBe` False
+  it "checks Eq between different constructors (closure vs string)" $ do
+    (VmClosure "x" == VmString "x") `shouldBe` False
+    (VmClosure "x" == VmClosure "x") `shouldBe` True
+  it "checks Eq for multiple sub-lists in a VmPreArray" $ do
+    (VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]
+      == VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]])
+        `shouldBe` True
+    (VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 2)]]
+      == VmPreArray "int" [[Push (VmInt 1)], [Push (VmInt 3)]])
+        `shouldBe` False
