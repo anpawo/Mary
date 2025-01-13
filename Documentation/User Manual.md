@@ -130,7 +130,7 @@ Some built-in functions include:
 The `if` construct evaluates a condition:
 
 ```
-if (x < 5) then {
+if x < 5 then {
     print("Less than 5");
 } else {
     print("Greater or equal to 5");
@@ -161,7 +161,7 @@ print(my_add(2, 5)); // Outputs 7
 And recursion looks like this :
 ```
 function factorial(n: int) -> int {
-    if (n == 0) then {
+    if n == 0 then {
         return 1;
     }
     return n * factorial(n - 1);
