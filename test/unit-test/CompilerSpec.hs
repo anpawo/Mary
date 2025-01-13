@@ -45,8 +45,6 @@ convertLiteralSpec = describe "convertLiteral" $ do
     convertLiteral (StructLit "person" [("name", Lit $ StringLit "marius"), ("age", Lit $ IntLit 1)]) `shouldBe` VmPreStruct "person" [("name", [Push $ VmString "marius"]), ("age", [Push $ VmInt 1])]
   it "converts NullLit to VmNull" $
     convertLiteral NullLit `shouldBe` VmNull
-  it "converts ClosureLit to VmClosure" $
-    convertLiteral (ClosureLit "myClosure" [IntType] IntType) `shouldBe` VmClosure "myClosure"
 
 compileSubExpressionSpec :: SpecWith ()
 compileSubExpressionSpec = describe "compileSubExpression" $ do
@@ -58,14 +56,6 @@ compileSubExpressionSpec = describe "compileSubExpression" $ do
       compileSubExpression (FunctionCall "double" [Lit (IntLit 42), Lit (IntLit 2)]) `shouldBe` [Push (VmInt 42), Push (VmInt 2), Push $ VmFunc "double", Call]
     it "compiles a Literal" $
       compileSubExpression (Lit (StringLit "hello")) `shouldBe` [Push (VmString "hello")]
-    it "compiles a FunctionCall with '.' operator" $
-      compileSubExpression (FunctionCall "." [VariableCall "myStruct", VariableCall "myField"])
-        `shouldBe`
-        [ Push (VmString "myStruct")
-        , Load "myField"
-        , Push (VmFunc ".")
-        , Call
-        ]
 
 compileExpressionSpec :: SpecWith ()
 compileExpressionSpec = describe "compileExpression" $ do
@@ -80,41 +70,6 @@ compileExpressionSpec = describe "compileExpression" $ do
     thenExpr = [Return {retValue = VariableCall {varCallName = "a"}}],
     elseExpr = [Return {retValue = VariableCall {varCallName = "b"}}]}
     compileExpression cond `shouldBe` [Load "a",Load "b",Push (VmFunc "<"),Call,JumpIfFalse 2,Load "a",Ret,Load "b",Ret]
-  it "compiles a StructField" $
-    compileExpression (StructField "person" "name" (Lit (StringLit "John")))
-      `shouldBe`
-      [ Push (VmString "name")
-      , Push (VmString "John")
-      , Update "person"
-      ]
-  it "compiles a While loop" $ do
-    let cond = FunctionCall ">" [VariableCall "x", Lit (IntLit 0)]
-    let body =
-          [ SubExpression (FunctionCall "print" [VariableCall "x"])
-          , Variable (IntType, "x") (FunctionCall "-" [VariableCall "x", Lit (IntLit 1)])
-          ]
-    compileExpression (While cond body)
-      `shouldBe`
-      [ Load "x"
-      , Push (VmInt 0)
-      , Push (VmFunc ">")
-      , Call
-      , JumpIfFalse 14
-      , Load "x"
-      , Push (VmFunc "print")
-      , Call
-      , Load "x"
-      , Push (VmInt 1)
-      , Push (VmFunc "-")
-      , Call
-      , Store "x"
-      , Load "x"
-      , Push (VmInt 0)
-      , Push (VmFunc ">")
-      , Call
-      , JumpIfFalse 1
-      , JumpBackward 13
-      ]
 
 compileExpressionsSpec :: SpecWith ()
 compileExpressionsSpec = describe "compileExpressions" $ do

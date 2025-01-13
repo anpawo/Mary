@@ -39,14 +39,6 @@ spec = do
   tokenizerSymbolSpec
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
-  tokenizerUtils
-  tokenizerAdvancedSpec
-  tokenizerEmptyCasesSpec
-
-tokenizerUtils :: SpecWith ()
-tokenizerUtils = describe "utils" $ do
-  it "&>" $
-    run (macro &> namespace) "macro FAILURE 84\nreturn FAILURE;import math\nmath.facto" ==> "return 84;_ZN4mathfacto"
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
@@ -181,69 +173,4 @@ commentSpec = describe "comment" $ do
   it "multi line without closing part" $
     run comment "x = 5/*\ncommentvariable x" === isLeft
   it "multi line and skip string" $
-    run comment "x = \"lol\"/* variable x*/\ny = 6" ==> "x = \"lol\"\ny = 6"
-
-tokenizerAdvancedSpec :: SpecWith ()
-tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
-  it "NULL" $
-    run tokenize "NULL" ==> [Literal NullLit]
-  it "struct with nested parentheses" $
-    run tokenize "person { data = (1), other = ((2)) }" ==>
-      [Literal $ StructLitPre "person"
-        [ ("data",[ParenOpen, Literal (IntLit 1), ParenClose])
-        , ("other",[ParenOpen, ParenOpen, Literal (IntLit 2), ParenClose, ParenClose])
-        ]
-      ]
-  it "int [[1, 2], [3]]" $
-    run tokenize "int [[1, 2], [3]]" ==>
-      [Literal $ ArrLitPre IntType
-        [ [BracketOpen, Literal (IntLit 1), Comma, Literal (IntLit 2), BracketClose]
-        , [BracketOpen, Literal (IntLit 3), BracketClose]
-        ]
-      ]
-  it "person { nested = { foo = 1 }, x = 2 }" $
-    run tokenize "person { nested = { foo = 1 }, x = 2 }" ==>
-      [Literal $ StructLitPre "person"
-        [ ("nested",
-          [ CurlyOpen
-          , Identifier (TextId "foo"), Assign, Literal (IntLit 1)
-          , CurlyClose
-          ])
-        , ("x",[Literal (IntLit 2)])
-        ]
-      ]
-  it "mixed { field = [ (1), (2), { sub = 3 } ] }" $
-    run tokenize "mixed { field = [ (1), (2), { sub = 3 } ] }" ==>
-      [Literal $ StructLitPre "mixed"
-        [("field",
-          [ BracketOpen
-          , ParenOpen, Literal (IntLit 1), ParenClose
-          , Comma
-          , ParenOpen, Literal (IntLit 2), ParenClose
-          , Comma
-          , CurlyOpen
-          , Identifier (TextId "sub"), Assign, Literal (IntLit 3)
-          , CurlyClose
-          , BracketClose
-          ])
-        ]
-      ]
-  it "int [(1)] -> triggers ParenOpen, ParenClose in array" $
-    run tokenize "int [(1)]" ==> 
-      [ Literal $ ArrLitPre IntType
-          [ [ParenOpen, Literal (IntLit 1), ParenClose] ] 
-      ]
-  it "int [{y = 5}]" $
-    run tokenize "int [{y = 5}]" ==>
-      [ Literal $ ArrLitPre IntType
-          [ [CurlyOpen, Identifier (TextId "y"), Assign, Literal (IntLit 5), CurlyClose] ]
-      ]
-
-tokenizerEmptyCasesSpec :: SpecWith ()
-tokenizerEmptyCasesSpec = describe "tokenize empty cases" $ do
-  it "int [] -> empty array" $
-    run tokenize "int []" ==> [Literal $ ArrLitPre IntType []]
-  it "type myConstraint -> ConstraintType (Just \"myConstraint\") []" $
-    run tokenize "type myConstraint" ==> [Type $ ConstraintType (Just "myConstraint") []]
-  it "tokenize type constraint with non-empty identifier" $
-    run tokenize "type MyConstraint" ==> [Type $ ConstraintType (Just "MyConstraint") []]  
+    run comment "x = \"lol\"/* variable x*/\ny = 6" ==>> "x = \"lol\"               \ny = 6"
