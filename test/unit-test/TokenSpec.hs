@@ -55,7 +55,10 @@ tokenSpec = describe "token" $ do
 
     describe "types" $ do
       it "Type IntType" $ show (Type IntType) ==> "int"
-      it "Identifier OperatorId" $ show (Identifier $ OperatorId "<*>") ==> "<*>"
+      it "Type FloatType" $ show (Type FloatType) ==> "float"
+
+    describe "identifier in MyToken" $ do
+      it "Identifier (TextId \"abc\")" $ show (Identifier (TextId "abc")) ==> "abc"
 
 identifierSpec :: SpecWith ()
 identifierSpec = describe "identifier" $ do
