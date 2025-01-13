@@ -46,6 +46,8 @@ valueSpec = describe "Value Show instance" $ do
   it "shows VmClosure correctly" $ show (VmClosure "myClosure") `shouldBe` "closure (myClosure)"
   it "shows VmStruct empty correctly" $ show (VmStruct "empty" []) `shouldBe` "[]"
   it "shows VmStruct 'elem' with one element correctly" $ show (VmStruct "elem" [("data", VmInt 99), ("next", VmStruct "empty" [])]) `shouldBe` "[99]"
+  it "shows a normal VmStruct with no fields" $ show (VmStruct "myStruct" []) `shouldBe` "myStruct{}"
+  it "shows a normal VmStruct with multiple fields" $ show (VmStruct "myStruct" [("f1", VmInt 1), ("f2", VmString "test")]) `shouldBe` "myStruct{1, test}"
   it "shows VmStruct 'elem' with multiple elements correctly" $
     show (VmStruct "elem"
       [ ("data", VmInt 1)
