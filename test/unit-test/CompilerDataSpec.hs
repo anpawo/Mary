@@ -41,5 +41,6 @@ valueSpec = describe "Value Show instance" $ do
     it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "function myFunc"
     it "shows VmBool False correctly" $ show (VmBool False) `shouldBe` "false"
     it "shows VmArray correctly" $ show (VmArray "int" [VmInt 1, VmInt 2]) shouldBe` "[1, 2]"
+    it "shows VmClosure correctly" $ show (VmClosure "myClosure") `shouldBe` "closure (myClosure)"
 
 
