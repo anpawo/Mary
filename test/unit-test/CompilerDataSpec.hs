@@ -66,4 +66,11 @@ typeSpec = describe "typeCheck for Value" $ do
   it "returns True for VmStruct \"myStruct\" [] / \"myStruct\"" $ typeCheck (VmStruct "myStruct" []) "myStruct" `shouldBe` True
   it "returns False for mismatch" $ typeCheck (VmInt 42) "float" `shouldBe` False
 
+derivingSpec :: SpecWith ()
+derivingSpec = describe "deriving Eq"
+  it "checks equality of two instructions" $ (Push (VmInt 42) == Push (VmInt 42)) `shouldBe` True
+  it "checks inequality of two instructions" $ (Push (VmInt 42) == Ret) `shouldBe` False
+  it "checks equality of two values" $ (VmInt 42 == VmInt 42) `shouldBe` True
+  it "checks inequality of two values" $ (VmInt 42 == VmFloat 42.0) `shouldBe` False
+
 
