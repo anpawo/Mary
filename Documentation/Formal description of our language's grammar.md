@@ -1,7 +1,7 @@
 La bnf pour definir une fonction 
 
 ```BNF
-<function> ::= "function" <function name> "(" <arguments> ")" "->" <return type> "{" <function body> "}"
+<function> ::= "function" <function name> "(" <arguments> ")" "->" < type> "{" <function body> "}"
 
 <function name> ::= <letter> (<letter> | <digit>)*
 
@@ -9,22 +9,21 @@ La bnf pour definir une fonction
 
 <digit> ::= '0'-'9'
 
-<arguments> ::= <variable> | <function> ("," <variable> | <function>)*
+<arguments> ::= <variable> | <function> ("," <variable> | <function type>)*
 
 <variable> ::= <identifier> ":" <type>
 
-<function> ::= //todo
-
 <identifier> ::= <letter> (<letter> | <digit>)*
 
-<return type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | //todo type function
+<type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | <struct type> | <function type>
 
-<type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | //todo type fonction
+<return type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | <struct type>
+
+<function type> ::= <identifier> ":" "(" <arguments> ")" "->" <return type>
+
+<struct type> ::= <identifier> ":" "struct " <name_of_struct>
+
+<name_of_struct> ::= <letter> (<letter> | <digit>)*
 
 <function body> ::= //todo
 ```
-
-<!-- //todo notes a moi meme: -verifier si on peut nommer une fonction ou identifiant en commencant a par un digit 
-    - demander si on peut "arr[arr[int]]"
-    -->
-
