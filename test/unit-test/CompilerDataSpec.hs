@@ -32,6 +32,7 @@ instructionSpec = describe "data Value" $ do
 
 valueSpec :: SpecWith ()
 valueSpec = describe "Value Show instance" $ do
+  it "shows VmVoid correctly" $ show VmVoid `shouldBe` "void"
   it "shows VmChar correctly" $ show (VmChar 'a') `shouldBe` "a"
   it "shows VmBool correctly" $ show (VmBool True) `shouldBe` "true"
   it "shows VmInt correctly" $ show (VmInt 42) `shouldBe` "42"
