@@ -2,7 +2,9 @@ Below is a formal description of our programming language `Mary`.
 This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
 ```BNF
-<function> ::= "function" <function_name> "(" <arguments> ")" "->" <type> "{" <body> "}"
+<function> ::= "function" <whitespace> <function_name> <whitespace> "(" <arguments> ")" <whitespace> "->" <whitespace> <type> <whitespace> "{" <body> "}"
+
+<whitespace> ::= " "
 
 <function_name> ::= <letter> (<letter> | <digit>)*
 
@@ -38,7 +40,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <name_of_struct> ::= <letter> (<letter> | <digit>)*
 
-<body> ::= <statement>+
+<body> ::= (<whitespace> <statement> <whitespace>)+
 
 <statement> ::= <declaration> | <binary_expression> | <control_structure> | <return_statement>
 
@@ -48,15 +50,15 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <binary_expression> ::= <binary_operation> | <bool> | <number> | <float> | <identifier>
 
-<binary_operation> ::= <binary_expression> <binary_operator> <binary_expression>
+<binary_operation> ::= <binary_expression> <whitespace> <binary_operator> <whitespace> <binary_expression>
 
 <control_structure> ::= <if_statement> | <while_loop>
 
-<if_statement> ::= "if" <binary_expression> "then" "{" <body> "}" ("else" "{" <body> "}")?
+<if_statement> ::= "if" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}" ( <whitespace> "else" <whitespace> "{" <body> "}")?
 
-<while_loop> ::= "while" <binary_expression> "then" "{" <body> "}"
+<while_loop> ::= "while" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}"
 
-<return_statement> ::= "return" <value>? ";"
+<return_statement> ::= "return" (<whitespace> <value>)? ";"
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
 
