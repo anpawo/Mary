@@ -8,9 +8,10 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
 import Test.Hspec.Runner (SpecWith)
 import Text.RawString.QQ
+import Text.Megaparsec (runParser)
 import Text.Megaparsec.Error (ParseErrorBundle(..))
 import Data.Either (isLeft)
 import Data.Void (Void)
@@ -43,6 +44,96 @@ spec = do
   ifThenElseSpec
   whileSpec
   structureSpec
+  getSpec
+  isSpec
+
+isSpec :: SpecWith ()
+isSpec = describe "is functions" $ do
+  describe "isOp" $ do
+    it "returns True for an Operator AST node" $ do
+      let opNode = Operator "**" 8 IntType (IntType, "a") (IntType, "b") []
+      isOp opNode `shouldBe` True
+
+    it "returns False for a Structure AST node" $ do
+      let structNode = Structure "test" [("field", IntType)]
+      isOp structNode `shouldBe` False
+
+  describe "types" $ do
+    let ctx = []
+        tokenizeInput input =
+          case run tokenize input of
+            Left _ -> Nothing
+            Right tokens -> Just tokens
+        parseType input = tokenizeInput input >>= \tokens ->
+          case run (types ctx False False) tokens of
+            Left _ -> Nothing
+            Right t -> Just t
+
+    it "parses a valid float type" $ do
+      parseType "float" `shouldBe` Just FloatType
+
+    it "parses a valid int type" $ do
+      parseType "int" `shouldBe` Just IntType
+
+    it "parses a valid char type" $ do
+      parseType "char" `shouldBe` Just CharType
+
+    it "fails on an invalid type" $ do
+      parseType "invalidType" `shouldBe` Nothing
+
+    it "parses a valid void type when allowed" $ do
+      let parseVoidType input = tokenizeInput input >>= \tokens ->
+            case run (types ctx True False) tokens of
+              Left _ -> Nothing
+              Right t -> Just t
+      parseVoidType "void" `shouldBe` Just VoidType
+
+    it "fails on void type when not allowed" $ do
+      parseType "void" `shouldBe` Nothing
+
+  describe "isType" $ do
+    it "returns True if a literal matches its type" $ do
+      isType IntType (IntLit 42) `shouldBe` True
+
+    it "returns False if a literal does not match its type" $ do
+      isType FloatType (IntLit 42) `shouldBe` False
+
+  describe "notTaken" $ do
+    let notTakenTest takenNames newName =
+          tokenizeInput newName >>= \tokens ->
+            case run (notTaken takenNames newName) tokens of
+              Left _ -> Nothing
+              Right n -> Just n
+
+    it "allows a name that is not taken" $ do
+      notTakenTest ["name1", "name2"] "name3" `shouldBe` Just "name3"
+
+    it "fails for a name that is already taken" $ do
+      notTakenTest ["name1", "name2"] "name1" `shouldBe` Nothing
+
+getSpec :: SpecWith ()
+getSpec = describe "get functions" $ do
+
+  describe "getName" $ do
+    it "returns the name of a Structure AST node" $ do
+      getName (Structure "myStruct" []) `shouldBe` "myStruct"
+    it "returns the name of a Function AST node" $ do
+      getName (Function "myFunction" [] VoidType []) `shouldBe` "myFunction"
+
+  describe "getNames" $ do
+    it "extracts all names from a context with mixed AST nodes" $ do
+      let ctx = [
+            Structure "struct1" [],
+            Function "fn1" [] VoidType [],
+            Operator "op1" 0 IntType (IntType, "a") (IntType, "b") []
+            ]
+      getNames ctx `shouldBe` ["struct1", "fn1", "op1"]
+
+  describe "getLitType" $ do
+    it "returns the correct type for a literal" $ do
+      getLitType (IntLit 42) `shouldBe` IntType
+    it "returns the correct type for a StructLit" $ do
+      getLitType (StructLit "myStruct" []) `shouldBe` StructType "myStruct"
 
 structureSpec :: SpecWith ()
 structureSpec = describe "structure parsing" $ do
@@ -80,6 +171,12 @@ structureSpec = describe "structure parsing" $ do
       let input = "struct elem { data: invalid_type; }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
+
+  describe "isStruct" $ do
+    it "returns True for a Structure AST node" $ do
+      isStruct (Structure "test" [("field", IntType)]) `shouldBe` True
+    it "returns False for a Function AST node" $ do
+      isStruct (Function "testFn" [] VoidType []) `shouldBe` False
 
 ifThenElseSpec :: SpecWith ()
 ifThenElseSpec = describe "if-then-else" $ do
