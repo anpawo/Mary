@@ -21,8 +21,11 @@ import Data.Void ()
 import Control.Monad ()
 import Utils.Lib
 
-(==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
-(==>) got expected = got `shouldBe` Right expected
+(==>) :: (Show a, Eq a, Show b, Eq b) => Either a (pos, b) -> b -> Expectation
+(==>) got expected = (snd <$> got) `shouldBe` Right expected
+
+(==>>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
+(==>>) got expected = got `shouldBe` Right expected
 
 (===) :: (Show a, Show b) => Either a b -> (Either a b -> Bool) -> Expectation
 (===) got satisfy = got `shouldSatisfy` satisfy
@@ -31,18 +34,11 @@ spec :: Spec
 spec = do
   commentSpec
   macroSpec
-  namespaceSpec
   tokenizerTypeSpec
   tokenizerKeywordSpec
   tokenizerSymbolSpec
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
-  tokenizerUtils
-
-tokenizerUtils :: SpecWith ()
-tokenizerUtils = describe "utils" $ do
-  it "&>" $
-    run (macro &> namespace) "macro FAILURE 84\nreturn FAILURE;import math\nmath.facto" ==> "return 84;_ZN4mathfacto"
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
@@ -149,41 +145,32 @@ tokenizerTypeSpec = describe "tokenize types" $ do
   it "type" $
     run tokenize "type number" ==> [Type $ ConstraintType (Just "number") []]
 
-namespaceSpec :: SpecWith ()
-namespaceSpec= describe "namespace" $ do
-  it "import math" $
-    run namespace "import math\nmath.facto" ==> "_ZN4mathfacto"
-  it "import math and eof" $
-    run namespace "import math" ==> ""
-  it "import math and skip string" $
-    run namespace "import math\nmath.facto \"string\"" ==> "_ZN4mathfacto \"string\""
-
 macroSpec :: SpecWith ()
 macroSpec = describe "macro" $ do
   it "macro FAILURE = 84" $
-    run macro "macro FAILURE 84\nreturn FAILURE;" ==> "return 84;"
+    run macro "macro FAILURE 84\nreturn FAILURE;" ==>> "return 84;"
   it "macro FAILURE = 84 and eof" $
-    run macro "macro FAILURE 84" ==> ""
+    run macro "macro FAILURE 84" ==>> ""
   it "macro FAILURE = 84 and skip string" $
-    run macro "macro FAILURE 84\nreturn FAILURE; return \"string\"" ==> "return 84; return \"string\""
+    run macro "macro FAILURE 84\nreturn FAILURE; return \"string\"" ==>> "return 84; return \"string\""
 
 commentSpec :: SpecWith ()
 commentSpec = describe "comment" $ do
   it "no comment" $
-    run comment "x = 5\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5\ny = 6" ==>> "x = 5\ny = 6"
   it "unfinished string" $
     run comment "x = 5\"y = 6" === isLeft
   it "single line \\n" $
-    run comment "x = 5// variable x\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5// variable x\ny = 6" ==>> "x = 5             \ny = 6"
   it "single line eof" $
-    run comment "x = 5// variable x" ==> "x = 5"
+    run comment "x = 5// variable x" ==>> "x = 5             "
   it "single line and skip string" $
-    run comment "x = \"lol\"// variable x" ==> "x = \"lol\""
+    run comment "x = \"lol\"// variable x" ==>> "x = \"lol\"             "
   it "multi line on single line" $
-    run comment "x = 5/* variable x*/\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5/* variable x*/\ny = 6" ==>> "x = 5               \ny = 6"
   it "multi line on two lines" $
-    run comment "x = 5/*\ncomment*/variable x" ==> "x = 5variable x"
+    run comment "x = 5/*\ncomment*/variable x" ==>> "x = 5  \n         variable x"
   it "multi line without closing part" $
     run comment "x = 5/*\ncommentvariable x" === isLeft
   it "multi line and skip string" $
-    run comment "x = \"lol\"/* variable x*/\ny = 6" ==> "x = \"lol\"\ny = 6"
+    run comment "x = \"lol\"/* variable x*/\ny = 6" ==>> "x = \"lol\"               \ny = 6"

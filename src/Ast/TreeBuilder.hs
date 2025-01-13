@@ -37,13 +37,13 @@ validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit n
   where
     tosub :: (String, [MyToken]) -> Parser (String, SubExpression)
     tosub (n, v) = case (,) n <$> run (subexpression ctx locVar eof) v of
-      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError v err) (intercalate "  " $ map show v)
+      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError "struct error" [] v err) (intercalate "  " $ map show v)
       Right suc -> pure suc
 validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
   where
     tosub :: [MyToken] -> Parser SubExpression
     tosub v = case run (subexpression ctx locVar eof) v of
-      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError v err) (intercalate "  " $ map show v)
+      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError "array error" [] v err) (intercalate "  " $ map show v)
       Right suc -> pure suc
 validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr >>= \case

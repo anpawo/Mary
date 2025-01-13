@@ -15,6 +15,7 @@ import Data.Void (Void)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set.Internal (elemAt)
 import Data.List (intercalate, isPrefixOf)
+import Utils.Lib ((!?))
 
 errCondNotBool :: Int -> String
 errCondNotBool i = printf ":%sexpected a %s condition." (show i) (blue "boolean")
@@ -126,17 +127,20 @@ errInvalidOpType name expected got = printf "invalid operator type for '%s', exp
 errInvalidNumberOfArgument :: String -> Int -> Int -> String
 errInvalidNumberOfArgument name expected found = printf "invalid number of arguments for the function '%s', expected %s but found %s." (blue name) (blue . show $ expected) (blue . show $ found)
 
-prettyPrintError :: [MyToken] -> ParseErrorBundle [MyToken] Void -> String
-prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
+type Line = Int
+type Col  = Int
+
+prettyPrintError :: String -> [(Line, Col)] -> [MyToken] -> ParseErrorBundle [MyToken] Void -> String
+prettyPrintError fileName tokensPos tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
     case errors of
         (FancyError pos fancySet :| _) ->
             case 0 `elemAt` fancySet of
                 (ErrorFail (';': err)) -> err
                 (ErrorFail (':': input)) -> do
                     (n, err) <- (reads input :: [(Int, String)])
-                    " |\n | " ++ tokCons ++ red (tokErr2 n) ++ tokLeft2 n ++ "\n |" ++ red (pointer2 n) ++ "\n" ++ red "error" ++ ": " ++ err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos pos) tokCons (red (tokErr2 n)) (tokLeft2 n) (red (pointer2 n)) (red "error") err
                 (ErrorFail err) ->
-                    " |\n | " ++ tokCons ++ red tokErr ++ tokLeft ++ "\n |" ++ red pointer ++ "\n" ++ red "error" ++ ": " ++ err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos pos) tokCons (red tokErr)       tokLeft     (red pointer)      (red "error") err
                 x -> "This error should be transformed into a custom one:\n" ++ show x
             where
                 tokCons = unwords $ show <$> suffix (take (pos - 1) tokens)
@@ -158,12 +162,23 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
         (TrivialError offset unexpected expected :| _) ->
             printf "This error should be transformed into a custom one:\nindex error: %s\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show offset) (red . show $ tokens !! offset) (show unexpected) (show expected)
 
+filePosition :: String -> [(Line, Col)] -> Int -> String
+filePosition f ps idx = case ps !? idx of
+    Nothing -> bold $ printf "%s:\n" f
+    Just (l, c) -> bold $ printf "%s:%s:%s:\n" f (show l) (show c)
+
 colorblindMode :: String -> String
 colorblindMode [] = []
 colorblindMode str@(x:xs)
-    | redPrefix `isPrefixOf` str  = yellowPrefix ++ colorblindMode (drop (length yellowPrefix) str) 
-    | bluePrefix `isPrefixOf` str = pinkPrefix ++ colorblindMode (drop (length pinkPrefix) str) 
+    | redPrefix `isPrefixOf` str  = yellowPrefix ++ colorblindMode (drop (length yellowPrefix) str)
+    | bluePrefix `isPrefixOf` str = pinkPrefix ++ colorblindMode (drop (length pinkPrefix) str)
     | otherwise                   = x : colorblindMode xs
+
+bold :: String -> String
+bold s = boldPrefix ++ s ++ reset
+
+boldPrefix :: String
+boldPrefix = "\ESC[1m"
 
 yellowPrefix :: String
 yellowPrefix = "\ESC[93m"

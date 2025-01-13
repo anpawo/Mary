@@ -16,7 +16,7 @@ import Ast.Ast
 import Parser.Token
 import Parser.Tokenizer
 import Utils.Lib
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, fromJust)
 import Utils.ArgParser
 import Data.List (intercalate)
 import Ast.Parser (tokenToAst)
@@ -45,12 +45,12 @@ importLib args builtins ctx importedLib (libname:xs)
     | libname `elem` importedLib = pure (importedLib, ctx)
     | otherwise = do
         content <- getContent [] (argImportPath args) libname
-        case run (comment &> tokenize) content of
+        case run tokenize content of
             Left tokErr -> errInputFile libname $ errorBundlePretty tokErr
-            Right tokens -> do
+            Right (pos, tokens) -> do
                 (importedLib', ctx') <- importLib args builtins ctx importedLib (findImports tokens)
                 case run (tokenToAst builtins ctx') tokens of
-                    Left astErr -> errInputFile libname $ (if argColorblind args then colorblindMode else id) $ prettyPrintError tokens astErr
+                    Left astErr -> errInputFile libname $ (if argColorblind args then colorblindMode else id) $ prettyPrintError (fromJust $ argInputFile args) pos tokens astErr
                     Right ctx'' -> importLib args builtins ctx'' (importedLib' ++ [libname]) xs
 
 isImportKw :: MyToken -> Maybe String

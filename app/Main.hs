@@ -14,9 +14,9 @@ import Data.List (intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Megaparsec (errorBundlePretty)
 
-import Utils.Lib ((&>), run)
+import Utils.Lib (run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
-import Parser.Tokenizer (tokenize, comment)
+import Parser.Tokenizer (tokenize)
 import Ast.Parser (tokenToAst)
 import Ast.Error (prettyPrintError, bgBlack, colorblindMode)
 import Bytecode.Compiler (compiler)
@@ -24,21 +24,22 @@ import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
 import Ast.Import (resolveImports)
 import Control.Monad (void)
+import System.Directory (makeAbsolute)
 
 
 glados :: Arguments -> String ->  IO ()
 glados args = toToken
     where
-        toToken input = case run (comment &> tokenize) input of
+        toToken input = case run tokenize input of
             Left err -> putStrLn (errorBundlePretty err) >> exitWith (ExitFailure 1)
             Right tokens
-                | tokenTy $ argOutputType args -> putStrLn $ intercalate "  " (map (bgBlack . show) tokens)
+                | tokenTy $ argOutputType args -> putStrLn $ intercalate "  " (map (bgBlack . show) (snd tokens))
                 | otherwise -> toAst tokens
 
-        toAst tokens = do
+        toAst (pos, tokens) = do
             (builtins, imports) <- resolveImports args tokens
             case run (tokenToAst builtins imports) tokens of
-                Left err -> putStrLn ((if argColorblind args then colorblindMode else id) $ prettyPrintError tokens err) >> exitWith (ExitFailure 1)
+                Left err -> putStrLn ((if argColorblind args then colorblindMode else id) $ prettyPrintError (fromJust $ argInputFile args) pos tokens err) >> exitWith (ExitFailure 1)
                 Right ast
                     | astTy $ argOutputType args -> print ast
                     | otherwise -> toBytecode ast
@@ -69,7 +70,9 @@ handleArgs :: Arguments -> IO ()
 handleArgs args
     | argShowHelper args = putStrLn helper >> exitSuccess
     | isNothing $ argInputFile args = putStrLn helper >> exitWith (ExitFailure 1)
-    | otherwise = getFile (fromJust $ argInputFile args) >>= \input -> glados args input
+    | otherwise = getFile (fromJust $ argInputFile args) >>=
+        \input -> makeAbsolute (fromJust $ argInputFile args) >>=
+            \path -> glados args { argInputFile = Just path } input
     where
         getFile file = catch (readFile file) invalidFile
 
