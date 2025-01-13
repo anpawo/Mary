@@ -104,6 +104,7 @@ typeSpec = describe "type" $ do
       let c = ConstraintType Nothing [IntType]
           big = ConstraintType Nothing [c, FloatType]
       (c == big) ==> True
+    it "(ConstraintType _ ts) == t => t in ts" $ do (ConstraintType Nothing [IntType, BoolType] == IntType) ==> True
 
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do
