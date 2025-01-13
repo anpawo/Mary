@@ -83,6 +83,7 @@ Hello, World!
 ## 2. Syntax and Basics
 
 Our language is iterative, and takes direct inspiration from Python, TypeScript as well as C. In the following chapters we will see how to write our language.
+The following examples are non-exhaustive and you are encouraged to read the [Formal description of our language's grammar] (#https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde/blob/Documentation/Documentation/Formal%20description%20of%20our%20language%27s%20grammar.md) by clicking the link or going to the [official repository](#https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde) and clicking on `Documentation` and then on `Formal description of our language's grammar.md`. This file contains detailed descriptions of our language's grammar using the [BNF notation] (#https://letmegooglethat.com/?q=BNF+notation).
 
 ### Variables and Bindings
 
