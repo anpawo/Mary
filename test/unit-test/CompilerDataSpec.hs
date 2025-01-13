@@ -67,6 +67,7 @@ typeSpec = describe "typeCheck for Value" $ do
   it "returns True for VmArray \"int\" / \"arr[int]\"" $ typeCheck (VmArray "int" [VmInt 1]) "arr[int]" `shouldBe` True
   it "returns True for VmStruct \"myStruct\" [] / \"myStruct\"" $ typeCheck (VmStruct "myStruct" []) "myStruct" `shouldBe` True
   it "returns False for mismatch" $ typeCheck (VmInt 42) "float" `shouldBe` False
+  it "returns False for an array type mismatch" $ typeCheck (VmArray "int" [VmInt 1]) "arr[float]" `shouldBe` False
 
 derivingSpec :: SpecWith ()
 derivingSpec = describe "deriving Eq" $ do
