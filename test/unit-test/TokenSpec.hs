@@ -48,8 +48,11 @@ tokenSpec = describe "token" $ do
       it "]" $ show BracketClose ==> "]"
       it "->" $ show Arrow ==> "->"
       it ";" $ show SemiColon ==> ";"
+      it ":" $ show Colon ==> ":"
       it "," $ show Comma ==> ","
       it "|" $ show Pipe ==> "|"
+      it "=" $ show Assign ==> "="
+
     describe "types" $ do
       it "Type IntType" $ show (Type IntType) ==> "int"
       it "Identifier OperatorId" $ show (Identifier $ OperatorId "<*>") ==> "<*>"
