@@ -100,6 +100,17 @@ y: int = x + 5;
 print(y); // Outputs 15
 ```
 
+### Mandatory use of a `Main` function
+
+The use of a `main` function is mandatory. The structure of the `main` is the same as any other function except for it's name that needs to remain `main`.
+//todo description du fonctionnnement d'un main et pk obligatoire ?
+
+```
+function main () -> <return type> {
+    <main body>
+}
+```
+
 ### Built-in Functions
 
 Some built-in functions include:
