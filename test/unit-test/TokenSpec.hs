@@ -111,12 +111,13 @@ typeSpec = describe "type" $ do
       (ClosureType [IntType] FloatType == ClosureType [BoolType] FloatType) ==> False
     it "AnyType == (ClosureType [IntType] FloatType) -> False" $
       (AnyType == ClosureType [IntType] FloatType) ==> False
-    it "AnyType == IntType -> True" $ do
+    it "AnyType == IntType -> True" $
       (AnyType == IntType) ==> True
-    it "(ClosureType [IntType] FloatType) == AnyType -> False" $ do
+    it "(ClosureType [IntType] FloatType) == AnyType -> False" $
       (ClosureType [IntType] FloatType == AnyType) ==> False
-    it "BoolType == AnyType -> True" $ do
+    it "BoolType == AnyType -> True" $
       (BoolType == AnyType) ==> True
+
   describe "show" $ do
     it "char" $ show CharType ==> "char"
     it "void" $ show VoidType ==> "void"
