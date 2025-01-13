@@ -120,6 +120,7 @@ typeSpec = describe "type" $ do
 
   describe "show" $ do
     it "char" $ show CharType ==> "char"
+    it "null" $ show NullType ==> "null"
     it "void" $ show VoidType ==> "void"
     it "bool" $ show BoolType ==> "bool"
     it "int" $ show IntType ==> "int"
