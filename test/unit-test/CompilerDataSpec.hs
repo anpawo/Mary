@@ -82,5 +82,19 @@ derivingSpec = describe "deriving Eq" $ do
   it "checks inequality of two instructions" $ (Push (VmInt 42) == Ret) `shouldBe` False
   it "checks equality of two values" $ (VmInt 42 == VmInt 42) `shouldBe` True
   it "checks inequality of two values" $ (VmInt 42 == VmFloat 42.0) `shouldBe` False
-
-
+  it "checks Eq for all Instruction constructors" $ do
+    (Push (VmInt 1) == Push (VmInt 1)) `shouldBe` True
+    (Push (VmInt 1) == Push (VmInt 2)) `shouldBe` False
+    (Call == Call) `shouldBe` True
+    (Call == Ret)  `shouldBe` False
+    (Ret == Ret) `shouldBe` True
+    (Store "x" == Store "x") `shouldBe` True
+    (Store "x" == Store "y") `shouldBe` False
+    (Update "x" == Update "x") `shouldBe` True
+    (Update "x" == Update "z") `shouldBe` False
+    (Load "a" == Load "a") `shouldBe` True
+    (Load "a" == Load "b") `shouldBe` False
+    (JumpIfFalse 10 == JumpIfFalse 10) `shouldBe` True
+    (JumpIfFalse 10 == JumpIfFalse 20) `shouldBe` False
+    (JumpBackward 5 == JumpBackward 5) `shouldBe` True
+    (JumpBackward 5 == JumpBackward 1) `shouldBe` False
