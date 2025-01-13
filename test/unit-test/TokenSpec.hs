@@ -101,9 +101,15 @@ typeSpec :: SpecWith ()
 typeSpec = describe "type" $ do
   describe "eq" $ do
     it "char == int" $ (CharType == IntType) ==> False
-    it "type number == type integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
-    it "int == type integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
-    it "AnyType == (ClosureType [IntType] FloatType) -> False" $ do
+    it "type number == type integer" $
+      (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "int == type integer" $
+      (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "ClosureType [IntType] FloatType == ClosureType [IntType] FloatType -> True" $
+      (ClosureType [IntType] FloatType == ClosureType [IntType] FloatType) ==> True
+    it "ClosureType [IntType] FloatType == ClosureType [BoolType] FloatType -> False" $
+      (ClosureType [IntType] FloatType == ClosureType [BoolType] FloatType) ==> False
+    it "AnyType == (ClosureType [IntType] FloatType) -> False" $
       (AnyType == ClosureType [IntType] FloatType) ==> False
     it "AnyType == IntType -> True" $ do
       (AnyType == IntType) ==> True
