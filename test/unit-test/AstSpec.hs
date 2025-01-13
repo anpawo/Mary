@@ -5,13 +5,14 @@
 -- Spec
 -}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE LambdaCase #-}
 
 module AstSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
-import Test.Hspec.Runner (SpecWith)
+import Test.Hspec.Runner ()
 import Text.RawString.QQ
-import Text.Megaparsec (runParser)
+import Text.Megaparsec ()
 import Text.Megaparsec.Error (ParseErrorBundle(..))
 import Data.Either (isLeft)
 import Data.Void (Void)
@@ -99,17 +100,28 @@ isSpec = describe "is functions" $ do
       isType FloatType (IntLit 42) `shouldBe` False
 
   describe "notTaken" $ do
-    let notTakenTest takenNames newName =
-          tokenizeInput newName >>= \tokens ->
-            case run (notTaken takenNames newName) tokens of
+      let tokenizeInput input =
+            case run tokenize input of
               Left _ -> Nothing
-              Right n -> Just n
+              Right tokens -> Just tokens
 
-    it "allows a name that is not taken" $ do
-      notTakenTest ["name1", "name2"] "name3" `shouldBe` Just "name3"
+      let notTakenTest takenNames newName = do
+            let builtins = map (\name -> Function { fnName = name, fnArgs = [], fnRetType = VoidType, fnBody = [] }) takenNames
+            tokens <- maybe (fail "Tokenization failed") return (tokenizeInput newName)
+            case run (tokenToAst builtins []) tokens of
+              Left _ -> return Nothing
+              Right context ->
+                  if any (\case Function { fnName = n } -> n == newName; _ -> False) context
+                  then return Nothing
+                  else return (Just newName)
 
-    it "fails for a name that is already taken" $ do
-      notTakenTest ["name1", "name2"] "name1" `shouldBe` Nothing
+      it "allows a name that is not taken" $ do
+        result <- notTakenTest ["name1", "name2"] "name3"
+        result `shouldBe` Just "name3"
+
+      it "fails for a name that is already taken" $ do
+        result <- notTakenTest ["name1", "name2"] "name1"
+        result `shouldBe` Nothing
 
 getSpec :: SpecWith ()
 getSpec = describe "get functions" $ do
