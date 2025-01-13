@@ -13,10 +13,10 @@ import Ast.Ast
 import Ast.ExpressionParser
 import Ast.TokenParser
 import Data.Functor (($>))
-import Control.Applicative ((<|>), optional)
+import Control.Applicative ((<|>), optional, Alternative (empty))
 import Utils.Lib
 import Ast.Error
-import Text.Megaparsec (getOffset, satisfy)
+import Text.Megaparsec (getOffset, satisfy, MonadParsec (try))
 import Data.Maybe (fromJust)
 
 getMembers :: Ctx -> [String] -> Parser [(String, Type)]
@@ -25,7 +25,7 @@ getMembers ctx names = tok CurlyOpen *> (tok CurlyClose $> [] <|> fields names)
     fields n = (,) <$> (textIdentifier >>= notTaken n) <*> (tok Colon *> types ctx False True) >>= \a -> (tok CurlyClose $> [a]) <|> (tok Comma *> ((a :) <$> fields (fst a : n)))
 
 atom :: Ctx -> Parser Ast
-atom ctx = (`Structure` []) <$> ((tok AtomKw *> textIdentifier >>= notTaken (getNames ctx)) <* tok SemiColon)
+atom ctx = (`Structure` []) <$> (tok AtomKw *> textIdentifier >>= notTaken (getNames ctx))
 
 structure :: Ctx -> Parser Ast
 structure ctx = do
@@ -52,7 +52,7 @@ function ctx = do
 operator :: Ctx -> Parser Ast
 operator ctx = do
   isBuiltin <- tok OperatorKw *> optional (tok BuiltinKw)
-  name <- operatorIdentifier >>= notTaken (getNames ctx)
+  name <- (operatorIdentifier <|> (try textIdentifier >>= \s -> if s == "is" then pure s else empty) ) >>= notTaken (getNames ctx)
   prcd <- (tok PrecedenceKw *> intLiteral) <|> pure 0
   args <- getOffset >>= (\offset -> getFnArgs ctx (name : getNames ctx) >>= validArgNumber offset name) . (+1)
   retT <- (tok Arrow <|> failN errMissingRetT) *> ((satisfy isStructLiteral *> fail errMisingBody) <|> types ctx True True)

@@ -58,6 +58,7 @@ validLit _ _ lit = pure lit
 getGroup :: Ctx -> LocalVariable -> Parser Group
 getGroup ctx locVar = getOffset >>= (\offset -> choice
     [ eof *> fail errEndSubexpr
+    , try $ GOp offset <$> (textIdentifier >>= \s -> if s == "is" then pure s else empty) <*> pure []
     , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
     , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
     , try $ GLit offset <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of

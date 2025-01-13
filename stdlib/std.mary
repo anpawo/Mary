@@ -29,7 +29,7 @@ operator >= precedence 4 (a: number, b: number) -> bool {
     return not(a < b);
 }
 
-operator && precedence 4 (a: bool, b: bool) -> bool {
+operator && precedence 3 (a: bool, b: bool) -> bool {
     if a then
     {
         return b;
@@ -40,7 +40,7 @@ operator && precedence 4 (a: bool, b: bool) -> bool {
     }
 }
 
-operator || precedence 4 (a: bool, b: bool) -> bool {
+operator || precedence 3 (a: bool, b: bool) -> bool {
     if a then
     {
         return true;

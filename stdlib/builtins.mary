@@ -29,7 +29,7 @@ operator builtin * precedence 7 (a: number, b: number) -> number
 operator builtin / precedence 7 (a: number, b: number) -> number
 
 // comparison operators
-function builtin is(a: any, b: str) -> bool
+operator builtin is precedence 4 (a: any, b: str) -> bool
 operator builtin == precedence 4 (a: any, b: any) -> bool
 operator builtin < precedence 5 (a: number, b: number) -> bool
 
