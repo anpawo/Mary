@@ -16,6 +16,8 @@ spec :: Spec
 spec = do
   instructionSpec
   valueSpec
+  typeSpec
+  derivingSpec
 
 instructionSpec :: SpecWith ()
 instructionSpec = describe "data Value" $ do
@@ -40,7 +42,7 @@ valueSpec = describe "Value Show instance" $ do
   it "shows VmNull correctly" $ show VmNull `shouldBe` "null"
   it "shows VmFunc correctly" $ show (VmFunc "myFunc") `shouldBe` "function myFunc"
   it "shows VmBool False correctly" $ show (VmBool False) `shouldBe` "false"
-  it "shows VmArray correctly" $ show (VmArray "int" [VmInt 1, VmInt 2]) shouldBe` "[1, 2]"
+  it "shows VmArray correctly" $ show (VmArray "int" [VmInt 1, VmInt 2]) `shouldBe` "[1, 2]"
   it "shows VmClosure correctly" $ show (VmClosure "myClosure") `shouldBe` "closure (myClosure)"
   it "shows VmStruct empty correctly" $ show (VmStruct "empty" []) `shouldBe` "[]"
   it "shows VmStruct 'elem' with one element correctly" $ show (VmStruct "elem" [("data", VmInt 99), ("next", VmStruct "empty" [])]) `shouldBe` "[99]"
@@ -67,7 +69,7 @@ typeSpec = describe "typeCheck for Value" $ do
   it "returns False for mismatch" $ typeCheck (VmInt 42) "float" `shouldBe` False
 
 derivingSpec :: SpecWith ()
-derivingSpec = describe "deriving Eq"
+derivingSpec = describe "deriving Eq" $ do
   it "checks equality of two instructions" $ (Push (VmInt 42) == Push (VmInt 42)) `shouldBe` True
   it "checks inequality of two instructions" $ (Push (VmInt 42) == Ret) `shouldBe` False
   it "checks equality of two values" $ (VmInt 42 == VmInt 42) `shouldBe` True
