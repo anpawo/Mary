@@ -66,6 +66,11 @@ identifierSpec = describe "identifier" $ do
     it "add" $ show (TextId "add") ==> "add"
     it "<*>" $ show (OperatorId "<*>") ==> "<*>"
 
+  describe "eq/ord" $ do
+    it "TextId vs OperatorId" $ do
+      (TextId "abc" == OperatorId "abc") `shouldBe` False
+      (TextId "abc" < TextId "abd") `shouldBe` True
+
 literalSpec :: SpecWith ()
 literalSpec = describe "literal" $ do
   describe "show" $ do
