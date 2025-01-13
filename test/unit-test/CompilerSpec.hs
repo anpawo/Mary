@@ -87,6 +87,34 @@ compileExpressionSpec = describe "compileExpression" $ do
       , Push (VmString "John")
       , Update "person"
       ]
+  it "compiles a While loop" $ do
+    let cond = FunctionCall ">" [VariableCall "x", Lit (IntLit 0)]
+    let body =
+          [ SubExpression (FunctionCall "print" [VariableCall "x"])
+          , Variable (IntType, "x") (FunctionCall "-" [VariableCall "x", Lit (IntLit 1)])
+          ]
+    compileExpression (While cond body)
+      `shouldBe`
+      [ Load "x"
+      , Push (VmInt 0)
+      , Push (VmFunc ">")
+      , Call
+      , JumpIfFalse 14
+      , Load "x"
+      , Push (VmFunc "print")
+      , Call
+      , Load "x"
+      , Push (VmInt 1)
+      , Push (VmFunc "-")
+      , Call
+      , Store "x"
+      , Load "x"
+      , Push (VmInt 0)
+      , Push (VmFunc ">")
+      , Call
+      , JumpIfFalse 1
+      , JumpBackward 13
+      ]
 
 compileExpressionsSpec :: SpecWith ()
 compileExpressionsSpec = describe "compileExpressions" $ do
