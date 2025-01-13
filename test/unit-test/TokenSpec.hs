@@ -154,13 +154,25 @@ subexpressionSpec = describe "subexpression" $ do
   it "SubExpression Eq: same VariableCall" $ do
     (VariableCall "x" == VariableCall "x") ==> True
     (VariableCall "x" == VariableCall "y") ==> False
-  it "SubExpression Show: variable call" $ do
-    show (VariableCall "abc") ==> "VariableCall {varCallName = \"abc\"}"
   it "SubExpression Eq: function call" $ do
     let f1 = FunctionCall "f" [VariableCall "x"]
         f2 = FunctionCall "f" [VariableCall "x"]
         f3 = FunctionCall "g" []
     (f1 == f2) ==> True
     (f1 == f3) ==> False
-  it "SubExpression Ord" $ do
+  it "SubExpression Eq: Lit vs VariableCall" $ do
+    (Lit (BoolLit True) == VariableCall "x") ==> False
+    (Lit (BoolLit True) == Lit (BoolLit True)) ==> True
+  it "SubExpression Show: variable call" $ do
+    show (VariableCall "abc") ==> "VariableCall {varCallName = \"abc\"}"
+  it "SubExpression Show: function call" $ do
+    show (FunctionCall "foo" [VariableCall "bar"])
+      ==> "FunctionCall {fnCallName = \"foo\", fnCallArgs = [VariableCall {varCallName = \"bar\"}]}"
+  it "SubExpression Show: lit" $ do
+    show (Lit (IntLit 42)) ==> "Lit 42"
+  it "SubExpression Ord: variableCall a < variableCall b" $ do
     VariableCall "a" < VariableCall "b" `shouldBe` True
+  it "SubExpression Ord: compare function calls" $ do
+    let f1 = FunctionCall "aaa" []
+        f2 = FunctionCall "zzz" []
+    (f1 < f2) `shouldBe` True
