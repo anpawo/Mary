@@ -253,7 +253,4 @@ tokenizerEmptyCasesSpec = describe "tokenize empty cases" $ do
   it "type myConstraint -> ConstraintType (Just \"myConstraint\") []" $
     run tokenize "type myConstraint" ==> [Type $ ConstraintType (Just "myConstraint") []]
   it "tokenize type constraint with non-empty identifier" $
-    run tokenize "type MyConstraint" ==> [Type $ ConstraintType (Just "MyConstraint") []]
-  it "emptyList retourne bien une liste vide" $
-    emptyList `shouldBe` ([] :: [Int])
-  
+    run tokenize "type MyConstraint" ==> [Type $ ConstraintType (Just "MyConstraint") []]  
