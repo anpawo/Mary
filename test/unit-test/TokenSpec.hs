@@ -142,7 +142,7 @@ typeSpec = describe "type" $ do
       let clos = ClosureType [IntType, FloatType] StrType
       fnTyArgs clos ==> [IntType, FloatType]
       fnTyRet clos ==> StrType
-
+  
 subexpressionSpec :: SpecWith ()
 subexpressionSpec = describe "subexpression" $ do
   it "varCallName" $
