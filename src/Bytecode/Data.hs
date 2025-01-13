@@ -99,8 +99,6 @@ instance TypeCheck Value where
   typeCheck (VmString {}) "str" = True
   typeCheck (VmArray typeName _) expected
     | printf "arr[%s]" typeName == expected = True
-    | otherwise = False
   typeCheck (VmStruct structName _) expected
     | structName == expected = True
-    | otherwise = False
   typeCheck _ _ = False
