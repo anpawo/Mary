@@ -115,3 +115,14 @@ subexpressionSpec = describe "subexpression" $ do
     fnCallName (FunctionCall "test" []) ==> "test"
   it "fnCallArgs" $
     fnCallArgs (FunctionCall "test" []) ==> []
+  it "SubExpression Eq: same VariableCall" $ do
+    (VariableCall "x" == VariableCall "x") ==> True
+    (VariableCall "x" == VariableCall "y") ==> False
+  it "SubExpression Show: variable call" $ do
+    show (VariableCall "abc") ==> "VariableCall {varCallName = \"abc\"}"
+  it "SubExpression Eq: function call" $ do
+    let f1 = FunctionCall "f" [VariableCall "x"]
+        f2 = FunctionCall "f" [VariableCall "x"]
+        f3 = FunctionCall "g" []
+    (f1 == f2) ==> True
+    (f1 == f3) ==> False
