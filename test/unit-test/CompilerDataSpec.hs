@@ -43,5 +43,15 @@ valueSpec = describe "Value Show instance" $ do
     it "shows VmArray correctly" $ show (VmArray "int" [VmInt 1, VmInt 2]) shouldBe` "[1, 2]"
     it "shows VmClosure correctly" $ show (VmClosure "myClosure") `shouldBe` "closure (myClosure)"
     it "shows VmStruct empty correctly" $ show (VmStruct "empty" []) `shouldBe` "[]"
+    it "shows VmStruct 'elem' with one element correctly" $ show (VmStruct "elem" [("data", VmInt 99), ("next", VmStruct "empty" [])]) `shouldBe` "[99]"
+    it "shows VmStruct 'elem' with multiple elements correctly" $
+      show (VmStruct "elem"
+        [ ("data", VmInt 1)
+        , ("next", VmStruct "elem"
+            [ ("data", VmInt 2)
+            , ("next", VmStruct "empty" [])
+            ])
+        ])
+        `shouldBe` "[1, 2]"
 
 
