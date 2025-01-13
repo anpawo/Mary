@@ -20,6 +20,7 @@ import Data.Void (Void)
 import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
+import Ast.DeclarationParser
 import Ast.Parser
 import Utils.Lib
 import Utils.ArgParser
@@ -47,6 +48,101 @@ spec = do
   structureSpec
   getSpec
   isSpec
+  declarationParserSpec
+
+declarationParserSpec :: SpecWith ()
+declarationParserSpec = describe "declaration parser" $ do
+  describe "getMembers" $ do
+    it "parses valid members in a struct" $ do
+      let ctx = []
+          input = "{ field1: int, field2: float }"
+      case run (getMembers ctx []) =<< run tokenize input of
+        Right result -> result `shouldBe` [("field1", IntType), ("field2", FloatType)]
+        Left err -> error ("Failed to parse: " ++ show err)
+
+    it "fails on invalid member definition" $ do
+      let ctx = []
+          input = "{ field1: int field2: float }"
+      case run (getMembers ctx []) =<< run tokenize input of
+        Right _ -> error "Unexpected success"
+        Left _ -> return ()
+
+  describe "structure" $ do
+    it "parses a valid structure" $ do
+      let input = "struct Point { x: float, y: float }"
+      result <- pAst input
+      result `shouldBe` Right [Structure "Point" [("x", FloatType), ("y", FloatType)]]
+
+    it "fails on missing braces in structure" $ do
+      let input = "struct Point x: float, y: float"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
+
+  describe "getFnArgs" $ do
+    it "parses function arguments" $ do
+      let ctx = []
+          input = "(arg1: int, arg2: string)"
+      case run (getFnArgs ctx []) =<< run tokenize input of
+        Right result -> result `shouldBe` [(IntType, "arg1"), (StrType, "arg2")]
+        Left err -> error ("Failed to parse: " ++ show err)
+
+    it "fails on invalid argument syntax" $ do
+      let ctx = []
+          input = "(arg1: int arg2: string)"
+      case run (getFnArgs ctx []) =<< run tokenize input of
+        Right _ -> error "Unexpected success"
+        Left _ -> return ()
+
+  describe "function" $ do
+    it "parses a valid function" $ do
+      let input = "function add(a: int, b: int) -> int { return a + b; }"
+      ast <- pAst input
+      ast `shouldBe` Right [Function "add" [(IntType, "a"), (IntType, "b")] IntType
+               [Return $ FunctionCall "+" [VariableCall "a", VariableCall "b"]]]
+
+    it "fails on missing return type" $ do
+      let input = "function add(a: int, b: int) { return a + b; }"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
+
+  describe "operator" $ do
+    it "parses a valid operator" $ do
+      let input = "operator ** precedence 8 (a: int, b: int) -> int { return a ** b; }"
+      ast <- pAst input
+      ast `shouldBe` Right [Operator "**" 8 IntType (IntType, "a") (IntType, "b")
+               [Return $ FunctionCall "**" [VariableCall "a", VariableCall "b"]]]
+
+    it "fails on invalid operator syntax" $ do
+      let input = "operator ** precedence (a: int, b: int) -> int { return a ** b; }"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
+
+  describe "constraint" $ do
+    it "parses a valid constraint" $ do
+      let input = "constraint TypeA = int | float;"
+      ast <- pAst input
+      ast `shouldBe` Right [Constraint "TypeA" [IntType, FloatType]]
+
+    it "fails on invalid constraint syntax" $ do
+      let input = "constraint TypeA = int float;"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
+
+  describe "getFnBody" $ do
+    it "parses a valid function body" $ do
+      let ctx = []
+          input = "{ x = x + 1; }"
+      case run (getFnBody ctx [] IntType) =<< pAst input of
+        Right result -> result `shouldBe`
+          [Variable (IntType, "x") $ FunctionCall "+" [VariableCall "x", Lit $ IntLit 1]]
+        Left err -> error ("Failed to parse: " ++ show err)
+
+    it "fails on invalid function body" $ do
+      let ctx = []
+          input = "{ x = ; }"
+      case run (getFnBody ctx [] IntType) =<< run tokenize input of
+        Right _ -> error "Unexpected success"
+        Left _ -> return ()
 
 isSpec :: SpecWith ()
 isSpec = describe "is functions" $ do
