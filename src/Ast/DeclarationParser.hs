@@ -6,7 +6,7 @@
 -}
 {-# LANGUAGE LambdaCase #-}
 
-module Ast.DeclarationParser (structure, function, operator, constraint) where
+module Ast.DeclarationParser (getMembers, getFnArgs, getFnBody, validArgNumber, structure, function, operator, constraint) where
 
 import Parser.Token
 import Ast.Ast
