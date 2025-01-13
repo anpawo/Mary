@@ -77,6 +77,14 @@ typeSpec = describe "type" $ do
     it "char == int" $ (CharType == IntType) ==> False
     it "type number == type integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
     it "int == type integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
+    it "AnyType == (ClosureType [IntType] FloatType) -> False" $ do
+      (AnyType == ClosureType [IntType] FloatType) ==> False
+    it "AnyType == IntType -> True" $ do
+      (AnyType == IntType) ==> True
+    it "(ClosureType [IntType] FloatType) == AnyType -> False" $ do
+      (ClosureType [IntType] FloatType == AnyType) ==> False
+    it "BoolType == AnyType -> True" $ do
+      (BoolType == AnyType) ==> True
   describe "show" $ do
     it "char" $ show CharType ==> "char"
     it "void" $ show VoidType ==> "void"
