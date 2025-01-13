@@ -1,0 +1,69 @@
+function add(int a, int b) -> int {
+    return a + b;
+}
+
+/*  
+    bloc
+    de
+    commentaire
+*/
+
+struct Person {
+    name x;
+    age y;
+}
+
+function test_all_features() -> void {
+    // variables types base
+    int x = 5;
+    float y = 4.2;
+    bool b = true;
+    str message = "hello mary!";
+    char c = 'm';
+
+    // tableaux structures
+    arr[int] numbers = [1, 2];
+    struct Person personStruct { name = "john", age = 30 };
+
+    // operateurs
+    int result = x + 3 * (2 - 1);
+    float division = y / 2.0;
+
+    // conditions
+    if (b) {
+        result = result + 1;
+    } else {
+        result = result - 1;
+    }
+
+    // boucles
+    int sum = 0;
+    int i = sum;
+    while (i < 10) {
+        sum = sum + i;
+        i = i + 1;
+    }
+
+    // fonctions retour
+    int additionResult = add(10, 20);
+
+    // litteraux
+    str greeting = "hello world!";
+    bool isTrue = true;
+    int negNumber = -42;
+
+    // test structures
+    personStruct.name = "jane";
+    personStruct.age = 25;
+
+    // test tableaux
+    arr[int] moreNumbers = [numbers[0] + 1, numbers[1] + 2];
+
+    // retour resultats
+    print("test keywords : ", result);
+    print("test types litteraux : ", greeting, isTrue, negNumber);
+    print("test fonctions : ", additionResult);
+    print("test structures : ", personStruct.name, personStruct.age);
+    print("test tableaux : ", moreNumbers[0], moreNumbers[1]);
+    print("test boucles : ", sum);
+}

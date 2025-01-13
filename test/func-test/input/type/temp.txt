@@ -1,4 +1,4 @@
-function test(number | int a, int | float b) -> int | float {
-    int | float c = b;
+function test(a: number | int, b: int | float) -> int | float {
+    c: int | float = b;
     return c;
 }

@@ -41,22 +41,27 @@ convertLitStruct :: (String, SubExpression) -> [(String, [Instruction])]
 convertLitStruct (key, value) = [(key , compileSubExpression value)]
 
 convertLiteral :: Literal -> Value
+convertLiteral (ClosureLit name argsTy retTy) = VmClosure name
 convertLiteral (CharLit c) = VmChar c
 convertLiteral (BoolLit b) = VmBool b
 convertLiteral (IntLit i) = VmInt i
 convertLiteral (FloatLit f) = VmFloat f
 convertLiteral (StringLit s) = VmString s
-convertLiteral (ArrLit _ arr) = VmArray $ concatMap compileSubExpression arr
-convertLiteral (StructLit _ structMember) = VmStruct $ concatMap convertLitStruct structMember
+convertLiteral (ArrLit t arr) = VmPreArray (show t) $ map compileSubExpression arr
+convertLiteral (StructLit name structMember) = VmPreStruct name $ concatMap convertLitStruct structMember
 convertLiteral NullLit = VmNull
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]
+compileSubExpression (FunctionCall "." [VariableCall varCallName, nameField]) = [Push (VmString varCallName)] ++ res ++ [Push (VmFunc "."), Call]
+  where
+    res = compileSubExpression nameField
 compileSubExpression (FunctionCall fnName args) = concatMap compileSubExpression args ++ [Push $ VmFunc fnName, Call]
 compileSubExpression (Lit lit) = [Push (convertLiteral lit)]
 
 compileExpression :: Expression -> [Instruction]
 compileExpression (SubExpression subExpr) = compileSubExpression subExpr
+compileExpression (StructField name field value) = [Push $ VmString field] ++ compileSubExpression value ++ [Update name]
 compileExpression (Variable (_, name) value) = compileSubExpression value ++ [Store name]
 compileExpression (Return value) = compileSubExpression value ++ [Ret]
 compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse nbInstructionsTrue] ++ instructionsTrue ++ instructionsFalse
@@ -65,7 +70,7 @@ compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFals
     instructionsFalse = compileExpressions false
     instructionsCond = compileSubExpression cond
     nbInstructionsTrue = length instructionsTrue
-compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 2] ++ [JumpBackward (nbSkipLoop + 1)]
+compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 1] ++ [JumpBackward (nbSkipLoop + 1)]
   where
     instructionsCond = compileSubExpression cond
     instructionsBody = compileExpressions body

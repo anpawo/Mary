@@ -1,0 +1,53 @@
+{
+  "scopeName": "source.mary",
+  "patterns": [
+    {
+      "name": "comment.line.double-slash.mary",
+      "match": "//.*"
+    },
+    {
+      "name": "comment.block.mary",
+      "begin": "/\\*",
+      "end": "\\*/",
+      "patterns": [
+        {
+          "match": "\\*\\*.*",
+          "name": "comment.block.documentation.mary"
+        }
+      ]
+    },
+    {
+      "name": "string.quoted.double.mary",
+      "match": "\"(\\\\.|[^\"])*\""
+    },
+    {
+      "name": "keyword.control.mary",
+      "match": "\\b(import|type|builtin|precedence|operator|function|return|if|else|while|then)\\b"
+    },
+    {
+      "name": "entity.name.function.mary",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\s*(?=\\()"
+    },
+    {
+      "name": "storage.type.mary",
+      "match": "\\b(char|void|bool|int|float|str|arr|any|struct|true|false)\\b"
+    },
+    {
+      "name": "variable.name.mary",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    },
+    {
+      "name": "constant.numeric.mary",
+      "match": "\\b\\d+\\b"
+    },
+    {
+      "name": "punctuation.mary",
+      "match": "[{}();,=]"
+    },
+    {
+      "name": "operator.mary",
+      "match": "[+\\-*/]|><!="
+    }
+  ],
+  "fileTypes": ["mary"]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "mary",
+  "displayName": "Mary",
+  "description": "Mary language support",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mary",
+        "aliases": [
+          "Mary",
+          "mary"
+        ],
+        "extensions": [
+          ".mary"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mary",
+        "scopeName": "source.mary",
+        "path": "./syntaxes/mary.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.2.1"
+  }
+}

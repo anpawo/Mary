@@ -28,16 +28,17 @@ data Type
   | ArrType Type --                                                    \| arr [ <type> ]
   | AnyType --                                                         \| any
   | StructType { stTyName :: String} --                                \| struct <name> (the real parsing of the structure is done in the Ast)
-  | StructAnyType --                                                   \| struct any (only for builtins)
   | ConstraintType { crTyName :: Maybe String, crTyTypes :: [Type]} -- \| int | float
+  | ClosureType { fnTyArgs :: [Type], fnTyRet :: Type }
   deriving (Ord)
 
 instance Eq Type where
-  StructAnyType == (StructType _) = True
-  (StructType _) == StructAnyType = True
   (StructType n) == (StructType n') = n == n'
   (ArrType t) == (ArrType t') = t == t'
+  (ClosureType argsTy retTy) == (ClosureType argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+  AnyType == (ClosureType {}) = False
   AnyType == _ = True
+  (ClosureType {}) == AnyType = False
   _ == AnyType = True
   (ConstraintType (Just n) _) == (ConstraintType (Just n') _) | n == n' = True
   c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
@@ -53,6 +54,7 @@ instance Eq Type where
   _ == _ = False
 
 instance Show Type where
+  show (ClosureType argsTy retTy) = printf "(%s) -> %s" (intercalate ", " $ map show argsTy) (show retTy)
   show CharType = "char"
   show NullType = "null"
   show VoidType = "void"
@@ -61,9 +63,8 @@ instance Show Type where
   show FloatType = "float"
   show StrType = "str"
   show (ArrType t) = printf "arr[%s]" $ show t
-  show (StructType n) = printf "struct %s" n
+  show (StructType n) = printf "%s" n
   show AnyType = "any"
-  show StructAnyType = "struct any"
   show (ConstraintType (Just n) _) = n
   show (ConstraintType Nothing t) = intercalate " | " (map show t)
 
@@ -78,9 +79,11 @@ data Literal
   | StructLitPre String [(String, [MyToken])] --                    \| before computation of the elements
   | StructLit String [(String, SubExpression)] --                   \| {name: "marius", age: 19}
   | NullLit --                                                      \| null
+  | ClosureLit String [Type] Type --                               \| (+)
   deriving (Eq, Ord)
 
 instance Show Literal where
+  show (ClosureLit x _ _) = printf "(%s)" x
   show (CharLit x) = show x
   show (BoolLit True) = "true"
   show (BoolLit False) = "false"

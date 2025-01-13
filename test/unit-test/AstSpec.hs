@@ -18,6 +18,7 @@ import Data.Void (Void)
 import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
+import Ast.Parser
 import Utils.Lib
 import Utils.ArgParser
 import Ast.Import (resolveImports)
@@ -84,7 +85,7 @@ ifThenElseSpec :: SpecWith ()
 ifThenElseSpec = describe "if-then-else" $ do
   describe "valid cases" $ do
     it "parses a valid if-then-else statement" $ do
-      let input = "function main() -> void { int x = 0; int y = 0; if x < 10 then { y = y + 1; } else { y = 0; } }"
+      let input = "function main() -> void { x: int = 0; y: int = 0; if x < 10 then { y = y + 1; } else { y = 0; } }"
       ast <- pAst input
       ast ==>
         [ Function "main" [] VoidType
@@ -96,7 +97,7 @@ ifThenElseSpec = describe "if-then-else" $ do
             ]
         ]
     it "parses a valid if-then statement without else" $ do
-      let input = "function main() -> void { int x = 0; int y = 0; if x == 0 then { y = 1; } }"
+      let input = "function main() -> void { x: int = 0; y: int = 0; if x == 0 then { y = 1; } }"
       ast <- pAst input
       ast ==>
         [ Function "main" [] VoidType
@@ -109,17 +110,17 @@ ifThenElseSpec = describe "if-then-else" $ do
         ]
   describe "invalid cases" $ do
     it "fails on missing 'then' keyword in if-then-else" $ do
-      let input = "function main() -> void { int x = 0; int y = 0; if x == 0 { y = 1; } else { y = 0; } }"
+      let input = "function main() -> void { x: int = 0; y: int = 0; if x == 0 { y = 1; } else { y = 0; } }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
 
     it "fails not boolean condition" $ do
-      let input = "function main() -> void { int x = 0; int y = 0; if x + 0 then { y = 1; } else { y = 0; } }"
+      let input = "function main() -> void { x: int = 0; y: int = 0; if x + 0 then { y = 1; } else { y = 0; } }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
 
     it "fails on missing braces in if-then-else" $ do
-      let input = "function main()  -> void { int x = 0; int y = 0; if x == 0 then y = 1; else y = 0; }"
+      let input = "function main()  -> void { x: int = 0; y: int = 0; if x == 0 then y = 1; else y = 0; }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
 
@@ -128,7 +129,7 @@ whileSpec :: SpecWith ()
 whileSpec = describe "while loop" $ do
   describe "valid cases" $ do
     it "parses a valid while loop with one statement" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 then { x = x + 1; } }"
+      let input = "function main () -> void { x: int = 0; while x < 10 then { x = x + 1; } }"
       ast <- pAst input
       ast ==>
         [ Function "main" [] VoidType
@@ -138,7 +139,7 @@ whileSpec = describe "while loop" $ do
             ]
         ]
     it "parses a valid while loop with multiple statements" $ do
-      let input = "function main () -> void { int x = 0; int y = 0; while x < 10 then { x = x + 1; y = y + 2; } }"
+      let input = "function main () -> void { x: int = 0; y: int = 0; while x < 10 then { x = x + 1; y = y + 2; } }"
       ast <- pAst input
       ast ==>
         [ Function "main" [] VoidType
@@ -152,26 +153,26 @@ whileSpec = describe "while loop" $ do
         ]
   describe "invalid cases" $ do
     it "fails on missing braces in while loop" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 then x = x + 1; }"
+      let input = "function main () -> void { x: int = 0; while x < 10 then x = x + 1; }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
 
     it "fails on empty body for while loop" $ do
-      let input = "function main () -> void { int x = 0; while x < 10 then {} }"
+      let input = "function main () -> void { x: int = 0; while x < 10 then {} }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
 
 
 op0 :: String
 op0 = [r|
-operator **(int a, int b) -> int {
+operator **(a: int, b: int) -> int {
     return 0;
 }
 |]
 
 opRec :: String
 opRec = [r|
-operator ** precedence 8 (int a, int b) -> int {
+operator ** precedence 8 (a: int, b: int) -> int {
   return a ** (b - 1);
 }
 |]
@@ -195,7 +196,7 @@ function zero() -> int {
 
 fnParam :: String
 fnParam = [r|
-function suc(int x) -> int {
+function suc(x: int) -> int {
     return x + 1;
 }
 |]

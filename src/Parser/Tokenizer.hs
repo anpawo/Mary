@@ -20,14 +20,12 @@ module Parser.Tokenizer
 
     ) where
 
--- import Debug.Trace (trace)
-
 import Data.Void (Void)
 import Data.List (singleton)
 import Data.Functor (($>), (<&>))
 
 import Control.Applicative ((<|>), some, empty)
-import Control.Monad (void)
+import Control.Monad (void, liftM2)
 
 import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead))
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
@@ -69,18 +67,6 @@ spaces = many $ oneOf " \n\t"
 
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
-
-getargs :: Parser start -> Parser value -> Parser end -> Parser [value]
-getargs start p end  = start *> (end $> [] <|> getargs')
-    where
-        getargs' = do
-            void spaces
-            v <- p
-            void spaces
-            endFound <- (end $> True) <|> (char ',' $> False)
-            if endFound
-                then pure [v]
-                else (v :) <$> getargs'
 -- utils
 
 -- comments
@@ -217,14 +203,58 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , StringLit <$> (quote *> manyTill anySingle quote)
             , NullLit <$ string "NULL"
             , do
-                ty <- parseType
-                args <- spaces *> getargs (char '[') (someTill (tokens <* spaces) (lookAhead (char ']' <|> char ','))) (char ']')
+                ty <- parseType <* spaces
+                args <- char '[' *> spaces *> ((char ']' $> []) <|> arrayArgs)
                 return $ ArrLitPre ty args
             , do
                 name <- some textIdentifier <* spaces
-                args <- getargs (char '{') ((,) <$> some textIdentifier <* spaces <* char '=' <* spaces <*> someTill (tokens <* spaces) (lookAhead (char '}' <|> char ','))) (char '}')
+                args <- char '{' *> spaces *> ((char '}' $> []) <|> structArgs)
                 return $ StructLitPre name args
             ]
+            where
+                structArgs :: Parser [(String, [MyToken])]
+                structArgs = (:) <$> liftM2 (,) (spaces *> some textIdentifier <* spaces <* char '=') (oneArg 0 0 0) <*> ((char ',' *> structArgs) <|> (char '}' $> []))
+                    where
+                        -- in function / array / struct
+                        oneArg :: Int -> Int -> Int -> Parser [MyToken]
+                        oneArg inFunction inArray inStruct = do
+                            let oneTok = spaces *> tokens
+                            t <- lookAhead oneTok
+                            case t of
+                                ParenOpen    -> (:) <$> oneTok <*> oneArg (inFunction + 1) inArray inStruct
+                                ParenClose   -> (:) <$> oneTok <*> oneArg (inFunction - 1) inArray inStruct
+                                BracketOpen  -> (:) <$> oneTok <*> oneArg inFunction (inArray + 1) inStruct
+                                BracketClose -> (:) <$> oneTok <*> oneArg inFunction (inArray - 1) inStruct
+                                CurlyOpen    -> (:) <$> oneTok <*> oneArg inFunction inArray (inStruct + 1)
+                                CurlyClose   -> if inFunction == 0 && inArray == 0 && inStruct == 0
+                                    then spaces $> []
+                                    else (:) <$> oneTok <*> oneArg inFunction inArray (inStruct - 1)
+                                Comma        -> if inFunction == 0 && inArray == 0 && inStruct == 0
+                                    then spaces $> []
+                                    else (:) <$> oneTok <*> oneArg inFunction inArray inStruct
+                                _ -> (:) <$> oneTok <*> oneArg inFunction inArray inStruct
+
+                arrayArgs :: Parser [[MyToken]]
+                arrayArgs = (:) <$> oneArg 0 0 0 <*> ((char ',' *> arrayArgs) <|> (char ']' $> []))
+                    where
+                        -- in function / array / struct
+                        oneArg :: Int -> Int -> Int -> Parser [MyToken]
+                        oneArg inFunction inArray inStruct = do
+                            let oneTok = spaces *> tokens
+                            t <- lookAhead oneTok
+                            case t of
+                                ParenOpen    -> (:) <$> oneTok <*> oneArg (inFunction + 1) inArray inStruct
+                                ParenClose   -> (:) <$> oneTok <*> oneArg (inFunction - 1) inArray inStruct
+                                CurlyOpen    -> (:) <$> oneTok <*> oneArg inFunction inArray (inStruct + 1)
+                                CurlyClose   -> (:) <$> oneTok <*> oneArg inFunction inArray (inStruct - 1)
+                                BracketOpen  -> (:) <$> oneTok <*> oneArg inFunction (inArray + 1) inStruct
+                                BracketClose   -> if inFunction == 0 && inArray == 0 && inStruct == 0
+                                    then spaces $> []
+                                    else (:) <$> oneTok <*> oneArg inFunction (inArray - 1) inStruct
+                                Comma        -> if inFunction == 0 && inArray == 0 && inStruct == 0
+                                    then spaces $> []
+                                    else (:) <$> oneTok <*> oneArg inFunction inArray inStruct
+                                _ -> (:) <$> oneTok <*> oneArg inFunction inArray inStruct
 
         -- Symbol
         curlyOpenSym = char '{' $> CurlyOpen
@@ -234,7 +264,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         bracketOpenSym = char '[' $> BracketOpen
         bracketCloseSym = char ']' $> BracketClose
         semicolonSym = char ';' $> SemiColon
-        colonSym = char ':' $> Colon
+        colonSym = try $ symbol ":" $> Colon
         commaSym = char ',' $> Comma
         arrowSym = try $ symbol "->" $> Arrow
         pipeSym = try $ symbol "|" $> Pipe

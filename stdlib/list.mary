@@ -1,0 +1,170 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - list
+//
+
+import std
+import math
+
+/*
+add macro [x] = !! x
+or smth
+*/
+
+struct empty {}
+
+struct elem {
+    data: any,
+    next: empty | elem
+}
+
+type list = empty | elem;
+
+operator ++ precedence 5 (l: list, r: list) -> list {
+    if is(l, "empty") then
+    {
+        return r;
+    }
+    if is(r, "empty") then
+    {
+        return l;
+    }
+    return elem { data = l.data, next = l.next ++ r };
+}
+
+operator :| precedence 5 (d: any, l: list) -> list {
+    return elem { data = d, next = l };
+}
+
+operator |: precedence 5 (l: list, d: any) -> list {
+    if is(l, "empty") then
+    {
+        return elem { data = d, next = empty {} };
+    }
+    else
+    {
+        return elem { data = l.data, next = l.next |: d };
+    }
+}
+
+operator !! precedence 10 (l: list, index: int) -> null | any {
+    if index < 0 || is(l, "empty") then
+    {
+        return NULL;
+    }
+    if index == 0 then
+    {
+        return l.data;
+    }
+    else
+    {
+        return l.next !! (index - 1);
+    }
+}
+
+// ranges inclusive
+operator .. precedence 10 (lowerBound: int, upperBound: int) -> list {
+    if lowerBound > upperBound then
+    {
+        return empty {};
+    }
+    if lowerBound == upperBound then
+    {
+        return elem { data = upperBound, next = empty {} };
+    }
+    return elem { data = lowerBound, next = (lowerBound + 1)..upperBound };
+}
+
+function map(f: (any) -> any, l: list) -> list {
+    if is(l, "empty") then
+    {
+        return l;
+    }
+    return elem { data = f(l.data), next = map(f, l.next) };
+}
+
+function filter(p: (any) -> bool, l: list) -> list {
+    if is(l, "empty") then
+    {
+        return l;
+    }
+    if p(l.data) then
+    {
+        return elem { data = l.data, next = filter(p, l.next) };
+    }
+    return filter(p, l.next);
+}
+
+function foldl(f: (any, any) -> any, acc: any, l: list) -> any {
+    if is(l, "empty") then
+    {
+        return acc;
+    }
+    foldl(f, f(l.data, acc), l.next);
+}
+
+function foldr(f: (any, any) -> any, acc: any, l: list) -> any {
+    if is(l, "empty") then
+    {
+        return acc;
+    }
+    return f(foldr(f, acc, l.next), l.data);
+}
+
+function sum(l: list) -> number {
+    return foldl((+), 0, l);
+}
+
+function minimum(l: list) -> number {
+    return foldl((min), l.data, l);
+}
+
+function maximum(l: list) -> number {
+    return foldl((max), l.data, l);
+}
+
+function all(f: (any) -> bool, l: list) -> bool {
+    if is(l, "empty") then
+    {
+        return true;
+    }
+    if f(l.data) then
+    {
+        return all(f, l.next);
+    }
+    return false;
+}
+
+function anyP(f: (any) -> bool, l: list) -> bool {
+    if is(l, "empty") then
+    {
+        return false;
+    }
+    if f(l.data) then
+    {
+        return true;
+    }
+    return anyP(f, l.next);
+}
+
+function in(x: any, l: list) -> bool {
+    if is(l, "empty") then
+    {
+        return false;
+    }
+    if x == l.data then
+    {
+        return true;
+    }
+    return in(x, l.next);
+}
+
+function len(l: list) -> int {
+    if is(l, "empty") then
+    {
+        return 0;
+    }
+    return 1 + len(l.next);
+}

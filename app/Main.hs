@@ -17,12 +17,13 @@ import Text.Megaparsec (errorBundlePretty)
 import Utils.Lib ((&>), run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize, comment)
-import Ast.Ast (tokenToAst)
-import Ast.Error (prettyPrintError, bgBlack)
+import Ast.Parser (tokenToAst)
+import Ast.Error (prettyPrintError, bgBlack, colorblindMode)
 import Bytecode.Compiler (compiler)
 import Bytecode.Display (displayBytecode)
 import VM.VirtualMachine (exec)
 import Ast.Import (resolveImports)
+import Control.Monad (void)
 
 
 glados :: Arguments -> String ->  IO ()
@@ -37,7 +38,7 @@ glados args = toToken
         toAst tokens = do
             (builtins, imports) <- resolveImports args tokens
             case run (tokenToAst builtins imports) tokens of
-                Left err -> putStrLn (prettyPrintError tokens err) >> exitWith (ExitFailure 1)
+                Left err -> putStrLn ((if argColorblind args then colorblindMode else id) $ prettyPrintError tokens err) >> exitWith (ExitFailure 1)
                 Right ast
                     | astTy $ argOutputType args -> print ast
                     | otherwise -> toBytecode ast
@@ -48,9 +49,7 @@ glados args = toToken
                 | bytecodeTy $ argOutputType args -> displayBytecode instr env
                 | otherwise -> runVm env instr
 
-        runVm env instr = case exec 0 env instr [] of
-            Left err -> print err >> exitWith (ExitFailure 1)
-            Right result -> print result
+        runVm env instr = void $ exec 0 env instr []
 
 helper :: String
 helper =
@@ -66,7 +65,6 @@ helper =
     "--colorblind       => display colors according to most colorblinds.\n" ++
     "--no-builtins      => doesn't load the builtins.\n"
 
-
 handleArgs :: Arguments -> IO ()
 handleArgs args
     | argShowHelper args = putStrLn helper >> exitSuccess
@@ -77,7 +75,6 @@ handleArgs args
 
         invalidFile :: IOException -> IO String
         invalidFile _ = putStrLn "Invalid input file." >> exitWith (ExitFailure 1)
-
 
 main :: IO ()
 main = getArgs >>= \args -> either (\_ -> putStrLn helper >> exitWith (ExitFailure 1)) handleArgs (parseArguments args)

@@ -1,4 +1,4 @@
-function if_test(int a, int b) -> int {
+function if_test(a: int, b: int) -> int {
     if a < b then
     {
         return a;

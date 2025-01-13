@@ -1,0 +1,86 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - math
+//
+
+import std
+
+operator ** precedence 8 (n: number, power: number) -> number {
+    if power == 0 then
+    {
+        return 1;
+    }
+    else
+    {
+        return n * n ** (power - 1);
+    }
+}
+
+function pow(n: number, power: number) -> number {
+    return n ** power;
+}
+
+function abs(n: number) -> number {
+    if n < 0 then
+    {
+        return 0 - n;
+    }
+    return n;
+}
+
+function even(n: number) -> bool {
+    if n % 2 == 0 then
+    {
+        return true;
+    }
+    return false;
+}
+
+function odd(n: number) -> bool {
+    if n % 2 == 1 then
+    {
+        return true;
+    }
+    return false;
+}
+
+function min(a: number, b: number) -> number {
+    if a <= b then
+    {
+        return a;
+    }
+    return b;
+}
+
+function max(a: number, b: number) -> number {
+    if a >= b then
+    {
+        return a;
+    }
+    return b;
+}
+
+function factorial(n: int) -> int {
+    if n < 2 then
+    {
+        return 1;
+    }
+    else
+    {
+        return n * factorial(n - 1);
+    }
+}
+
+function fibonacci(n: int) -> int {
+    if n == 0 then
+    {
+        return 0;
+    }
+    if n == 1 then
+    {
+        return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}

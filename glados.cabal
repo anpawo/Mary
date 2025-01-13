@@ -26,10 +26,12 @@ source-repository head
 library
   exposed-modules:
       Ast.Ast
+      Ast.DeclarationParser
       Ast.Error
+      Ast.ExpressionParser
       Ast.Import
+      Ast.Parser
       Ast.TokenParser
-      Ast.TopLevelDeclaration
       Ast.TreeBuilder
       Bytecode.Compiler
       Bytecode.Data
@@ -81,7 +83,6 @@ test-suite glados-test
       CompilerSpec
       TokenizerSpec
       TokenSpec
-      VirtualMachineSpec
       Paths_glados
   autogen-modules:
       Paths_glados

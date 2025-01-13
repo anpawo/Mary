@@ -23,30 +23,42 @@ type bool = false | true;
 type number = int | float;
 
 // arithmetic operators
-operator builtin + precedence 6 (number a, number b) -> number
-operator builtin - precedence 6 (number a, number b) -> number
-operator builtin * precedence 7 (number a, number b) -> number
-operator builtin / precedence 7 (number a, number b) -> number
+operator builtin + precedence 6 (a: number, b: number) -> number
+operator builtin - precedence 6 (a: number, b: number) -> number
+operator builtin * precedence 7 (a: number, b: number) -> number
+operator builtin / precedence 7 (a: number, b: number) -> number
 
 // comparison operators
-function builtin is(any a, str b) -> bool
-operator builtin == precedence 4 (any a, any b) -> bool
-operator builtin < precedence 5 (number a, number b) -> bool
+function builtin is(a: any, b: str) -> bool
+operator builtin == precedence 4 (a: any, b: any) -> bool
+operator builtin < precedence 5 (a: number, b: number) -> bool
 
 // io
-function builtin print(any a) -> void
-function builtin eprint(any a) -> void
+function builtin print(a: any) -> void
+function builtin eprint(a: any) -> void
 function builtin getline() -> str
-function builtin exit(int a) -> void
+function builtin exit(a: int) -> void
 
-// access struct field
-operator builtin . precedence 10 (any a, any b) -> any
+// struct
+operator builtin . precedence 10 (a: any, b: any) -> any
+function builtin set(a: any, b: str, c: any) -> any
 
-// access array elements
-function builtin length(arr[any] a) -> int
-function builtin at(arr[any] a, int b) -> any
+// array and string
+function builtin length(a: arr[any] | str) -> int
+function builtin insert(a: arr[any] | str, i: int, b: any | char) -> arr[any] | str
+function builtin append(a: arr[any] | str, b: any | char) -> arr[any] | str
+function builtin at(a: arr[any] | str, b: int) -> any | char
+function builtin concat(a: arr[any] | str, b: arr[any] | str) -> arr[any] | str
 
-function builtin append(arr[any] a, any b, int c) -> arr[any]
-function builtin pop(arr[any] a, int c) -> any
+// function builtin pop(arr[any] | str a, int i) -> any | char
+// function builtin del(arr[any]  a, int i) -> void
 
-// more to come
+// conversion
+type __convertibleToInt__   = int | float | bool | str | char;
+type __convertibleToFloat__ = int | float | bool | str;
+type __convertibleToChar__  = int | char;
+
+function builtin toInt(n: __convertibleToInt__) -> int
+function builtin toFloat(n: __convertibleToFloat__) -> float
+function builtin toChar(n: __convertibleToChar__) -> char
+function builtin toString(n: any) -> str

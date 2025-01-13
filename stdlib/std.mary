@@ -5,40 +5,31 @@
 // Mary Standard library - std
 //
 
-operator % precedence 7 (number a, number b) -> null | number {
-    number | null c = a / b;
-
-    if c == NULL then
-    {
-        return NULL;
-    }
-    else
-    {
-        return a - c * b;
-    }
+operator % precedence 7 (a: number, b: number) -> number {
+    return a - (a / b) * b;
 }
 
-function not(bool a) -> bool {
+function not(a: bool) -> bool {
     return a == false;
 }
 
-operator != precedence 4 (any a, any b) -> bool {
+operator != precedence 4 (a: any, b: any) -> bool {
     return not(a == b);
 }
 
-operator > precedence 5 (number a, number b) -> bool {
+operator > precedence 5 (a: number, b: number) -> bool {
     return b < a;
 }
 
-operator <= precedence 4 (number a, number b) -> bool {
+operator <= precedence 4 (a: number, b: number) -> bool {
     return not(a > b);
 }
 
-operator >= precedence 4 (number a, number b) -> bool {
+operator >= precedence 4 (a: number, b: number) -> bool {
     return not(a < b);
 }
 
-operator && precedence 4 (bool a, bool b) -> bool {
+operator && precedence 4 (a: bool, b: bool) -> bool {
     if a then
     {
         return b;
@@ -49,7 +40,7 @@ operator && precedence 4 (bool a, bool b) -> bool {
     }
 }
 
-operator || precedence 4 (bool a, bool b) -> bool {
+operator || precedence 4 (a: bool, b: bool) -> bool {
     if a then
     {
         return true;

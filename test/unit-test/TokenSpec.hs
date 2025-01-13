@@ -74,10 +74,6 @@ literalSpec = describe "literal" $ do
 typeSpec :: SpecWith ()
 typeSpec = describe "type" $ do
   describe "eq" $ do
-    it "struct any == struct person" $ (StructAnyType == StructType "person") ==> True
-    it "struct person == struct any" $ (StructType "person" == StructAnyType) ==> True
-    it "any == struct any" $ (AnyType == StructAnyType) ==> True
-    it "struct any == any" $ (StructAnyType == AnyType) ==> True
     it "char == int" $ (CharType == IntType) ==> False
     it "type number == type integer" $ (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
     it "int == type integer" $ (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
@@ -89,9 +85,8 @@ typeSpec = describe "type" $ do
     it "float" $ show FloatType ==> "float"
     it "str" $ show StrType ==> "str"
     it "arr[int]" $ show (ArrType IntType) ==> "arr[int]"
-    it "struct person" $ show (StructType "person") ==> "struct person"
+    it "struct person" $ show (StructType "person") ==> "person"
     it "any" $ show AnyType ==> "any"
-    it "struct any" $ show StructAnyType ==> "struct any"
     it "constraint number = int | float" $ show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
 
 subexpressionSpec :: SpecWith ()

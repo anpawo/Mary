@@ -1,0 +1,20 @@
+//
+//
+//
+//
+
+import list
+
+function recursive_list() -> list {
+    return empty {} |: 1 |: 2 |: 3;
+}
+
+function main() -> int {
+    print(5 :| empty {} ++ empty {});
+    a: list = recursive_list();
+    print(a);
+    print(a.next.next.data);
+    a.next = empty {};
+    print(a);
+    return 0;
+}

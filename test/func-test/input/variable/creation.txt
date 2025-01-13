@@ -1,4 +1,4 @@
-function mul_add(int a, int b, int c) -> int {
-    int v = a * b;
+function mul_add(a: int, b: int, c: int) -> int {
+    v: int = a * b;
     return v + c;
 }

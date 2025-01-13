@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField) where
+module Ast.Error (blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -14,36 +14,36 @@ import Parser.Token
 import Data.Void (Void)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set.Internal (elemAt)
-import Data.List (intercalate)
+import Data.List (intercalate, isPrefixOf)
 
 errCondNotBool :: Int -> String
-errCondNotBool i = printf ":%sexpected a %s condition." (show i) (purple "boolean")
+errCondNotBool i = printf ":%sexpected a %s condition." (show i) (blue "boolean")
 
 errNameTaken :: String -> String
-errNameTaken name = printf "name '%s' already taken." $ purple name
+errNameTaken name = printf "name '%s' already taken." $ blue name
 
 errExpectedType :: Bool -> String
 errExpectedType canBeVoid
-    | canBeVoid = printf "expected a %s (including void)." $ purple "type"
-    | otherwise = printf "expected a %s (excluding void)." $ purple "type"
+    | canBeVoid = printf "expected a %s (including void)." $ blue "type"
+    | otherwise = printf "expected a %s (excluding void)." $ blue "type"
 
 errStartBody :: String
-errStartBody = printf "expected a '%s' representing the start of the body of the function." $ purple "{"
+errStartBody = printf "expected a '%s' representing the start of the body of the function." $ blue "{"
 
 errEndBody :: String
-errEndBody = printf "expected a '%s' representing the end of the body of the function." $ purple "}"
+errEndBody = printf "expected a '%s' representing the end of the body of the function." $ blue "}"
 
 errTodo :: String -> String
-errTodo = printf "todo: %s." . purple
+errTodo = printf "todo: %s." . blue
 
 errVoidRet :: String
-errVoidRet = printf "%s function should not %s." (purple "void") (purple "return")
+errVoidRet = printf "%s function should not %s." (blue "void") (blue "return")
 
 errEndSubexpr :: String
-errEndSubexpr = printf "expected end of expression '%s'." $ purple ";"
+errEndSubexpr = printf "expected end of expression '%s'." $ blue ";"
 
 errEmptyParen :: String
-errEmptyParen = printf ":2expected an expression inside the %s." $ purple "parenthesis"
+errEmptyParen = printf ":2expected an expression inside the %s." $ blue "parenthesis"
 
 errEmptyExpr :: String
 errEmptyExpr = "expected an expression."
@@ -52,76 +52,79 @@ errExpectedField :: String
 errExpectedField = "expected a structure field."
 
 errMissingRetT :: String
-errMissingRetT = printf "expected return type: '%s'." (purple "-> <type>")
+errMissingRetT = printf "expected return type: '%s'." (blue "-> <type>")
+
+errMisingBody :: String
+errMisingBody = printf "the body of a function cannot be empty."
 
 errSemiColon :: String
-errSemiColon = printf "expected a '%s' at the end of the expression." (purple ";")
+errSemiColon = printf "expected a '%s' at the end of the expression." (blue ";")
 
 errOpNotDefined :: String -> String
-errOpNotDefined = printf "the operator '%s' is not defined." . purple
+errOpNotDefined = printf "the operator '%s' is not defined." . blue
 
 errMissingOperand :: String -> String -> String
-errMissingOperand side name = printf "missing the %s operand for the operator '%s'." (purple side) (purple name)
+errMissingOperand side name = printf "missing the %s operand for the operator '%s'." (blue side) (blue name)
 
 errInvalidExprToken :: MyToken -> String
-errInvalidExprToken = printf "invalid expression '%s'." . purple . show
+errInvalidExprToken = printf "invalid expression '%s'." . blue . show
 
 errTooManyExpr :: Int -> String
 errTooManyExpr = printf ":%stoo many expressions, expected one." . show
 
 errOpArgs :: Int -> Int -> String -> String
-errOpArgs lenErr nargs name = printf ":%soperators must take 2 arguments. '%s' has %s argument%s." (show lenErr) (purple name) (purple . show $ nargs) (if nargs <= 1 then "" else "s")
+errOpArgs lenErr nargs name = printf ":%soperators must take 2 arguments. '%s' has %s argument%s." (show lenErr) (blue name) (blue . show $ nargs) (if nargs <= 1 then "" else "s")
 
 errRetType :: String -> String -> String
-errRetType expected got = printf "invalid return type, expected '%s' got '%s'." (purple expected) (purple got)
+errRetType expected got = printf "invalid return type, expected '%s' got '%s'." (blue expected) (blue got)
 
 errAssignType :: String -> String -> String -> String
-errAssignType name expected got = printf "invalid type for the variable '%s', expected '%s' got '%s'." (purple name) (purple expected) (purple got)
+errAssignType name expected got = printf "invalid type for the variable '%s', expected '%s' got '%s'." (blue name) (blue expected) (blue got)
 
 errTopLevelDef :: String
-errTopLevelDef = printf "top level declaration must be either %s, %s or %s." (purple "function") (purple "operator") (purple "struct")
+errTopLevelDef = printf "top level declaration must be either %s, %s or %s." (blue "function") (blue "operator") (blue "struct")
 
 errImpossibleCase :: String -> String
-errImpossibleCase = printf "Impossible case. (from %s)." . purple
+errImpossibleCase = printf "Impossible case. (from %s)." . blue
 
 errVariableNotBound :: String -> String
-errVariableNotBound = printf "variable '%s' is not bound." . purple
+errVariableNotBound = printf "variable '%s' is not bound." . blue
 
 errFunctionNotBound :: String -> String
-errFunctionNotBound = printf "function '%s' doesn't exist." . purple
+errFunctionNotBound = printf "function '%s' doesn't exist." . blue
 
 errStructureNotBound :: String -> String
-errStructureNotBound = printf "structure '%s' doesn't exist." . purple
+errStructureNotBound = printf "structure '%s' doesn't exist." . blue
 
 errStructureFieldNotBound :: String -> String -> String
-errStructureFieldNotBound name field = printf "structure '%s' doesn't have the field '%s'." (purple name) (purple field)
+errStructureFieldNotBound name field = printf "structure '%s' doesn't have the field '%s'." (blue name) (blue field)
 
 errConstraintNotBound :: String -> String
-errConstraintNotBound = printf "constraint '%s' doesn't exist." . purple
+errConstraintNotBound = printf "constraint '%s' doesn't exist." . blue
 
 errInvalidStructure :: String -> [(String, Type)] -> String
-errInvalidStructure st diff = printf "invalid structure '%s', expected:\n{\n    %s\n}" (purple st) $ intercalate ",\n    " $ map (\(n, t) -> printf "%s = %s" (purple n) (purple $ show t)) diff
+errInvalidStructure st diff = printf "invalid structure '%s', expected:\n{\n    %s\n}" (blue st) $ intercalate ",\n    " $ map (\(n, t) -> printf "%s = %s" (blue n) (blue $ show t)) diff
 
 errInvalidArray :: String -> String
-errInvalidArray = printf "invalid array of type '%s'." . purple
+errInvalidArray = printf "invalid array of type '%s'." . blue
 
 errOperatorNotBound :: String -> String
-errOperatorNotBound = printf "operator '%s' is not bound." . purple
+errOperatorNotBound = printf "operator '%s' is not bound." . blue
 
 errInvalidLitType :: String -> String -> String
-errInvalidLitType expected got = printf "invalid literal type, expected %s but got %s." (purple expected) (purple got)
+errInvalidLitType expected got = printf "invalid literal type, expected %s but got %s." (blue expected) (blue got)
 
 errInvalidVarType :: String -> String -> String -> String
-errInvalidVarType name expected got = printf "invalid variable type for '%s', expected '%s' but got '%s'." (purple name) (purple expected) (purple got)
+errInvalidVarType name expected got = printf "invalid variable type for '%s', expected '%s' but got '%s'." (blue name) (blue expected) (blue got)
 
 errInvalidFnType :: String -> String -> String -> String
-errInvalidFnType name expected got = printf "invalid function type for '%s', expected '%s' but got '%s'." (purple name) (purple expected) (purple got)
+errInvalidFnType name expected got = printf "invalid function type for '%s', expected '%s' but got '%s'." (blue name) (blue expected) (blue got)
 
 errInvalidOpType :: String -> String -> String -> String
-errInvalidOpType name expected got = printf "invalid operator type for '%s', expected '%s' but got '%s'." (purple name) (purple expected) (purple got)
+errInvalidOpType name expected got = printf "invalid operator type for '%s', expected '%s' but got '%s'." (blue name) (blue expected) (blue got)
 
 errInvalidNumberOfArgument :: String -> Int -> Int -> String
-errInvalidNumberOfArgument name expected found = printf "invalid number of arguments for the function '%s', expected %s but found %s." (purple name) (purple . show $ expected) (purple . show $ found)
+errInvalidNumberOfArgument name expected found = printf "invalid number of arguments for the function '%s', expected %s but found %s." (blue name) (blue . show $ expected) (blue . show $ found)
 
 prettyPrintError :: [MyToken] -> ParseErrorBundle [MyToken] Void -> String
 prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
@@ -155,11 +158,30 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
         (TrivialError offset unexpected expected :| _) ->
             printf "This error should be transformed into a custom one:\nindex error: %s\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show offset) (red . show $ tokens !! offset) (show unexpected) (show expected)
 
-red :: String -> String
-red s = "\ESC[91m" ++ s ++ reset
+colorblindMode :: String -> String
+colorblindMode [] = []
+colorblindMode str@(x:xs)
+    | redPrefix `isPrefixOf` str  = yellowPrefix ++ colorblindMode (drop (length yellowPrefix) str) 
+    | bluePrefix `isPrefixOf` str = pinkPrefix ++ colorblindMode (drop (length pinkPrefix) str) 
+    | otherwise                   = x : colorblindMode xs
 
-purple :: String -> String
-purple s = "\ESC[95m" ++ s ++ reset
+yellowPrefix :: String
+yellowPrefix = "\ESC[93m"
+
+pinkPrefix :: String
+pinkPrefix = "\ESC[95m"
+
+bluePrefix :: String
+bluePrefix = "\ESC[94m"
+
+redPrefix :: String
+redPrefix = "\ESC[91m"
+
+red :: String -> String
+red s = redPrefix ++ s ++ reset
+
+blue :: String -> String
+blue s = bluePrefix ++ s ++ reset
 
 reset :: String
 reset = "\ESC[0m"
