@@ -98,3 +98,36 @@ derivingSpec = describe "deriving Eq" $ do
     (JumpIfFalse 10 == JumpIfFalse 20) `shouldBe` False
     (JumpBackward 5 == JumpBackward 5) `shouldBe` True
     (JumpBackward 5 == JumpBackward 1) `shouldBe` False
+  it "checks Eq for all Value constructors" $ do
+    (VmChar 'a' == VmChar 'a') `shouldBe` True
+    (VmChar 'a' == VmChar 'b') `shouldBe` False
+    (VmBool True == VmBool True) `shouldBe` True
+    (VmBool True == VmBool False) `shouldBe` False
+    (VmInt 1 == VmInt 1) `shouldBe` True
+    (VmInt 1 == VmInt 2) `shouldBe` False
+    (VmFloat 3.14 == VmFloat 3.14) `shouldBe` True
+    (VmFloat 3.14 == VmFloat 2.71) `shouldBe` False
+    (VmString "hello" == VmString "hello") `shouldBe` True
+    (VmString "hello" == VmString "world") `shouldBe` False
+    (VmNull == VmNull) `shouldBe` True
+    (VmNull == VmInt 42) `shouldBe` False
+    (VmFunc "f" == VmFunc "f") `shouldBe` True
+    (VmFunc "f" == VmFunc "g") `shouldBe` False
+    (VmVoid == VmVoid) `shouldBe` True
+    (VmVoid == VmNull) `shouldBe` False
+    (VmArray "int" [VmInt 1] == VmArray "int" [VmInt 1]) `shouldBe` True
+    (VmArray "int" [VmInt 1] == VmArray "float" [VmFloat 1.0]) `shouldBe` False
+    (VmStruct "myStruct" [("field", VmInt 1)]
+      == VmStruct "myStruct" [("field", VmInt 1)]) `shouldBe` True
+    (VmStruct "myStruct" [("field", VmInt 1)]
+      == VmStruct "myStruct" [("field", VmInt 2)]) `shouldBe` False
+    (VmPreArray "int" [[Push (VmInt 1)]]
+      == VmPreArray "int" [[Push (VmInt 1)]]) `shouldBe` True
+    (VmPreArray "int" [[Push (VmInt 1)]]
+      == VmPreArray "int" [[Push (VmInt 2)]]) `shouldBe` False
+    (VmPreStruct "test" [("f1", [Push (VmInt 1)])]
+      == VmPreStruct "test" [("f1", [Push (VmInt 1)])]) `shouldBe` True
+    (VmPreStruct "test" [("f1", [Push (VmInt 1)])]
+      == VmPreStruct "test" [("f1", [Push (VmInt 2)])]) `shouldBe` False
+    (VmClosure "c1" == VmClosure "c1") `shouldBe` True
+    (VmClosure "c1" == VmClosure "c2") `shouldBe` False
