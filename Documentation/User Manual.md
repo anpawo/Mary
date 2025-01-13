@@ -60,7 +60,7 @@ Download the latest release by clicking on `Releases` then `Assets` and download
 
 Save the following code in a file named `hello.mary`:
 
-```
+```c
 function main () -> void {
     print("Hello, World!");
 }
@@ -89,13 +89,13 @@ The following examples are non-exhaustive and you are encouraged to read the [Fo
 
 Create variables using the syntax:
 
-```
+```c
 x: int = 10;
 ```
 
 Access and manipulate the variable:
 
-```
+```c
 y: int = x + 5;
 print(y); // Outputs 15
 ```
@@ -105,7 +105,7 @@ print(y); // Outputs 15
 The use of a `main` function is mandatory. The structure of the `main` is the same as any other function except for it's name that needs to remain `main`.
 //todo description du fonctionnnement d'un main et pk obligatoire ?
 
-```
+```f#
 function main () -> <return type> {
     <main body>
 }
@@ -129,7 +129,7 @@ Some built-in functions include:
 
 The `if` construct evaluates a condition:
 
-```
+```f#
 if x < 5 then {
     print("Less than 5");
 } else {
@@ -144,7 +144,7 @@ if x < 5 then {
 GLaDOS allows for both recursion and loops. Example:
 
 An example of a loop:
-```
+```f#
 function my_add(a: int, b: int) -> int {
     i: int = 0;
 
@@ -159,7 +159,7 @@ print(my_add(2, 5)); // Outputs 7
 ```
 
 And recursion looks like this :
-```
+```f#
 function factorial(n: int) -> int {
     if n == 0 then {
         return 1;
@@ -178,7 +178,7 @@ print(factorial(5)); // Outputs 120
 
 Define a function using the `function` keyword:
 
-```
+```f#
 function add_two(x: int) -> int {
     return x + 2;
 }
@@ -190,7 +190,7 @@ print(add_two(5)); // Outputs 7
 
 Functions can be passed as arguments:
 
-```
+```f#
 function apply(f: (int) -> int, x: int) -> int {
     return f(x);
 }
@@ -206,7 +206,7 @@ print(apply((add_two), 10)); // Outputs 12
 
 Define custom operators using `operator`:
 
-```
+```f#
 operator !! precedence 10 (l: list, index: int) -> null | any {
     if index < 0 then {
         return NULL;
@@ -225,7 +225,7 @@ This part is currently underway
 
 Functions can close over variables:
 
-```
+```f#
 function counter() -> function {
     plus: (int, int) -> int = (+);
     plus(1, 2); // 3
@@ -240,13 +240,13 @@ function counter() -> function {
 
 - **Undefined Variable**:
 
-  ```
+  ```f#
   y: int = x + 5; // Error: Variable x is not defined
   ```
 
 - **Malformed Expression**:
 
-  ```
+  ```f#
   z: int = 1 + ; // Error: Syntax error
   ```
 
@@ -261,7 +261,7 @@ function counter() -> function {
 
 ### Factorial Function
 
-```
+```f#
 function factorial(n: int) -> int {
     if n == 0 then {
         return 1;
@@ -272,7 +272,7 @@ function factorial(n: int) -> int {
 
 ### Fibonacci Sequence
 
-```
+```f#
 function fibonacci(n: int) -> int {
     if n <= 1 then {
         return n;
@@ -285,10 +285,33 @@ function fibonacci(n: int) -> int {
 
 Using lists and structures:
 
-```
+Lists:
+```c
 import list;
 
 print(1..5) // [1, 2, 3, 4, 5]
+```
+
+Structures:
+  - Definition:
+
+```c
+struct date {
+    d: int,
+    m: int,
+    y: int
+}
+
+struct person {
+    name: str,
+    age: date
+}
+```
+  - Accessing a defined field:
+```f#
+function getname(p: struct person) -> str {
+    return p.name;
+}
 ```
 
 ---
