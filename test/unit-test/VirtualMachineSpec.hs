@@ -10,6 +10,24 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+toFloatCallFuncSpec :: Spec
+toFloatCallFuncSpec = do
+  describe "toFloatCallFunc" $ do
+    it "VmBool True -> 1.0" $ do
+      v <- toFloatCallFunc 0 [] [] [VmBool True]
+      v `shouldBe` VmFloat 1.0
+    it "VmInt 5 -> 5.0" $ do
+      v <- toFloatCallFunc 0 [] [] [VmInt 5]
+      v `shouldBe` VmFloat 5.0
+    it "VmString \"3.14\" -> 3.14" $ do
+      v <- toFloatCallFunc 0 [] [] [VmString "3.14"]
+      v `shouldBe` VmFloat 3.14
+    it "VmString \"notFloat\" -> VmNull" $ do
+      v <- toFloatCallFunc 0 [] [] [VmString "notFloat"]
+      v `shouldBe` VmNull
+    it "fail if empty" $ do
+      (toFloatCallFunc 0 [] [] []) `shouldThrow` anyException
+
 operatorCallFuncSpec :: Spec
 operatorCallFuncSpec = do
   describe "operatorCallFunc" $ do
