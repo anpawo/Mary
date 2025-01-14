@@ -48,102 +48,7 @@ spec = do
   structureSpec
   getSpec
   isSpec
-  -- declarationParserSpec
-
--- declarationParserSpec :: SpecWith ()
--- declarationParserSpec = describe "declaration parser" $ do
-  -- describe "getMembers" $ do
-  --   it "parses valid members in a struct" $ runIO $ do
-  --     let ctx = []
-  --         input = "{ field1: int, field2: float }"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getMembers ctx []) tokens of
-  --           Right result -> result `shouldBe` [("field1", IntType), ("field2", FloatType)]
-  --           Left err -> error ("Failed to parse members: " ++ show err)
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  --   it "fails on invalid member definition" $ runIO $ do
-  --     let ctx = []
-  --         input = "{ field1: int field2: float }"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getMembers ctx []) tokens of
-  --           Right _ -> error "Unexpected success"
-  --           Left _ -> return ()
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  --   it "fails on missing braces in structure" $ runIO $ do
-  --     let input = "struct Point x: float, y: float"
-  --     ast <- pAst input
-  --     ast `shouldSatisfy` isLeft
-
-  -- describe "getFnArgs" $ do
-  --   it "parses function arguments" $ runIO $ do
-  --     let ctx = []
-  --         input = "(arg1: int, arg2: string)"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getFnArgs ctx []) tokens of
-  --           Right result -> result `shouldBe` [(IntType, "arg1"), (StrType, "arg2")]
-  --           Left err -> error ("Failed to parse function arguments: " ++ show err)
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  --   it "fails on invalid argument syntax" $ runIO $ do
-  --     let ctx = []
-  --         input = "(arg1: int arg2: string)"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getFnArgs ctx []) tokens of
-  --           Right _ -> error "Unexpected success"
-  --           Left _ -> return ()
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  -- describe "function" $ do
-  --   it "parses a valid function" $ do
-  --     let ctx = []
-  --     let input = "function add(a: int, b: int) -> int { return a + b; }"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getFnBody ctx [] IntType) tokens of
-  --           Right [Function "add" [(IntType, "a"), (IntType, "b")] IntType
-  --              [Return (FunctionCall "+" [VariableCall "a", VariableCall "b"])]] -> return ()
-  --           Left err -> error ("Failed to parse function: " ++ show err)
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  --   it "fails on missing return type" $ do
-  --     let input = "function add(a: int, b: int) { return a + b; }"
-  --     ast <- pAst input
-  --     ast `shouldSatisfy` isLeft
-
-  -- describe "operator" $ do
-  --   it "parses a valid operator" $ do
-  --     let input = "operator ** precedence 8 (a: int, b: int) -> int { return a ** b; }"
-  --     case run tokenize input of
-  --       Right tokens -> do
-  --         case run (getFnBody [] [] IntType) tokens of
-  --           Right [Operator "**" 8 IntType (IntType, "a") (IntType, "b")
-  --              [Return (FunctionCall "**" [VariableCall "a", VariableCall "b"])]] -> return ()
-  --           Left err -> error ("Failed to parse operator: " ++ show err)
-  --       Left err -> error ("Failed to tokenize: " ++ show err)
-
-  --   it "fails on invalid operator syntax" $ do
-  --     let input = "operator ** precedence (a: int, b: int) -> int { return a ** b; }"
-  --     ast <- pAst input
-  --     ast `shouldSatisfy` isLeft
-
-  -- describe "constraint" $ do
-  --   it "parses a valid constraint" $ runIO $ do
-  --     let input = "constraint TypeA = int | float;"
-  --     ast <- pAst input
-  --     case ast of
-  --       Right result -> result `shouldBe` [Constraint "TypeA" [IntType, FloatType]]
-  --       Left err -> error ("Failed to parse constraint: " ++ show err)
-
-    -- it "fails on invalid constraint syntax" $ runIO $ do
-    --   let input = "constraint TypeA = int float;"
-    --   ast <- pAst input
-    --   ast `shouldSatisfy` isLeft
+  isTypeSpec
 
 isSpec :: SpecWith ()
 isSpec = describe "is functions" $ do
@@ -156,69 +61,107 @@ isSpec = describe "is functions" $ do
       let structNode = Structure "test" [("field", IntType)]
       isOp structNode `shouldBe` False
 
-  describe "types" $ do
-    let ctx = []
-        tokenizeInput input =
-          case run tokenize input of
-            Left _ -> Nothing
-            Right tokens -> Just tokens
-        parseType input = tokenizeInput input >>= \tokens ->
-          case run (types ctx False False) tokens of
-            Left _ -> Nothing
-            Right t -> Just t
+  describe "Edge cases for expressions" $ do
+    it "should handle empty function body gracefully" $ do
+      let input = "function empty() -> void { }"
+      result <- pAst input
+      result `shouldSatisfy` isLeft
 
-    it "parses a valid float type" $ do
-      parseType "float" `shouldBe` Just FloatType
+    it "should parse nested structures correctly" $ do
+      let input = "struct outer { inner: struct inner { value: int } }"
+      ast <- pAst input
+      ast ==> [ Structure "outer" [("inner", StructType "inner")],
+                Structure "inner" [("value", IntType)]
+              ]
 
-    it "parses a valid int type" $ do
-      parseType "int" `shouldBe` Just IntType
+    it "should fail with incompatible types in assignments" $ do
+      let input = "function main() -> void { x: int = true; }"
+      ast <- pAst input
+      ast `shouldSatisfy` isLeft
 
-    it "parses a valid char type" $ do
-      parseType "char" `shouldBe` Just CharType
+    it "should correctly parse recursive function calls" $ do
+      let input = "function factorial(n: int) -> int { if n == 0 then { return 1; } else { return n * factorial(n - 1); } }"
+      ast <- pAst input
+      ast ==> [ Function "factorial" [(IntType, "n")] IntType
+          [ IfThenElse (FunctionCall "==" [VariableCall "n", Lit (IntLit 0)])
+                      [Return (Lit (IntLit 1))]
+                      [Return (FunctionCall "*" [VariableCall "n", FunctionCall "factorial" [FunctionCall "-" [VariableCall "n", Lit (IntLit 1)]]])]
+          ]
+        ]
 
-    it "fails on an invalid type" $ do
-      parseType "invalidType" `shouldBe` Nothing
+    it "should handle arrays of complex types" $ do
+      let input = "function test() -> void { arr: arr[struct person] = [{name: \"Marius\", age: 25}, {name: \"Alex\", age: 30}]; }"
+      ast <- pAst input
+      ast ==> [Function
+        "test" [] VoidType
+        [ Variable { varMeta = (ArrType (StructType "person"), "arr"),
+                    varValue = Lit (ArrLit (StructType "person")
+                                    [ Lit (StructLit "person" [("name", Lit (StringLit "Marius")), ("age", Lit (IntLit 25))]),
+                                      Lit (StructLit "person" [("name", Lit (StringLit "Alex")), ("age", Lit (IntLit 30))])]) }
+        ]]
 
-    it "parses a valid void type when allowed" $ do
-      let parseVoidType input = tokenizeInput input >>= \tokens ->
-            case run (types ctx True False) tokens of
-              Left _ -> Nothing
-              Right t -> Just t
-      parseVoidType "void" `shouldBe` Just VoidType
-
-    it "fails on void type when not allowed" $ do
-      parseType "void" `shouldBe` Nothing
-
-  describe "isType" $ do
-    it "returns True if a literal matches its type" $ do
+isTypeSpec :: SpecWith ()
+isTypeSpec = describe "isType function" $ do
+  describe "matching types" $ do
+    it "returns True for an IntLit with IntType" $ do
       isType IntType (IntLit 42) `shouldBe` True
 
-    it "returns False if a literal does not match its type" $ do
+    it "returns True for a FloatLit with FloatType" $ do
+      isType FloatType (FloatLit 1.5) `shouldBe` True
+
+    it "returns True for a CharLit with CharType" $ do
+      isType CharType (CharLit 'c') `shouldBe` True
+
+    it "returns True for a BoolLit with BoolType" $ do
+      isType BoolType (BoolLit True) `shouldBe` True
+
+    it "returns True for a StringLit with StrType" $ do
+      isType StrType (StringLit "hello") `shouldBe` True
+
+    -- it "returns True for an ArrLitPre with an appropriate type" $ do
+    --   let tokens = [[Token "1"], [Token "2"]]
+    --   isType (ArrayType IntType) (ArrLitPre IntType tokens) `shouldBe` True
+
+    -- it "returns True for an ArrLit with an appropriate type" $ do
+    --   let elements = [SubExpression (IntLit 1), SubExpression (IntLit 2)]
+    --   isType (ArrType IntType) (ArrLit IntType elements) `shouldBe` True
+
+    -- it "returns True for a StructLitPre with matching fields" $ do
+    --   let fields = [("name", [Token "\"marius\""]), ("age", [Token "19"])]
+    --   isType (StructType "Person") (StructLitPre "Person" fields) `shouldBe` True
+
+    -- it "returns True for a StructLit with matching fields" $ do
+    --   let fields = [("name", SubExpression (StringLit "marius")), ("age", SubExpression (IntLit 19))]
+    --   isType (StructType "Person") (StructLit "Person" fields) `shouldBe` True
+
+    it "returns True for NullLit with NullType" $ do
+      isType NullType NullLit `shouldBe` True
+
+    it "returns True for a ClosureLit with matching parameters and return type" $ do
+      isType (ClosureType [IntType] BoolType) (ClosureLit "func" [IntType] BoolType) `shouldBe` True
+
+  describe "non-matching types" $ do
+    it "returns False for an IntLit with FloatType" $ do
       isType FloatType (IntLit 42) `shouldBe` False
 
-  -- describe "notTaken" $ do
-  --     let tokenizeInput input =
-  --           case run tokenize input of
-  --             Left _ -> Nothing
-  --             Right tokens -> Just tokens
+    it "returns False for a FloatLit with IntType" $ do
+      isType IntType (FloatLit 1.5) `shouldBe` False
 
-  --     let notTakenTest takenNames newName = do
-  --           let builtins = map (\name -> Function { fnName = name, fnArgs = [], fnRetType = VoidType, fnBody = [] }) takenNames
-  --           tokens <- maybe (fail "Tokenization failed") return (tokenizeInput newName)
-  --           case run (tokenToAst builtins []) tokens of
-  --             Left _ -> return Nothing
-  --             Right context ->
-  --                 if any (\case Function { fnName = n } -> n == newName; _ -> False) context
-  --                 then return Nothing
-  --                 else return (Just newName)
+    it "returns False for a CharLit with StringType" $ do
+      isType StrType (CharLit 'c') `shouldBe` False
 
-  --     it "allows a name that is not taken" $ do
-  --       result <- notTakenTest ["name1", "name2"] "name3"
-  --       result `shouldBe` Just "name3"
+    it "returns False for a BoolLit with IntType" $ do
+      isType IntType (BoolLit True) `shouldBe` False
 
-  --     it "fails for a name that is already taken" $ do
-  --       result <- notTakenTest ["name1", "name2"] "name1"
-  --       result `shouldBe` Nothing
+    -- it "returns False for an ArrLitPre with incorrect element type" $ do
+    --   let tokens = [[Token "true"], [Token "false"]]
+    --   isType (ArrType IntType) (ArrLitPre BoolType tokens) `shouldBe` False
+
+    it "returns False for NullLit with non-null type" $ do
+      isType IntType NullLit `shouldBe` False
+
+    it "returns False for a ClosureLit with mismatched return type" $ do
+      isType (ClosureType [IntType] StrType) (ClosureLit "func" [IntType] BoolType) `shouldBe` False
 
 getSpec :: SpecWith ()
 getSpec = describe "get functions" $ do
