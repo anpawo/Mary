@@ -322,13 +322,22 @@ built-in functions include in Mary:
   - toString: Converts any value to a string representation.
   Example: toString(42) → "42".
 
-### Conditionals
+---
 
-#### `if`
+## **Condition**
 
-The `if` construct evaluates a condition:
+### Using if
 
-```f#
+The `if` construct evaluates a condition and executes the corresponding block of code.
+
+**Syntax:**
+
+```
+condition ::= if < bool | fonction<bool> > then { <body> } else { <body> }
+```
+
+Example:
+```c
 if x < 5 then {
     print("Less than 5");
 } else {
@@ -336,14 +345,30 @@ if x < 5 then {
 }
 ```
 
+Explanation:
+
+  if x < 5: Checks if the variable x is less than 5.
+
+  then: Introduces the block to execute if the condition is true.
+
+  else: Executes an alternative block if the condition is false.
+
 ---
 
-### Loops and Recursion
+## **Loops and Recursion**
 
-GLaDOS allows for both recursion and loops. Example:
+### Using Loops
 
-An example of a loop:
-```f#
+A loop repeatedly executes a block of code as long as the condition evaluates to true.
+
+**Syntax:**
+
+```
+loop ::= while < bool | fonction<bool> > then { <body> }
+```
+
+Example:
+```c
 function my_add(a: int, b: int) -> int {
     i: int = 0;
 
@@ -357,8 +382,18 @@ function my_add(a: int, b: int) -> int {
 print(my_add(2, 5)); // Outputs 7
 ```
 
-And recursion looks like this :
-```f#
+Explanation:
+
+  The while loop increments a by 1 until i equals b.
+
+  The function returns the final value of a.
+
+### Using Recursion
+
+Recursion occurs when a function calls itself to solve a problem.
+
+Example:
+```c
 function factorial(n: int) -> int {
     if n == 0 then {
         return 1;
@@ -368,6 +403,11 @@ function factorial(n: int) -> int {
 
 print(factorial(5)); // Outputs 120
 ```
+
+Explanation:
+
+  The base case checks if n is 0 and returns 1.
+  For other values, the function recursively calls itself with n - 1, multiplying the results.
 
 ---
 
