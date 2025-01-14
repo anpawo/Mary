@@ -16,6 +16,7 @@ import Text.Megaparsec ()
 import Text.Megaparsec.Error (ParseErrorBundle(..))
 import Data.Either (isLeft)
 import Data.Void (Void)
+import qualified Data.List.NonEmpty as NE
 
 import Parser.Tokenizer
 import Parser.Token
@@ -203,6 +204,13 @@ errorSpec = describe "error functions" $ do
     it "errInvalidNumberOfArgument formats correctly" $ do
       errInvalidNumberOfArgument "f" 2 3
         `shouldBe` "invalid number of arguments for the function '\ESC[94mf\ESC[0m', expected \ESC[94m2\ESC[0m but found \ESC[94m3\ESC[0m."
+
+  describe "colorblindMode" $ do
+    it "replaces red with yellow for colorblind mode" $ do
+      colorblindMode "\ESC[91mError\ESC[0m" `shouldBe` "\ESC[93mError\ESC[0m"
+
+    it "replaces blue with pink for colorblind mode" $ do
+      colorblindMode "\ESC[94mInfo\ESC[0m" `shouldBe` "\ESC[95mInfo\ESC[0m"
 
 isSpec :: SpecWith ()
 isSpec = describe "is functions" $ do
