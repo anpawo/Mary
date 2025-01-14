@@ -23,3 +23,24 @@ instance Show OutputType where
     ++ ", astTy=" ++ show (astTy o)
     ++ ", bytecodeTy=" ++ show (bytecodeTy o)
     ++ "}"
+
+instance Eq Arguments where
+  (==) a1 a2 =
+    argOutputType a1 == argOutputType a2 &&
+    argImportPath a1 == argImportPath a2 &&
+    argOptimize a1 == argOptimize a2 &&
+    argInputFile a1 == argInputFile a2 &&
+    argShowHelper a1 == argShowHelper a2 &&
+    argColorblind a1 == argColorblind a2 &&
+    argImportBuiltins a1 == argImportBuiltins a2
+
+instance Show Arguments where
+  show a =
+    "Arguments { argOutputType=" ++ show (argOutputType a)
+    ++ ", argImportPath=" ++ show (argImportPath a)
+    ++ ", argOptimize=" ++ show (argOptimize a)
+    ++ ", argInputFile=" ++ show (argInputFile a)
+    ++ ", argShowHelper=" ++ show (argShowHelper a)
+    ++ ", argColorblind=" ++ show (argColorblind a)
+    ++ ", argImportBuiltins=" ++ show (argImportBuiltins a)
+    ++ "}"
