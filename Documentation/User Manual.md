@@ -194,7 +194,7 @@ In Mary, functions are defined using the `function` keyword, followed by the fun
 
 **Syntax:**
 ```c
-function <function_name>(<parameters>) -> <return_type> {
+function ::= function <function_name>(<parameters>) -> <return_type> {
   <function_body>
 }
 ```
@@ -411,20 +411,15 @@ Explanation:
 
 ---
 
-### Custom Data Structures
+## **Custom Data Structures**
 
-Using lists and structures:
+In Mary, structures are defined using the struct keyword, where each structure contains fields.
 
-Lists:
+**Syntax:**
+
 ```c
-import list;
-
-print(1..5) // [1, 2, 3, 4, 5]
+structure ::= struct <struct_name> { field }
 ```
-
-Structures:
-  - Definition:
-
 ```c
 struct date {
     d: int,
@@ -437,7 +432,8 @@ struct person {
     age: date
 }
 ```
-  - Accessing a defined field:
+To access a field of a structure, the `.` operator is used:
+
 ```f#
 function getname(p: struct person) -> str {
     return p.name;
@@ -453,7 +449,7 @@ In Mary, we can define custom operators using `operator` keyword:
 **Syntax:**
 
 ```c
-operator <operator_symbol> precedence <int> (<parameters>) -> <return_type> {
+operator ::= operator <operator_symbol> precedence <int> (<parameters>) -> <return_type> {
   <operator_body>
 }
 ```
