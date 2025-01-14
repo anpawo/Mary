@@ -411,6 +411,25 @@ Explanation:
 
 ---
 
+## **Import**
+
+In Mary, we can import file or lib using `import` keyword:
+
+```f#
+import math
+
+function main() -> int {
+    print(3 ** 3);
+    print(factorial(6));
+    print(fibonacci(7));
+    print(pow(3, 4));
+    return 0;
+}
+
+```
+
+---
+
 ## **Custom Data Structures**
 
 In Mary, structures are defined using the struct keyword, where each structure contains fields.
