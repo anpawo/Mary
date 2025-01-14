@@ -10,6 +10,22 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+convArrInstrToValSpec :: Spec
+convArrInstrToValSpec = do
+  describe "convArrInstrToVal" $ do
+    it "handles empty list" $ do
+      convArrInstrToVal [] dummyEnv `shouldReturn` []
+    it "handles single item" $ do
+      let one = [[Push (VmInt 10), Ret]]
+      vals <- convArrInstrToVal one dummyEnv
+      vals `shouldBe` [VmInt 10]
+    it "handles multiple items" $ do
+      let arr =
+            [ [Push (VmInt 1), Ret]
+            , [Push (VmInt 2), Ret]
+            ]
+      convArrInstrToVal arr dummyEnv `shouldReturn` [VmInt 1, VmInt 2]
+
 convStructInstrToValSpec :: Spec
 convStructInstrToValSpec = do
   describe "convStructInstrToVal" $ do
