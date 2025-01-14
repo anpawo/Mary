@@ -20,7 +20,7 @@ struct elem {
     next: empty | elem
 }
 
-type list = empty | elem;
+type list = empty | elem
 
 operator ++ precedence 5 (l: list, r: list) -> list {
     if l is "empty" then

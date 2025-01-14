@@ -5,22 +5,8 @@
 // Mary Standard library - builtins
 //
 
-// todo: create atoms
-// they are currently handled internally and not generalized.
-
-/*
-atom void;
-atom null;
-atom any;
-
-atom false;
-atom true;
-
-type bool = false | true;
-*/
-
 // simplify type checks
-type number = int | float;
+type number = int | float
 
 // arithmetic operators
 operator builtin + precedence 6 (a: number, b: number) -> number
@@ -54,9 +40,9 @@ function builtin concat(a: arr[any] | str, b: arr[any] | str) -> arr[any] | str
 // function builtin del(arr[any]  a, int i) -> void
 
 // conversion
-type __convertibleToInt__   = int | float | bool | str | char;
-type __convertibleToFloat__ = int | float | bool | str;
-type __convertibleToChar__  = int | char;
+type __convertibleToInt__   = int | float | bool | str | char
+type __convertibleToFloat__ = int | float | bool | str
+type __convertibleToChar__  = int | char
 
 function builtin toInt(n: __convertibleToInt__) -> int
 function builtin toFloat(n: __convertibleToFloat__) -> float
