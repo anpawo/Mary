@@ -5,11 +5,25 @@
 -- Spec
 -}
 
+{-# LANGUAGE ScopedTypeVariables #-}
 module VirtualMachineSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe)
-
+import Test.Hspec
+import Test.Hspec.QuickCheck ()
+import Control.Exception ()
+import System.IO.Silently (capture_)
+import System.Exit (ExitCode(..))
+import System.IO.Error ()
+import Data.Char ()
+import Text.Printf ()
+import Text.Megaparsec.Error ()
+import Bytecode.Data
 import VM.VirtualMachine
+import Data.List (isInfixOf)
+
+runProg :: Program -> Stack -> IO Value
+runProg prog stack = exec 0 [] prog stack
+
 dummyEnv :: Env
 dummyEnv =
   [ ("f", [Push (VmInt 999)])
@@ -20,6 +34,25 @@ dummyEnv =
                  , Ret
                  ])
   ]
+
+spec :: Spec
+spec = do
+  convArrInstrToValSpec
+  convStructInstrToValSpec
+  countParamFuncSpec
+  jumpIfFalseInstrSpec
+  exitCallFuncSpec
+  toIntCallFuncSpec
+  toFloatCallFuncSpec
+  operatorCallFuncSpec
+  callInstrSpec
+  pushInstrSpec
+  doCurrentInstrSpec
+  getcurrentInstrSpec
+  execSpec
+  operatorExecSpec
+  boolOperatorExecSpec
+
 convArrInstrToValSpec :: Spec
 convArrInstrToValSpec = do
   describe "convArrInstrToVal" $ do
