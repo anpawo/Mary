@@ -62,7 +62,7 @@ convStructInstrToVal ((name, v):rest) env =
 countParamFunc :: [Instruction] -> Int -> Int
 countParamFunc [] nb = nb
 countParamFunc (Store _: rest) nb = countParamFunc rest (nb + 1)
-countParamFunc (_: rest) nb = nb
+countParamFunc (_: rest) nb       = countParamFunc rest nb
 
 jumpIfFalseInstr :: Instruction -> Int -> Env -> Program -> Stack -> IO Value
 jumpIfFalseInstr (JumpIfFalse n) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
