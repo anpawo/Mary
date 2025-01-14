@@ -18,7 +18,6 @@
 
 module Bytecode.Display
   (
-    --main
     displayBytecode
   ) where
 

@@ -7,7 +7,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Ast.DeclarationParser (structure, function, operator, constraint, atom) where
+module Ast.DeclarationParser (getMembers, getFnArgs, getFnBody, validArgNumber, structure, function, operator, constraint, atom) where
 
 import Parser.Token
 import Ast.Ast
