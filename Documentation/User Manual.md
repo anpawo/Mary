@@ -466,6 +466,16 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
     }
 }
 ```
+---
+
+## **Constraint type**
+
+In Mary, we can create our own custom types.
+
+Example: 
+```
+type number2: float | int;
+```
 
 ---
 
