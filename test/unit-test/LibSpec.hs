@@ -1,3 +1,13 @@
+functionSpec :: Spec
+functionSpec = do
+  describe "choicetry" $ do
+    it "tries multiple parsers" $ do
+      let p1 = string "hello" >> return "p1"
+      let p2 = string "hi" >> return "p2"
+      run (choicetry [p1,p2]) "hello" `shouldBe` Right "p1"
+      run (choicetry [p1,p2]) "hi"    `shouldBe` Right "p2"
+      (run (choicetry [p1,p2]) "x" :: Either (ParseErrorBundle String Void) String)
+        `shouldSatisfy` isLeft
   describe "run" $ do
     it "parses successfully" $
       run (string "test") "test" `shouldBe` Right "test"
