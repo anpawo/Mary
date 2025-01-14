@@ -83,6 +83,7 @@ instance Show Value where
       formatList [("data", d), ("next", VmStruct "empty" [])] = show d
       formatList [("data", d), ("next", VmStruct "elem" l)] = printf "%s, %s" (show d) (formatList l)
   show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
+  show VmVoid                          = "VmVoid"
 
 type EnvVar = (String, [Instruction])
 
