@@ -177,6 +177,19 @@ subexpressionSpec = describe "subexpression" $ do
     let f1 = FunctionCall "aaa" []
         f2 = FunctionCall "zzz" []
     (f1 < f2) `shouldBe` True
+
+  describe "additional coverage for SubExpression Ord" $ do
+    it "compare function calls with different arity" $ do
+      let f1 = FunctionCall "f" [VariableCall "x"]
+          f2 = FunctionCall "f" [VariableCall "x", VariableCall "y"]
+      (f1 < f2) `shouldBe` True
+      (f2 < f1) `shouldBe` False
+    it "compare function call with variable call" $ do
+      let f = FunctionCall "fun" []
+          v = VariableCall "var"
+      (f < v) `shouldBe` False
+      (v < f) `shouldBe` True
+
 eqSpec :: SpecWith ()
 eqSpec = describe "additional coverage for Type eq" $ do
   it "StructType different names" $
