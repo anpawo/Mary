@@ -9,7 +9,7 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO, shouldContain)
 import Test.Hspec.Runner ()
 import Text.RawString.QQ
 import Text.Megaparsec ()
