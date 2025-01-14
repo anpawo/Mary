@@ -15,14 +15,17 @@ import Data.Either (isLeft)
 import Parser.Tokenizer
 import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
 import Control.Applicative ()
-import Text.Megaparsec ()
+import Text.Megaparsec (parse)
 import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
 import Utils.Lib
 
-(==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
-(==>) got expected = got `shouldBe` Right expected
+(==>) :: (Show a, Eq a, Show b, Eq b) => Either a (pos, b) -> b -> Expectation
+(==>) got expected = (snd <$> got) `shouldBe` Right expected
+
+(==>>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
+(==>>) got expected = got `shouldBe` Right expected
 
 (===) :: (Show a, Show b) => Either a b -> (Either a b -> Bool) -> Expectation
 (===) got satisfy = got `shouldSatisfy` satisfy
@@ -31,18 +34,14 @@ spec :: Spec
 spec = do
   commentSpec
   macroSpec
-  namespaceSpec
   tokenizerTypeSpec
   tokenizerKeywordSpec
   tokenizerSymbolSpec
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
-  tokenizerUtils
-
-tokenizerUtils :: SpecWith ()
-tokenizerUtils = describe "utils" $ do
-  it "&>" $
-    run (macro &> namespace) "macro FAILURE 84\nreturn FAILURE;import math\nmath.facto" ==> "return 84;_ZN4mathfacto"
+  tokenizerAdvancedSpec
+  tokenizerEmptyCasesSpec
+  tokenizerPos
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
@@ -125,6 +124,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "else" ==> [ElseKw]
   it "return" $
     run tokenize "return" ==> [ReturnKw]
+  it "atom" $
+    run tokenize "atom" ==> [AtomKw]
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
@@ -149,41 +150,104 @@ tokenizerTypeSpec = describe "tokenize types" $ do
   it "type" $
     run tokenize "type number" ==> [Type $ ConstraintType (Just "number") []]
 
-namespaceSpec :: SpecWith ()
-namespaceSpec= describe "namespace" $ do
-  it "import math" $
-    run namespace "import math\nmath.facto" ==> "_ZN4mathfacto"
-  it "import math and eof" $
-    run namespace "import math" ==> ""
-  it "import math and skip string" $
-    run namespace "import math\nmath.facto \"string\"" ==> "_ZN4mathfacto \"string\""
-
 macroSpec :: SpecWith ()
 macroSpec = describe "macro" $ do
   it "macro FAILURE = 84" $
-    run macro "macro FAILURE 84\nreturn FAILURE;" ==> "return 84;"
+    run macro "macro FAILURE 84\nreturn FAILURE;" ==>> "return 84;"
   it "macro FAILURE = 84 and eof" $
-    run macro "macro FAILURE 84" ==> ""
+    run macro "macro FAILURE 84" ==>> ""
   it "macro FAILURE = 84 and skip string" $
-    run macro "macro FAILURE 84\nreturn FAILURE; return \"string\"" ==> "return 84; return \"string\""
+    run macro "macro FAILURE 84\nreturn FAILURE; return \"string\"" ==>> "return 84; return \"string\""
 
 commentSpec :: SpecWith ()
 commentSpec = describe "comment" $ do
   it "no comment" $
-    run comment "x = 5\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5\ny = 6" ==>> "x = 5\ny = 6"
   it "unfinished string" $
     run comment "x = 5\"y = 6" === isLeft
   it "single line \\n" $
-    run comment "x = 5// variable x\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5// variable x\ny = 6" ==>> "x = 5             \ny = 6"
   it "single line eof" $
-    run comment "x = 5// variable x" ==> "x = 5"
+    run comment "x = 5// variable x" ==>> "x = 5             "
   it "single line and skip string" $
-    run comment "x = \"lol\"// variable x" ==> "x = \"lol\""
+    run comment "x = \"lol\"// variable x" ==>> "x = \"lol\"             "
   it "multi line on single line" $
-    run comment "x = 5/* variable x*/\ny = 6" ==> "x = 5\ny = 6"
+    run comment "x = 5/* variable x*/\ny = 6" ==>> "x = 5               \ny = 6"
   it "multi line on two lines" $
-    run comment "x = 5/*\ncomment*/variable x" ==> "x = 5variable x"
+    run comment "x = 5/*\ncomment*/variable x" ==>> "x = 5  \n         variable x"
   it "multi line without closing part" $
     run comment "x = 5/*\ncommentvariable x" === isLeft
   it "multi line and skip string" $
-    run comment "x = \"lol\"/* variable x*/\ny = 6" ==> "x = \"lol\"\ny = 6"
+    run comment "x = \"lol\"/* variable x*/\ny = 6" ==>> "x = \"lol\"               \ny = 6"
+
+tokenizerAdvancedSpec :: SpecWith ()
+tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
+  it "NULL" $
+    run tokenize "NULL" ==> [Literal NullLit]
+  it "struct with nested parentheses" $
+    run tokenize "person { data = (1), other = ((2)) }" ==>
+      [Literal $ StructLitPre "person"
+        [ ("data",[ParenOpen, Literal (IntLit 1), ParenClose])
+        , ("other",[ParenOpen, ParenOpen, Literal (IntLit 2), ParenClose, ParenClose])
+        ]
+      ]
+  it "int [[1, 2], [3]]" $
+    run tokenize "int [[1, 2], [3]]" ==>
+      [Literal $ ArrLitPre IntType
+        [ [BracketOpen, Literal (IntLit 1), Comma, Literal (IntLit 2), BracketClose]
+        , [BracketOpen, Literal (IntLit 3), BracketClose]
+        ]
+      ]
+  it "person { nested = { foo = 1 }, x = 2 }" $
+    run tokenize "person { nested = { foo = 1 }, x = 2 }" ==>
+      [Literal $ StructLitPre "person"
+        [ ("nested",
+          [ CurlyOpen
+          , Identifier (TextId "foo"), Assign, Literal (IntLit 1)
+          , CurlyClose
+          ])
+        , ("x",[Literal (IntLit 2)])
+        ]
+      ]
+  it "mixed { field = [ (1), (2), { sub = 3 } ] }" $
+    run tokenize "mixed { field = [ (1), (2), { sub = 3 } ] }" ==>
+      [Literal $ StructLitPre "mixed"
+        [("field",
+          [ BracketOpen
+          , ParenOpen, Literal (IntLit 1), ParenClose
+          , Comma
+          , ParenOpen, Literal (IntLit 2), ParenClose
+          , Comma
+          , CurlyOpen
+          , Identifier (TextId "sub"), Assign, Literal (IntLit 3)
+          , CurlyClose
+          , BracketClose
+          ])
+        ]
+      ]
+  it "int [(1)] -> triggers ParenOpen, ParenClose in array" $
+    run tokenize "int [(1)]" ==> 
+      [ Literal $ ArrLitPre IntType
+          [ [ParenOpen, Literal (IntLit 1), ParenClose] ] 
+      ]
+  it "int [{y = 5}]" $
+    run tokenize "int [{y = 5}]" ==>
+      [ Literal $ ArrLitPre IntType
+          [ [CurlyOpen, Identifier (TextId "y"), Assign, Literal (IntLit 5), CurlyClose] ]
+      ]
+
+tokenizerEmptyCasesSpec :: SpecWith ()
+tokenizerEmptyCasesSpec = describe "tokenize empty cases" $ do
+  it "int [] -> empty array" $
+    run tokenize "int []" ==> [Literal $ ArrLitPre IntType []]
+  it "type myConstraint -> ConstraintType (Just \"myConstraint\") []" $
+    run tokenize "type myConstraint" ==> [Type $ ConstraintType (Just "myConstraint") []]
+  it "tokenize type constraint with non-empty identifier" $
+    run tokenize "type MyConstraint" ==> [Type $ ConstraintType (Just "MyConstraint") []]  
+
+tokenizerPos :: SpecWith ()
+tokenizerPos = describe "tokenize positions" $ do
+    it "les positions du premier token sont (1,1)" $ do
+      let input = "int"
+          positions = fst <$> parse tokenize "" input
+      positions `shouldBe` Right [(1, 1)]

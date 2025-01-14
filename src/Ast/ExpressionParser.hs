@@ -51,29 +51,30 @@ exprWhile ctx locVar retT = do
       | otherwise     -> (getOffset >>= (failI start . errCondNotBool) . subtract start)
 
 exprReturn :: Ctx -> LocalVariable -> Type -> Parser Expression
-exprReturn _ _ VoidType = failN errVoidRet
-exprReturn ctx locVar retT = tok ReturnKw *> getOffset >>= \offset -> subexpression ctx locVar (tok SemiColon) >>= \subexpr ->
-  case subexpr of
-    (VariableCall x) -> case fromJust $ find (\(_, n) -> n == x) locVar of
-        (t, _)
-          | t == retT -> return $ Return subexpr
-          | otherwise -> failI offset $ errRetType (show retT) (show t)
-    (FunctionCall {fnCallName = name}) -> case find (\a -> (isOp a || isFn a) && getName a == name) ctx of
-        Just (Operator {..})
-          | opRetType == retT -> return $ Return subexpr
-          | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
-        Just (Function {..})
-          | fnRetType == retT -> return $ Return subexpr
-          | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
-        Nothing -> case fromJust $ find ((== name) . snd) locVar of
-          (ClosureType _ closureRetType, _)
-            | closureRetType == retT -> return $ Return subexpr
-            | otherwise -> failI offset $ errRetType (show retT) (show closureRetType)
+exprReturn ctx locVar retT = tok ReturnKw *> case retT of
+  VoidType -> failN errVoidRet
+  _ -> getOffset >>= \offset -> subexpression ctx locVar (tok SemiColon) >>= \subexpr ->
+    case subexpr of
+      (VariableCall x) -> case fromJust $ find (\(_, n) -> n == x) locVar of
+          (t, _)
+            | t == retT -> return $ Return subexpr
+            | otherwise -> failI offset $ errRetType (show retT) (show t)
+      (FunctionCall {fnCallName = name}) -> case find (\a -> (isOp a || isFn a) && getName a == name) ctx of
+          Just (Operator {..})
+            | opRetType == retT -> return $ Return subexpr
+            | otherwise -> failI offset $ errRetType (show retT) (show opRetType)
+          Just (Function {..})
+            | fnRetType == retT -> return $ Return subexpr
+            | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
+          Nothing -> case fromJust $ find ((== name) . snd) locVar of
+            (ClosureType _ closureRetType, _)
+              | closureRetType == retT -> return $ Return subexpr
+              | otherwise -> failI offset $ errRetType (show retT) (show closureRetType)
+            _ -> failN $ errImpossibleCase "exprReturn function call"
           _ -> failN $ errImpossibleCase "exprReturn function call"
-        _ -> failN $ errImpossibleCase "exprReturn function call"
-    (Lit x)
-      | getLitType x == retT -> return $ Return subexpr
-      | otherwise -> failI offset $ errRetType (show retT) (show $ getLitType x)
+      (Lit x)
+        | getLitType x == retT -> return $ Return subexpr
+        | otherwise -> failI offset $ errRetType (show retT) (show $ getLitType x)
 
 exprVariable :: Ctx -> LocalVariable -> Parser Expression
 exprVariable ctx locVar = variableCreation ctx locVar <|> variableAssignation ctx locVar <|> modifyStructField ctx locVar

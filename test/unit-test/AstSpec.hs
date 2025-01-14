@@ -35,7 +35,7 @@ import Ast.Import (resolveImports)
 pAst :: String -> IO (Either (ParseErrorBundle [MyToken] Void) [Ast])
 pAst s = case run tokenize s of
   Left _ -> error "pAst"
-  Right tokens -> do
+  Right (_, tokens) -> do
     (builtins, imports) <- resolveImports defaultArguments tokens
     return $ run (tokenToAst builtins imports) tokens
 

@@ -11,7 +11,6 @@ module Parser.Tokenizer
     Parser,
     comment,
     macro,
-    namespace,
     tokenize,
 
     -- test
@@ -27,13 +26,14 @@ import Data.Functor (($>), (<&>))
 import Control.Applicative ((<|>), some, empty)
 import Control.Monad (void, liftM2)
 
-import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead))
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead), SourcePos (..), getSourcePos)
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
 
 import Parser.Token
-import Utils.Lib (choicetry, (~>))
+import Utils.Lib (choicetry, (~>), (&>))
+import Text.Megaparsec.Pos (unPos)
 
 type Parser = Parsec Void String
 
@@ -67,6 +67,10 @@ spaces = many $ oneOf " \n\t"
 
 linespaces :: Parser String
 linespaces = some $ oneOf " \t"
+
+toSpace :: Char -> Char
+toSpace '\n' = '\n'
+toSpace _ = ' '
 -- utils
 
 -- comments
@@ -74,13 +78,13 @@ comment :: Parser String
 comment = concat <$> manyTill (skipString <|> lineComment <|> blockComment <|> (singleton <$> anySingle)) eof
     where
         lineComment :: Parser String
-        lineComment =  snd <$> (startComment *> manyTill_ anySingle endComment)
+        lineComment =  startComment *> manyTill_ anySingle endComment >>= \(s, e) -> pure $ "  " ++ map toSpace s ++ e
             where
                 startComment = string "//"
                 endComment = string "\n" <|> eof $> ""
 
         blockComment :: Parser String
-        blockComment = startComment *> manyTill anySingle endComment $> ""
+        blockComment = startComment *> manyTill anySingle endComment >>= \s -> pure $ "  " ++ map toSpace s ++ "  "
             where
                 startComment :: Parser String
                 startComment = string "/*"
@@ -119,39 +123,43 @@ macro = getMacros ~> applyMacros
                 applyOne ((a, b): rst) = string a $> b <|> applyOne rst
 -- macro
 
--- namespace (working but may be useless according to what we decide to do)
-type Import = String
+-- -- namespace (working but may be useless according to what we decide to do)
+-- type Import = String
 
-namespace :: Parser String
-namespace = getImport ~> applyNamespace
-    where
-        getImport :: Parser ([Import], String)
-        getImport = temp [] "" where
-            temp :: [Import] -> String -> Parser ([Import], String)
-            temp imports str =
-                    (eof >> return (imports, str))
-                <|> (skipString >>= \s -> temp imports (str ++ s))
-                <|> (singleImport >>= \m -> temp (m : imports) str)
-                <|> (anySingle >>= \c -> temp imports (str ++ [c]))
+-- namespace :: Parser String
+-- namespace = getImport ~> applyNamespace
+--     where
+--         getImport :: Parser ([Import], String)
+--         getImport = temp [] "" where
+--             temp :: [Import] -> String -> Parser ([Import], String)
+--             temp imports str =
+--                     (eof >> return (imports, str))
+--                 <|> (skipString >>= \s -> temp imports (str ++ s))
+--                 <|> (singleImport >>= \m -> temp (m : imports) str)
+--                 <|> (anySingle >>= \c -> temp imports (str ++ [c]))
 
-        singleImport :: Parser Import
-        singleImport = string importPrefix *> linespaces *> manyTill anySingle (void (char '\n') <|> eof)
+--         singleImport :: Parser Import
+--         singleImport = string importPrefix *> linespaces *> manyTill anySingle (void (char '\n') <|> eof)
 
-        importPrefix = "import"
+--         importPrefix = "import"
 
-        applyNamespace :: [Import] -> Parser String
-        applyNamespace imports = concat <$> manyTill (applyOne imports <|> (singleton <$> anySingle)) eof
-            where
-                applyOne :: [Import] -> Parser String
-                applyOne [] = empty
-                applyOne (name: rst) = (string (name ++ ".") $> ("_ZN" ++ show (length name) ++ name)) <|> applyOne rst
--- namespace
+--         applyNamespace :: [Import] -> Parser String
+--         applyNamespace imports = concat <$> manyTill (applyOne imports <|> (singleton <$> anySingle)) eof
+--             where
+--                 applyOne :: [Import] -> Parser String
+--                 applyOne [] = empty
+--                 applyOne (name: rst) = (string (name ++ ".") $> ("_ZN" ++ show (length name) ++ name)) <|> applyOne rst
+-- -- namespace
 
+type Line = Int
+type Col  = Int
 
 -- TokenType
-tokenize :: Parser [MyToken]
-tokenize = spaces *> manyTill (tokens <* spaces) eof
+tokenize :: Parser ([(Line, Col)], [MyToken])
+tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> tokens) <* spaces) eof))
     where
+        pos = (\p -> (unPos $ sourceLine p, unPos $ sourceColumn p)) <$> getSourcePos
+
         tokens = choicetry
             [
             -- Symbol
@@ -179,6 +187,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
             , elseKw
             , whileKw
             , returnKw
+            , atomKw
 
             -- Literal
             , Literal <$> parseLit
@@ -281,6 +290,7 @@ tokenize = spaces *> manyTill (tokens <* spaces) eof
         elseKw = try $ keyword "else" $> ElseKw
         whileKw = try $ keyword "while" $> WhileKw
         returnKw = try $ keyword "return" $> ReturnKw
+        atomKw = try $ keyword "atom" $> AtomKw
 
         -- Type
         parseType = choicetry [

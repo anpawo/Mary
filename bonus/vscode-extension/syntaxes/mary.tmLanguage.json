@@ -22,7 +22,7 @@
     },
     {
       "name": "keyword.control.mary",
-      "match": "\\b(import|type|builtin|precedence|operator|function|return|if|else|while|then)\\b"
+      "match": "\\b(struct|atom|import|type|builtin|precedence|operator|function|return|if|else|while|then)\\b"
     },
     {
       "name": "entity.name.function.mary",
@@ -30,7 +30,7 @@
     },
     {
       "name": "storage.type.mary",
-      "match": "\\b(char|void|bool|int|float|str|arr|any|struct|true|false)\\b"
+      "match": "\\b(char|void|bool|int|float|str|arr|any|true|false)\\b"
     },
     {
       "name": "variable.name.mary",

@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errTodo, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errTooManyExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody) where
+module Ast.Error (blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errInvalidExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody, errMisingNameFn, errMisingNameOp, errExpectedArgs, errExpectedArgName, errExpectedColon, errExpectedCommaOrParen, errEndParen, errEndExpr, errMisingPrecOp, errExpectedStartField, errExpectedFieldName, errExpectedCommaOrCurly, errMisingEqual) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -15,6 +15,7 @@ import Data.Void (Void)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Set.Internal (elemAt)
 import Data.List (intercalate, isPrefixOf)
+import Utils.Lib ((!?))
 
 errCondNotBool :: Int -> String
 errCondNotBool i = printf ":%sexpected a %s condition." (show i) (blue "boolean")
@@ -33,14 +34,17 @@ errStartBody = printf "expected a '%s' representing the start of the body of the
 errEndBody :: String
 errEndBody = printf "expected a '%s' representing the end of the body of the function." $ blue "}"
 
-errTodo :: String -> String
-errTodo = printf "todo: %s." . blue
-
 errVoidRet :: String
 errVoidRet = printf "%s function should not %s." (blue "void") (blue "return")
 
 errEndSubexpr :: String
 errEndSubexpr = printf "expected end of expression '%s'." $ blue ";"
+
+errEndExpr :: String
+errEndExpr = printf "expected the end of the expression with '%s' or '%s'." (blue ";") (blue ")")
+
+errEndParen :: String
+errEndParen = printf "expected the end of the expression with a '%s'." $ blue ")"
 
 errEmptyParen :: String
 errEmptyParen = printf ":2expected an expression inside the %s." $ blue "parenthesis"
@@ -51,8 +55,41 @@ errEmptyExpr = "expected an expression."
 errExpectedField :: String
 errExpectedField = "expected a structure field."
 
+errExpectedStartField :: String
+errExpectedStartField = printf "expected a '%s' followed by the fields defition." $ blue "{"
+
+errExpectedFieldName :: String
+errExpectedFieldName = printf "expected a field name."
+
 errMissingRetT :: String
-errMissingRetT = printf "expected return type: '%s'." (blue "-> <type>")
+errMissingRetT = printf "expected a '%s' followed by the return type of the function." (blue "->")
+
+errMisingNameFn :: String
+errMisingNameFn = printf "expected a name made of letters."
+
+errMisingEqual :: String
+errMisingEqual = printf "expected a '%s' followed by the types." $ blue "="
+
+errMisingNameOp :: String
+errMisingNameOp = printf "expected a name made of symbols."
+
+errMisingPrecOp :: String
+errMisingPrecOp = printf "expected the precedence as an '%s'." $ blue "integer"
+
+errExpectedCommaOrCurly :: String
+errExpectedCommaOrCurly = printf "expected a '%s' to separate the fields or a '%s' to end their definition." (blue ",") (blue "}")
+
+errExpectedCommaOrParen :: String
+errExpectedCommaOrParen = printf "expected a '%s' to separate the arguments or a '%s' to end their definition." (blue ",") (blue ")")
+
+errExpectedColon :: String
+errExpectedColon = printf "expected a '%s' to separate the name of the argument from it's type." $ blue ":"
+
+errExpectedArgName :: String
+errExpectedArgName = printf "expected the name of the argument made of letters."
+
+errExpectedArgs :: String
+errExpectedArgs = printf "expected a '%s' followed by the arguments" $ blue "("
 
 errMisingBody :: String
 errMisingBody = printf "the body of a function cannot be empty."
@@ -69,8 +106,8 @@ errMissingOperand side name = printf "missing the %s operand for the operator '%
 errInvalidExprToken :: MyToken -> String
 errInvalidExprToken = printf "invalid expression '%s'." . blue . show
 
-errTooManyExpr :: Int -> String
-errTooManyExpr = printf ":%stoo many expressions, expected one." . show
+errInvalidExpr :: Int -> String
+errInvalidExpr = printf ":%sinvalid expression." . show
 
 errOpArgs :: Int -> Int -> String -> String
 errOpArgs lenErr nargs name = printf ":%soperators must take 2 arguments. '%s' has %s argument%s." (show lenErr) (blue name) (blue . show $ nargs) (if nargs <= 1 then "" else "s")
@@ -82,7 +119,7 @@ errAssignType :: String -> String -> String -> String
 errAssignType name expected got = printf "invalid type for the variable '%s', expected '%s' got '%s'." (blue name) (blue expected) (blue got)
 
 errTopLevelDef :: String
-errTopLevelDef = printf "top level declaration must be either %s, %s or %s." (blue "function") (blue "operator") (blue "struct")
+errTopLevelDef = printf "top level declaration must be either %s, %s, %s or %s." (blue "function") (blue "operator") (blue "struct") (blue "type")
 
 errImpossibleCase :: String -> String
 errImpossibleCase = printf "Impossible case. (from %s)." . blue
@@ -126,23 +163,26 @@ errInvalidOpType name expected got = printf "invalid operator type for '%s', exp
 errInvalidNumberOfArgument :: String -> Int -> Int -> String
 errInvalidNumberOfArgument name expected found = printf "invalid number of arguments for the function '%s', expected %s but found %s." (blue name) (blue . show $ expected) (blue . show $ found)
 
-prettyPrintError :: [MyToken] -> ParseErrorBundle [MyToken] Void -> String
-prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
+type Line = Int
+type Col  = Int
+
+prettyPrintError :: String -> [(Line, Col)] -> [MyToken] -> ParseErrorBundle [MyToken] Void -> String
+prettyPrintError fileName tokensPos tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState = _}) =
     case errors of
         (FancyError pos fancySet :| _) ->
             case 0 `elemAt` fancySet of
                 (ErrorFail (';': err)) -> err
                 (ErrorFail (':': input)) -> do
                     (n, err) <- (reads input :: [(Int, String)])
-                    " |\n | " ++ tokCons ++ red (tokErr2 n) ++ tokLeft2 n ++ "\n |" ++ red (pointer2 n) ++ "\n" ++ red "error" ++ ": " ++ err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos (pos - 1)) tokCons (red (tokErr2 n)) (tokLeft2 n) (red (pointer2 n)) (red "error") err
                 (ErrorFail err) ->
-                    " |\n | " ++ tokCons ++ red tokErr ++ tokLeft ++ "\n |" ++ red pointer ++ "\n" ++ red "error" ++ ": " ++ err
+                    printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos (pos - 1)) tokCons (red tokErr)       tokLeft     (red pointer)      (red "error") err
                 x -> "This error should be transformed into a custom one:\n" ++ show x
             where
                 tokCons = unwords $ show <$> suffix (take (pos - 1) tokens)
-                tokErr
-                    | pos > 0 = " " ++ show (tokens !! (pos - 1)) ++ " "
-                    | otherwise = ""
+                tokErr = case tokens !? (pos - 1) of
+                    Nothing -> " <"
+                    Just t -> " " ++ show t ++ " "
                 tokLeft = let tc = take 10 (drop pos tokens) in unwords $ show <$> tc
                 pointer = replicate (length tokCons + 2) ' ' ++ replicate (length tokErr - 2) '^'
 
@@ -158,12 +198,23 @@ prettyPrintError tokens (ParseErrorBundle {bundleErrors = errors, bundlePosState
         (TrivialError offset unexpected expected :| _) ->
             printf "This error should be transformed into a custom one:\nindex error: %s\nerror token: %s\nunexpected: %s\nexpected: %s\n" (show offset) (red . show $ tokens !! offset) (show unexpected) (show expected)
 
+filePosition :: String -> [(Line, Col)] -> Int -> String
+filePosition f ps idx = case ps !? idx of
+    Nothing -> bold $ printf "%s:\n" f
+    Just (l, c) -> bold $ printf "%s:%s:%s:\n" f (show l) (show c)
+
 colorblindMode :: String -> String
 colorblindMode [] = []
 colorblindMode str@(x:xs)
-    | redPrefix `isPrefixOf` str  = yellowPrefix ++ colorblindMode (drop (length yellowPrefix) str) 
-    | bluePrefix `isPrefixOf` str = pinkPrefix ++ colorblindMode (drop (length pinkPrefix) str) 
+    | redPrefix `isPrefixOf` str  = yellowPrefix ++ colorblindMode (drop (length yellowPrefix) str)
+    | bluePrefix `isPrefixOf` str = pinkPrefix ++ colorblindMode (drop (length pinkPrefix) str)
     | otherwise                   = x : colorblindMode xs
+
+bold :: String -> String
+bold s = boldPrefix ++ s ++ reset
+
+boldPrefix :: String
+boldPrefix = "\ESC[1m"
 
 yellowPrefix :: String
 yellowPrefix = "\ESC[93m"

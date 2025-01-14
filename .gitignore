@@ -3,7 +3,7 @@ sujet_bootstrap.pdf
 /glados
 test_Sexpr.txt
 /src/Ryan/
-/*.temp
+/*.temp*
 *.hi
 *.o
 vm-test
