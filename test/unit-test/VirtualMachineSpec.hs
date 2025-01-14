@@ -10,6 +10,21 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+jumpIfFalseInstrSpec :: Spec
+jumpIfFalseInstrSpec = do
+  describe "jumpIfFalseInstr" $ do
+    it "jumps when False" $ do
+      let prog = [JumpIfFalse 2, Push (VmInt 999), Push (VmInt 888)]
+      v <- exec 0 [] prog [VmBool False]
+      v `shouldBe` VmVoid
+    it "no jump when True" $ do
+      let prog = [JumpIfFalse 1, Push (VmInt 999)]
+      v <- exec 0 [] prog [VmBool True]
+      v `shouldBe` VmInt 999
+    it "fail if top not bool" $ do
+      let prog = [JumpIfFalse 1]
+      (exec 0 [] prog [VmInt 1]) `shouldThrow` anyException
+
 exitCallFuncSpec :: Spec
 exitCallFuncSpec = do
   describe "exitCallFunc" $ do
