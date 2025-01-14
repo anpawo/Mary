@@ -10,6 +10,16 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+exitCallFuncSpec :: Spec
+exitCallFuncSpec = do
+  describe "exitCallFunc" $ do
+    it "exitSuccess with code 0" $ do
+      let stack = [VmInt 0]
+      (exitCallFunc 0 [] [] stack) `shouldThrow` (== ExitSuccess)
+    it "exitWith code 42" $ do
+      let stack = [VmInt 42]
+      (exitCallFunc 0 [] [] stack) `shouldThrow` (== ExitFailure 42)
+
 toIntCallFuncSpec :: Spec
 toIntCallFuncSpec = do
   describe "toIntCallFunc" $ do
