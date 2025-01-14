@@ -371,11 +371,9 @@ print(factorial(5)); // Outputs 120
 
 ---
 
-## 3. Functions
+### Pass Functions as argument
 
-### Defining Functions
-
-Define a function using the `function` keyword:
+Functions can be passed as arguments:
 
 ```f#
 function add_two(x: int) -> int {
@@ -383,13 +381,7 @@ function add_two(x: int) -> int {
 }
 
 print(add_two(5)); // Outputs 7
-```
 
-### Higher-Order Functions
-
-Functions can be passed as arguments:
-
-```f#
 function apply(f: (int) -> int, x: int) -> int {
     return f(x);
 }
@@ -415,68 +407,6 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
         }
         return l.next !! (index - 1);
     }
-}
-```
-
-### Closures
-
-This part is currently underway
-
-Functions can close over variables:
-
-```f#
-function counter() -> function {
-    plus: (int, int) -> int = (+);
-    plus(1, 2); // 3
-}
-```
-
----
-
-## 6. Error Handling
-
-### Common Errors
-
-- **Undefined Variable**:
-
-  ```f#
-  y: int = x + 5; // Error: Variable x is not defined
-  ```
-
-- **Malformed Expression**:
-
-  ```f#
-  z: int = 1 + ; // Error: Syntax error
-  ```
-
-### Debugging Tips
-
-- Check for mismatched brackets.
-- Ensure all variables are defined before use.
-
----
-
-## 7. Examples
-
-### Factorial Function
-
-```f#
-function factorial(n: int) -> int {
-    if n == 0 then {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-```
-
-### Fibonacci Sequence
-
-```f#
-function fibonacci(n: int) -> int {
-    if n <= 1 then {
-        return n;
-    }
-    return fibonacci(n - 1) + fibonacci(n - 2);
 }
 ```
 
@@ -512,8 +442,4 @@ function getname(p: struct person) -> str {
     return p.name;
 }
 ```
-
----
-
-Thank you for using GLaDOS !
 
