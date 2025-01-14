@@ -10,6 +10,17 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+countParamFuncSpec :: Spec
+countParamFuncSpec = do
+  describe "countParamFunc" $ do
+    it "no Store => 0" $ do
+      countParamFunc [] 0 `shouldBe` 0
+    it "some instructions but no Store => 5" $ do
+      countParamFunc [Push VmVoid, Push (VmInt 1), Load "x"] 0 `shouldBe` 0
+    it "count store" $ do
+      let prog = [Store "x", Push (VmInt 2), Store "y", Store "z"]
+      countParamFunc prog 0 `shouldBe` 3
+
 jumpIfFalseInstrSpec :: Spec
 jumpIfFalseInstrSpec = do
   describe "jumpIfFalseInstr" $ do
