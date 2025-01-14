@@ -8,7 +8,22 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 
-module Ast.TreeBuilder (subexpression) where
+module Ast.TreeBuilder (
+  -- Types
+  Group(..),
+  -- Functions
+  validLit,
+  getGroup,
+  mountGroup,
+  calcPrec,
+  getOpName,
+  getGrIdx,
+  getGrType,
+  validateMount,
+  toSubexpr,
+  fixOp,
+  subexpression
+) where
 
 import Ast.Ast
 import Parser.Token (Type(..), Literal (..), MyToken (..))
