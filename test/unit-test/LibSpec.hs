@@ -1,3 +1,7 @@
+  describe "run" $ do
+    it "parses successfully" $
+      run (string "test") "test" `shouldBe` Right "test"
+
   describe "failN failP failI" $ do
     it "failN" $ do
       let p = do
