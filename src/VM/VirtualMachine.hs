@@ -14,6 +14,20 @@ module VM.VirtualMachine
     Program,
     Env,
     exec,
+    convArrInstrToVal,
+    convStructInstrToVal,
+    countParamFunc,
+    jumpIfFalseInstr,
+    exitCallFunc,
+    toIntCallFunc,
+    toFloatCallFunc,
+    operatorCallFunc,
+    callInstr,
+    pushInstr,
+    doCurrentInstr,
+    getcurrentInstr,
+    operatorExec,
+    boolOperatorExec
   )
 where
 
