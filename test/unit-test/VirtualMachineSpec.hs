@@ -10,6 +10,17 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+getcurrentInstrSpec :: Spec
+getcurrentInstrSpec = do
+  describe "getcurrentInstr" $ do
+    it "returns instruction if in range" $ do
+      let prog = [Push VmVoid, Ret]
+      getcurrentInstr 0 prog `shouldBe` Just (Push VmVoid)
+      getcurrentInstr 1 prog `shouldBe` Just Ret
+    it "returns Nothing if out of range" $ do
+      let prog = [Push VmVoid]
+      getcurrentInstr 10 prog `shouldBe` Nothing
+
 execSpec :: Spec
 execSpec = do
   describe "exec" $ do
