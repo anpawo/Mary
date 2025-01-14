@@ -2,7 +2,9 @@ Below is a formal description of our programming language `Mary`.
 This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
 ```BNF
-<function> ::= "function" <whitespace> <function_name> <whitespace> "(" <arguments> ")" <whitespace> "->" <whitespace> <type> <whitespace> "{" <body> "}"
+<file> ::= (<function> | <operator_definition> | <struct_definition>)+
+
+<function> ::= "function" <whitespace> <function_name> <whitespace>? "(" <arguments> ")" <whitespace> "->" <whitespace> <type> <whitespace> "{" <body> "}"
 
 <whitespace> ::= " "
 
