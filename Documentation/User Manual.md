@@ -89,20 +89,106 @@ and clicking on `Documentation` and then on `Formal description of our language'
 
 This file contains detailed descriptions of our language's grammar using the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
-### Variables and Bindings
+---
 
-Create variables using the syntax:
+## **Data Types**
+
+### **CharType**
+Represents a single character.
+- Example: `'a'`, `'1'`, `'$'`
+- **Usage:**
+  ```c
+  c: char = 'x';
+  ```
+
+### **BoolType**
+Represents a Boolean value (`true` or `false`).
+- **Usage:**
+  ```c
+  isReady: bool = true;
+  ```
+
+### **IntType**
+Represents an integer value (whole number).
+- **Usage:**
+  ```c
+  count: int = 42;
+  ```
+
+### **FloatType**
+Represents a floating-point number (decimal values).
+- **Usage:**
+  ```c
+  pi: float = 3.14;
+  ```
+
+### **StrType**
+Represents a string (a sequence of characters). Equivalent to an array of `char`.
+- **Usage:**
+  ```c
+  message: str = "Hello, world!";
+  ```
+
+### **ArrType**
+Represents an array of elements of a specific type.
+- **Usage:**
+  ```c
+  arr: arr[int] = [1, 2, 3];
+  words: arr[str] = ["hello", "world"];
+  ```
+
+### **AnyType**
+Represents a dynamic type that can hold any value
+- **Usage:**
+  ```c
+  x: any = 10;
+  x = "Dynamic typing";
+  ```
+
+### **4. ConstraintType**
+Represents a type constraint for variables, often combining multiple allowed types.
+- **Usage:**
+  ```c
+  x: int | float = 3.5;
+  ```
+
+---
+
+## **Variable and Binding Syntax**
+
+Declare and initialize variables using the following syntax:
 
 ```c
-x: int = 10;
+<variable> ::= <variable_name>: <type> = <value>;
 ```
 
-Access and manipulate the variable:
+### **Examples:**
 
-```c
-y: int = x + 5;
-print(y); // Outputs 15
-```
+1. **Integer Variable:**
+   ```c
+   age: int = 25;
+   ```
+
+2. **String Variable:**
+   ```c
+   name: str = "Ryan";
+   ```
+
+3. **Boolean Variable:**
+   ```c
+   isStudent: bool = true;
+   ```
+
+4. **Array of Floats:**
+   ```c
+   temperatures: arr[float] = [36.5, 37.0, 36.8];
+   ```
+
+---
+
+## **Function**
+
+
 
 ### Mandatory use of a `Main` function
 
@@ -209,10 +295,6 @@ built-in functions include in Mary:
   - toString: Converts any value to a string representation.
   Example: toString(42) → "42".
 
----
-
-## 3. Control Structures
-
 ### Conditionals
 
 #### `if`
@@ -262,7 +344,7 @@ print(factorial(5)); // Outputs 120
 
 ---
 
-## 4. Functions
+## 3. Functions
 
 ### Defining Functions
 
