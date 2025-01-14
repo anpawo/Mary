@@ -10,6 +10,16 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+dummyEnv :: Env
+dummyEnv =
+  [ ("f", [Push (VmInt 999)])
+  , ("structVar", [Push (VmStruct "st" [("field", VmInt 123)])])
+  , ("arrVar", [Push (VmArray "int" [VmInt 1, VmInt 2, VmInt 3])])
+  , ("funcPrint", [Store "param1", Ret])
+  , ("someFunc", [ Push (VmInt 42)
+                 , Ret
+                 ])
+  ]
 convArrInstrToValSpec :: Spec
 convArrInstrToValSpec = do
   describe "convArrInstrToVal" $ do
