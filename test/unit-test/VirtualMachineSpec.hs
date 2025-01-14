@@ -10,6 +10,43 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+operatorCallFuncSpec :: Spec
+operatorCallFuncSpec = do
+  describe "operatorCallFunc" $ do
+    it "handles + with 2 ints" $ do
+      let stack = [VmInt 3, VmInt 4]
+      v <- operatorCallFunc "+" 0 [] [] stack
+      v `shouldBe` VmInt 7
+    it "handles + with 2 floats" $ do
+      let stack = [VmFloat 1.2, VmFloat 3.4]
+      v <- operatorCallFunc "+" 0 [] [] stack
+      v `shouldBe` VmFloat 4.6
+    it "handles / with floats, not zero" $ do
+      let stack = [VmFloat 1, VmFloat 4]
+      v <- operatorCallFunc "/" 0 [] [] stack
+      v `shouldBe` VmFloat 4.0
+    it "fail on / by zero int" $ do
+      let stack = [VmInt 0, VmInt 10]
+      (operatorCallFunc "/" 0 [] [] stack) `shouldThrow` anyException
+    it "fail on / by zero float" $ do
+      let stack = [VmFloat 0.0, VmFloat 99.9]
+      (operatorCallFunc "/" 0 [] [] stack) `shouldThrow` anyException
+    it "handles < with 2 ints" $ do
+      let stack = [VmInt 5, VmInt 10]
+      v <- operatorCallFunc "<" 0 [] [] stack
+      v `shouldBe` VmBool False
+    it "handles == with 2 values" $ do
+      let stack = [VmInt 3, VmInt 3]
+      v <- operatorCallFunc "==" 0 [] [] stack
+      v `shouldBe` VmBool True
+    it "handles . with (VmString fieldName : VmStruct ...)" $ do
+      let stack = [VmString "xyz", VmStruct "st" [("xyz", VmInt 2024)]]
+      v <- operatorCallFunc "." 0 [] [] stack
+      v `shouldBe` VmInt 2024
+    it "handles unknown" $ do
+      let stack = [VmInt 42]
+      (operatorCallFunc "nope" 0 [] [] stack) `shouldThrow` anyException
+
 callInstrSpec :: Spec
 callInstrSpec = do
   describe "callInstr" $ do
