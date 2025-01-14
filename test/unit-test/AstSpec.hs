@@ -9,10 +9,10 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO, shouldContain, expectationFailure, runParser)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO, shouldContain, expectationFailure)
 import Test.Hspec.Runner ()
 import Text.RawString.QQ
-import Text.Megaparsec ()
+import Text.Megaparsec (runParser)
 import Text.Megaparsec.Error (ParseErrorBundle(..))
 import Data.Either (isLeft)
 import Data.Void (Void)
