@@ -444,7 +444,7 @@ function getname(p: struct person) -> str {
 
 ## **Custom Operators**
 
-In Mary, we can define custom operators using `operator` keyword:
+In Mary, we can define custom operators using `operator` keyword, where precedence refers to the priority order of the operator:
 
 **Syntax:**
 
