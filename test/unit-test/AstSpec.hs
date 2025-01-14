@@ -20,6 +20,7 @@ import Data.Void (Void)
 import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
+import Ast.Error
 import Ast.DeclarationParser
 import Ast.Parser
 import Utils.Lib
@@ -49,6 +50,159 @@ spec = do
   getSpec
   isSpec
   isTypeSpec
+  errorSpec
+
+errorSpec :: SpecWith ()
+errorSpec = describe "error functions" $ do
+  describe "Error Messages" $ do
+
+    it "errCondNotBool formats correctly" $ do
+      errCondNotBool 42 `shouldBe` ":42expected a \ESC[94mboolean\ESC[0m condition."
+
+    it "errNameTaken formats correctly" $ do
+      errNameTaken "x" `shouldBe` "name '\ESC[94mx\ESC[0m' already taken."
+
+    it "errExpectedType formats correctly with void allowed" $ do
+      errExpectedType True `shouldBe` "expected a \ESC[94mtype\ESC[0m (including void)."
+
+    it "errExpectedType formats correctly without void allowed" $ do
+      errExpectedType False `shouldBe` "expected a \ESC[94mtype\ESC[0m (excluding void)."
+
+    it "errStartBody formats correctly" $ do
+      errStartBody `shouldBe` "expected a '\ESC[94m{\ESC[0m' representing the start of the body of the function."
+
+    it "errEndBody formats correctly" $ do
+      errEndBody `shouldBe` "expected a '\ESC[94m}\ESC[0m' representing the end of the body of the function."
+
+    it "errVoidRet formats correctly" $ do
+      errVoidRet `shouldBe` "\ESC[94mvoid\ESC[0m function should not \ESC[94mreturn\ESC[0m."
+
+    it "errEndSubexpr formats correctly" $ do
+      errEndSubexpr `shouldBe` "expected end of expression '\ESC[94m;\ESC[0m'."
+
+    it "errEndExpr formats correctly" $ do
+      errEndExpr `shouldBe` "expected the end of the expression with '\ESC[94m;\ESC[0m' or '\ESC[94m)\ESC[0m'."
+
+    it "errEndParen formats correctly" $ do
+      errEndParen `shouldBe` "expected the end of the expression with a '\ESC[94m)\ESC[0m'."
+
+    it "errEmptyParen formats correctly" $ do
+      errEmptyParen `shouldBe` ":2expected an expression inside the \ESC[94mparenthesis\ESC[0m."
+
+    it "errEmptyExpr formats correctly" $ do
+      errEmptyExpr `shouldBe` "expected an expression."
+
+    it "errExpectedField formats correctly" $ do
+      errExpectedField `shouldBe` "expected a structure field."
+
+    it "errExpectedStartField formats correctly" $ do
+      errExpectedStartField `shouldBe` "expected a '\ESC[94m{\ESC[0m' followed by the fields defition."
+
+    it "errExpectedFieldName formats correctly" $ do
+      errExpectedFieldName `shouldBe` "expected a field name."
+
+    it "errMissingRetT formats correctly" $ do
+      errMissingRetT `shouldBe` "expected a '\ESC[94m->\ESC[0m' followed by the return type of the function."
+
+    it "errMisingNameFn formats correctly" $ do
+      errMisingNameFn `shouldBe` "expected a name made of letters."
+
+    it "errMisingEqual formats correctly" $ do
+      errMisingEqual `shouldBe` "expected a '\ESC[94m=\ESC[0m' followed by the types."
+
+    it "errMisingNameOp formats correctly" $ do
+      errMisingNameOp `shouldBe` "expected a name made of symbols."
+
+    it "errMisingPrecOp formats correctly" $ do
+      errMisingPrecOp `shouldBe` "expected the precedence as an '\ESC[94minteger\ESC[0m'."
+
+    it "errExpectedCommaOrCurly formats correctly" $ do
+      errExpectedCommaOrCurly `shouldBe` "expected a '\ESC[94m,\ESC[0m' to separate the fields or a '\ESC[94m}\ESC[0m' to end their definition."
+
+    it "errExpectedCommaOrParen formats correctly" $ do
+      errExpectedCommaOrParen `shouldBe` "expected a '\ESC[94m,\ESC[0m' to separate the arguments or a '\ESC[94m)\ESC[0m' to end their definition."
+
+    it "errExpectedColon formats correctly" $ do
+      errExpectedColon `shouldBe` "expected a '\ESC[94m:\ESC[0m' to separate the name of the argument from it's type."
+
+    it "errExpectedArgName formats correctly" $ do
+      errExpectedArgName `shouldBe` "expected the name of the argument made of letters."
+
+    it "errExpectedArgs formats correctly" $ do
+      errExpectedArgs `shouldBe` "expected a '\ESC[94m(\ESC[0m' followed by the arguments."
+
+    it "errMisingBody formats correctly" $ do
+      errMisingBody `shouldBe` "the body of a function cannot be empty."
+
+    it "errSemiColon formats correctly" $ do
+      errSemiColon `shouldBe` "expected a '\ESC[94m;\ESC[0m' at the end of the expression."
+
+    it "errOpNotDefined formats correctly" $ do
+      errOpNotDefined "+" `shouldBe` "the operator '\ESC[94m+\ESC[0m' is not defined."
+
+    it "errMissingOperand formats correctly" $ do
+      errMissingOperand "left" "+" `shouldBe` "missing the \ESC[94mleft\ESC[0m operand for the operator '\ESC[94m+\ESC[0m'."
+
+    it "errInvalidExpr formats correctly" $ do
+      errInvalidExpr 10 `shouldBe` ":10invalid expression."
+
+    it "errOpArgs formats correctly" $ do
+      errOpArgs 1 1 "+" `shouldBe` ":1operators must take 2 arguments. '\ESC[94m+\ESC[0m' has \ESC[94m1\ESC[0m argument."
+
+    it "errRetType formats correctly" $ do
+      errRetType "int" "string" `shouldBe` "invalid return type, expected '\ESC[94mint\ESC[0m' got '\ESC[94mstring\ESC[0m'."
+
+    it "errAssignType formats correctly" $ do
+      errAssignType "x" "int" "string" `shouldBe` "invalid type for the variable '\ESC[94mx\ESC[0m', expected '\ESC[94mint\ESC[0m' got '\ESC[94mstring\ESC[0m'."
+
+    it "errTopLevelDef formats correctly" $ do
+      errTopLevelDef `shouldBe` "top level declaration must be either \ESC[94mfunction\ESC[0m, \ESC[94moperator\ESC[0m, \ESC[94mstruct\ESC[0m or \ESC[94mtype\ESC[0m."
+
+    it "errImpossibleCase formats correctly" $ do
+      errImpossibleCase "this should not happen" `shouldBe` "Impossible case. (from \ESC[94mthis should not happen\ESC[0m)."
+
+    it "errVariableNotBound formats correctly" $ do
+      errVariableNotBound "x" `shouldBe` "variable '\ESC[94mx\ESC[0m' is not bound."
+
+    it "errFunctionNotBound formats correctly" $ do
+      errFunctionNotBound "f" `shouldBe` "function '\ESC[94mf\ESC[0m' doesn't exist."
+
+    it "errStructureNotBound formats correctly" $ do
+      errStructureNotBound "MyStruct" `shouldBe` "structure '\ESC[94mMyStruct\ESC[0m' doesn't exist."
+
+    it "errStructureFieldNotBound formats correctly" $ do
+      errStructureFieldNotBound "MyStruct" "field" `shouldBe` "structure '\ESC[94mMyStruct\ESC[0m' doesn't have the field '\ESC[94mfield\ESC[0m'."
+
+    it "errConstraintNotBound formats correctly" $ do
+      errConstraintNotBound "C" `shouldBe` "constraint '\ESC[94mC\ESC[0m' doesn't exist."
+
+    it "errInvalidStructure formats correctly" $ do
+      errInvalidStructure "MyStruct" [("field1", IntType), ("field2", BoolType)]
+        `shouldBe` "invalid structure '\ESC[94mMyStruct\ESC[0m', expected:\n{\n    \ESC[94mfield1\ESC[0m = \ESC[94mint\ESC[0m,\n    \ESC[94mfield2\ESC[0m = \ESC[94mbool\ESC[0m\n}"
+
+    it "errInvalidArray formats correctly" $ do
+      errInvalidArray "int" `shouldBe` "invalid array of type '\ESC[94mint\ESC[0m'."
+
+    it "errOperatorNotBound formats correctly" $ do
+      errOperatorNotBound "+" `shouldBe` "operator '\ESC[94m+\ESC[0m' is not bound."
+
+    it "errInvalidLitType formats correctly" $ do
+      errInvalidLitType "int" "string" `shouldBe` "invalid literal type, expected \ESC[94mint\ESC[0m but got \ESC[94mstring\ESC[0m."
+
+    it "errInvalidVarType formats correctly" $ do
+      errInvalidVarType "x" "int" "string" `shouldBe` "invalid variable type for '\ESC[94mx\ESC[0m', expected '\ESC[94mint\ESC[0m' but got '\ESC[94mstring\ESC[0m'."
+
+    it "errInvalidFnType formats correctly" $ do
+      errInvalidFnType "f" "int -> int" "string -> int"
+        `shouldBe` "invalid function type for '\ESC[94mf\ESC[0m', expected '\ESC[94mint -> int\ESC[0m' but got '\ESC[94mstring -> int\ESC[0m'."
+
+    it "errInvalidOpType formats correctly" $ do
+      errInvalidOpType "+" "int -> int -> int" "string -> string -> string"
+        `shouldBe` "invalid operator type for '\ESC[94m+\ESC[0m', expected '\ESC[94mint -> int -> int\ESC[0m' but got '\ESC[94mstring -> string -> string\ESC[0m'."
+
+    it "errInvalidNumberOfArgument formats correctly" $ do
+      errInvalidNumberOfArgument "f" 2 3
+        `shouldBe` "invalid number of arguments for the function '\ESC[94mf\ESC[0m', expected \ESC[94m2\ESC[0m but found \ESC[94m3\ESC[0m."
 
 isSpec :: SpecWith ()
 isSpec = describe "is functions" $ do
@@ -196,13 +350,13 @@ getSpec = describe "get functions" $ do
       getLitType (StringLit "yo") `shouldBe` StrType
 
     it "returns the correct type for an ArrLitPre" $ do
-      getLitType (ArrLitPre IntType [[Lit (IntLit 1), Lit (IntLit 2)]]) `shouldBe` ArrType IntType
+      getLitType (ArrLitPre IntType [[Literal (IntLit 1), Literal (IntLit 2)]]) `shouldBe` IntType
 
     it "returns the correct type for an ArrLit" $ do
-      getLitType (ArrLit IntType [Lit (IntLit 1), Lit (IntLit 2)]) `shouldBe` ArrType IntType
+      getLitType (ArrLit IntType [Lit (IntLit 1), Lit (IntLit 2)]) `shouldBe` IntType
 
     it "returns the correct type for a StructLitPre" $ do
-      getLitType (StructLitPre "myStruct" [("name", [Lit (StringLit "marius")]), ("age", [Lit (IntLit 19)])]) `shouldBe` StructType "myStruct"
+      getLitType (StructLitPre "myStruct" [("name", [Literal (StringLit "marius")]), ("age", [Literal (IntLit 19)])]) `shouldBe` StructType "myStruct"
 
     it "returns the correct type for a ClosureLit" $ do
       getLitType (ClosureLit "plus" [IntType, IntType] IntType) `shouldBe` ClosureType [IntType, IntType] IntType
