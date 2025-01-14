@@ -5,7 +5,7 @@
 -- ErrorMessage
 -}
 
-module Ast.Error (blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errInvalidExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody, errMisingNameFn, errMisingNameOp, errExpectedArgs, errExpectedArgName, errExpectedColon, errExpectedCommaOrParen, errEndParen, errEndExpr, errMisingPrecOp, errExpectedStartField, errExpectedFieldName, errExpectedCommaOrCurly, errMisingEqual) where
+module Ast.Error (blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errInvalidExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody, errMisingNameFn, errMisingNameOp, errExpectedArgs, errExpectedArgName, errExpectedColon, errExpectedCommaOrParen, errEndParen, errEndExpr, errMisingPrecOp, errExpectedStartField, errExpectedFieldName, errExpectedCommaOrCurly, errMisingEqual, errMissingRet) where
 
 import Text.Printf (printf)
 import Text.Megaparsec.Error (ParseErrorBundle(..), ParseError(..), ErrorFancy(..))
@@ -33,6 +33,9 @@ errStartBody = printf "expected a '%s' representing the start of the body of the
 
 errEndBody :: String
 errEndBody = printf "expected a '%s' representing the end of the body of the function." $ blue "}"
+
+errMissingRet :: String -> String
+errMissingRet ty = printf "the last expression should return since the return type isn't '%s' but '%s'." (blue "void") (blue ty)
 
 errVoidRet :: String
 errVoidRet = printf "%s function should not %s." (blue "void") (blue "return")

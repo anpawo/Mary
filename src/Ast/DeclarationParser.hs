@@ -5,6 +5,7 @@
 -- TopLevelDeclaration
 -}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Ast.DeclarationParser (structure, function, operator, constraint, atom) where
 
@@ -71,8 +72,15 @@ constraint ctx = Constraint <$> (constraintType >>= notTaken (getNames ctx) . fr
   where
     constrTypes = types ctx False False >>= \t -> (tok Pipe *> ((t:) <$> constrTypes)) <|> pure [t]
 
+branchEnd :: Type -> [Expression] -> Parser [Expression]
+branchEnd VoidType x = pure x
+branchEnd retTy [] = fail $ errMissingRet $ show retTy
+branchEnd _ x@[Return {}] = pure x
+branchEnd retTy x@[IfThenElse {..}] = branchEnd retTy thenExpr >> branchEnd retTy elseExpr >> pure x
+branchEnd retTy (x: xs) = (x:) <$> branchEnd retTy xs
+
 getFnBody :: Ctx -> LocalVariable -> Type -> Parser [Expression]
-getFnBody ctx locVar retT = (tok CurlyOpen <|> failN errStartBody) *> getExprAndUpdateCtx ctx locVar retT
+getFnBody ctx locVar retT = (tok CurlyOpen <|> failN errStartBody) *> getExprAndUpdateCtx ctx locVar retT >>= branchEnd retT
   where
     getExprAndUpdateCtx c l r = (tok CurlyClose $> []) <|> (expression c l r >>= \case
       x@(Variable metadata _) -> (x:) <$> getExprAndUpdateCtx c (metadata : l) r
