@@ -1,3 +1,53 @@
+  describe "failN failP failI" $ do
+    it "failN" $ do
+      let p = do
+            void $ string "a"
+            failN "error"
+      (run p "ab" :: Either (ParseErrorBundle String Void) ())
+        `shouldSatisfy` isLeft
+
+    it "failP" $ do
+      let p = do
+            void $ string "a"
+            failP "error"
+      (run p "ab" :: Either (ParseErrorBundle String Void) ())
+        `shouldSatisfy` isLeft
+
+    it "failI" $ do
+      let p = do
+            void $ string "abc"
+            failI 1 "error"
+      (run p "abc" :: Either (ParseErrorBundle String Void) ())
+        `shouldSatisfy` isLeft
+
+  describe "additional coverage for fail messages" $ do
+    it "failN sets the offset to the next token and includes the error message" $ do
+      let p = do
+            void $ string "abc"
+            failN "failN error"
+      let r = run p "abc"
+      case r of
+        Left bundle -> errorBundlePretty bundle `shouldContain` "failN error"
+        Right _     -> expectationFailure "Expected failN to fail"
+
+    it "failP sets the offset to the previous token and includes the error message" $ do
+      let p = do
+            void $ string "abc"
+            failP "failP error"
+      let r = run p "abc"
+      case r of
+        Left bundle -> errorBundlePretty bundle `shouldContain` "failP error"
+        Right _     -> expectationFailure "Expected failP to fail"
+
+    it "failI sets the offset to the given index and includes the error message" $ do
+      let p = do
+            void $ string "abcd"
+            failI 2 "failI error"
+      let r = run p "abcd"
+      case r of
+        Left bundle -> errorBundlePretty bundle `shouldContain` "failI error"
+        Right _     -> expectationFailure "Expected failI to fail"
+
   describe "additional coverage for initialPos \"\"" $ do
     it "sets parser state to line 1 col 1 after (&>)" $ do
       let p1 = string "some" >> return "leftover"
