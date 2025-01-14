@@ -10,6 +10,24 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+pushInstrSpec :: Spec
+pushInstrSpec = do
+  describe "pushInstr" $ do
+    it "pushes normal value" $ do
+      let prog = [Push (VmInt 42)]
+      v <- runProg prog []
+      v `shouldBe` VmInt 42
+    it "pushes VmPreArray" $ do
+      let arr = [[Push (VmInt 9), Ret], [Push (VmInt 1), Ret]]
+          prog = [Push (VmPreArray "int" arr)]
+      v <- runProg prog []
+      v `shouldBe` VmArray "int" [VmInt 9, VmInt 1]
+    it "pushes VmPreStruct" $ do
+      let fields = [("f", [Push (VmInt 777), Ret])]
+          prog = [Push (VmPreStruct "MySt" fields)]
+      v <- runProg prog []
+      v `shouldBe` VmStruct "MySt" [("f", VmInt 777)]
+
 doCurrentInstrSpec :: Spec
 doCurrentInstrSpec = do
   describe "doCurrentInstr" $ do
