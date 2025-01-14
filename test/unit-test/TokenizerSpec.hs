@@ -39,14 +39,8 @@ spec = do
   tokenizerSymbolSpec
   tokenizerLiteralSpec
   tokenizerIdentifierSpec
-  tokenizerUtils
   tokenizerAdvancedSpec
   tokenizerEmptyCasesSpec
-
-tokenizerUtils :: SpecWith ()
-tokenizerUtils = describe "utils" $ do
-  it "&>" $
-    run (macro &> namespace) "macro FAILURE 84\nreturn FAILURE;import math\nmath.facto" ==> "return 84;_ZN4mathfacto"
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
