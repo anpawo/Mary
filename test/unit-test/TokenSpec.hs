@@ -22,6 +22,8 @@ spec = do
   literalSpec
   identifierSpec
   tokenSpec
+  eqSpec
+  ordSpec
 
 tokenSpec :: SpecWith ()
 tokenSpec = describe "token" $ do
