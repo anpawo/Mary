@@ -48,6 +48,7 @@ instance Show Arguments where
 spec :: Spec
 spec = do
   functionSpec
+  operatorSpec
 
 functionSpec :: Spec
 functionSpec = do
@@ -89,3 +90,9 @@ functionSpec = do
           , argOptimize = True
           , argInputFile = Just "file.c"
           }
+
+operatorSpec :: Spec
+operatorSpec = do
+  describe "operatorSpec" $
+    it "dummy test" $
+      True `shouldBe` True
