@@ -15,7 +15,7 @@ import Data.Either (isLeft)
 import Parser.Tokenizer
 import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
 import Control.Applicative ()
-import Text.Megaparsec ()
+import Text.Megaparsec (parse)
 import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
@@ -41,6 +41,7 @@ spec = do
   tokenizerIdentifierSpec
   tokenizerAdvancedSpec
   tokenizerEmptyCasesSpec
+  tokenizerPos
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
@@ -123,6 +124,8 @@ tokenizerKeywordSpec = describe "tokenize keywords" $ do
     run tokenize "else" ==> [ElseKw]
   it "return" $
     run tokenize "return" ==> [ReturnKw]
+  it "atom" $
+    run tokenize "atom" ==> [AtomKw]
 
 tokenizerTypeSpec :: SpecWith ()
 tokenizerTypeSpec = describe "tokenize types" $ do
@@ -241,3 +244,10 @@ tokenizerEmptyCasesSpec = describe "tokenize empty cases" $ do
     run tokenize "type myConstraint" ==> [Type $ ConstraintType (Just "myConstraint") []]
   it "tokenize type constraint with non-empty identifier" $
     run tokenize "type MyConstraint" ==> [Type $ ConstraintType (Just "MyConstraint") []]  
+
+tokenizerPos :: SpecWith ()
+tokenizerPos = describe "tokenize positions" $ do
+    it "les positions du premier token sont (1,1)" $ do
+      let input = "int"
+          positions = fst <$> parse tokenize "" input
+      positions `shouldBe` Right [(1, 1)]
