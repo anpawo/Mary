@@ -9,9 +9,9 @@
 type number = int | float
 
 // arithmetic operators
-operator builtin + precedence 6 (a: number, b: number) -> number
+operator builtin + precedence 6 (a: number | str, b: number | str) -> number
 operator builtin - precedence 6 (a: number, b: number) -> number
-operator builtin * precedence 7 (a: number, b: number) -> number
+operator builtin * precedence 7 (a: number | str, b: number) -> number
 operator builtin / precedence 7 (a: number, b: number) -> number
 
 // comparison operators
