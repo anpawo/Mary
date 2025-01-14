@@ -188,20 +188,47 @@ Declare and initialize variables using the following syntax:
 
 ## **Function**
 
+### **Writing Functions**
 
+In Mary, functions are defined using the `function` keyword, followed by the function name, parameters, return type, and body.
 
-### Mandatory use of a `Main` function
-
-The use of a `main` function is mandatory. The structure of the `main` is the same as any other function except for it's name that needs to remain `main`.
-//todo description du fonctionnnement d'un main et pk obligatoire ?
-
-```f#
-function main () -> <return type> {
-    <main body>
+**Syntax:**
+```c
+function <function_name>(<parameters>) -> <return_type> {
+  <function_body>
 }
 ```
 
-### Built-in Functions
+**Example**
+```c
+function test_loop(a: int) -> int {
+  i: int = 1;
+  b: int = 1;
+
+  while i < a + 1 then {
+      b = b * i;
+      i = i + 1;
+  }
+  return b;
+}
+```
+
+### **Key Points for Writing Functions:**
+1. **Parameter Declaration:** Specify each parameter's name and type inside the parentheses.
+2. **Return Type:** Use `->` followed by the type of the value the function returns. Use `void` if no value is returned.
+3. **Body:** Enclose the function logic within `{}`.
+4. **Return Statement:** Use `return` to provide the output of the function.
+
+You need to create a function named `main` to execute the code you wrote
+
+```c
+function main() -> int {
+  res: int = test_loop(6);
+  return res;
+}
+```
+
+## **Built-in Functions**
 
 built-in functions include in Mary:
 
