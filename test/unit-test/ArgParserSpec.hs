@@ -81,3 +81,11 @@ functionSpec = do
     it "parses input file" $
       parseArguments ["input.txt"] `shouldBe`
         Right defaultArguments { argInputFile = Just "input.txt" }
+    it "parses multiple arguments" $
+      parseArguments ["--token","--import","some/path","--optimize","file.c"] `shouldBe`
+        Right defaultArguments
+          { argOutputType = (argOutputType defaultArguments) { tokenTy = True }
+          , argImportPath = "some/path" : argImportPath defaultArguments
+          , argOptimize = True
+          , argInputFile = Just "file.c"
+          }
