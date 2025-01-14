@@ -119,6 +119,9 @@ exitCallFuncSpec = do
     it "exitWith code 42" $ do
       let stack = [VmInt 42]
       (exitCallFunc 0 [] [] stack) `shouldThrow` (== ExitFailure 42)
+    it "fail if top of stack is not an integer" $ do
+      let stack = [VmString "notAnInt"]
+      (exitCallFunc 0 [] [] stack) `shouldThrow` anyException
 
 toIntCallFuncSpec :: Spec
 toIntCallFuncSpec = do
@@ -137,6 +140,9 @@ toIntCallFuncSpec = do
       v `shouldBe` VmNull
     it "fail if empty" $ do
       (toIntCallFunc 0 [] [] []) `shouldThrow` anyException
+    it "fail if top of stack is not compatible" $ do
+      let notCompatible = [VmStruct "something" []]
+      (toIntCallFunc 0 [] [] notCompatible) `shouldThrow` anyException
 
 toFloatCallFuncSpec :: Spec
 toFloatCallFuncSpec = do
@@ -155,6 +161,9 @@ toFloatCallFuncSpec = do
       v `shouldBe` VmNull
     it "fail if empty" $ do
       (toFloatCallFunc 0 [] [] []) `shouldThrow` anyException
+    it "fail if top of stack is not compatible" $ do
+      let notCompatible = [VmStruct "bad" []]
+      (toFloatCallFunc 0 [] [] notCompatible) `shouldThrow` anyException
 
 operatorCallFuncSpec :: Spec
 operatorCallFuncSpec = do
@@ -192,6 +201,12 @@ operatorCallFuncSpec = do
     it "handles unknown" $ do
       let stack = [VmInt 42]
       (operatorCallFunc "nope" 0 [] [] stack) `shouldThrow` anyException
+    it "fail if not enough arguments on stack" $ do
+      let stack = [VmInt 3]
+      (operatorCallFunc "+" 0 [] [] stack) `shouldThrow` anyException
+    it "fail if operator \".\" stack mismatch" $ do
+      let stack = [VmInt 999]
+      (operatorCallFunc "." 0 [] [] stack) `shouldThrow` anyException
 
 callInstrSpec :: Spec
 callInstrSpec = do
@@ -222,6 +237,23 @@ callInstrSpec = do
       v `shouldBe` VmChar 'A'
     it "handles unknown call => operatorCallFunc or fail" $ do
       let prog = [Push (VmInt 123), Push (VmFunc "someUnknown"), Call]
+      (runProg prog []) `shouldThrow` anyException
+    it "fail if set on unknown field" $ do
+      let prog =
+            [ Push (VmStruct "person" [("age", VmInt 20)])
+            , Push (VmString "unknownField")
+            , Push (VmInt 999)
+            , Push (VmFunc "set")
+            , Call
+            ]
+      (runProg prog []) `shouldThrow` anyException
+    it "fail when concat two arrays of different type" $ do
+      let prog =
+            [ Push (VmArray "int" [VmInt 1])
+            , Push (VmArray "float" [VmFloat 2.5])
+            , Push (VmFunc "concat")
+            , Call
+            ]
       (runProg prog []) `shouldThrow` anyException
 
 pushInstrSpec :: Spec
@@ -330,4 +362,7 @@ boolOperatorExecSpec = do
       v `shouldBe` VmBool True
     it "fail if different types" $ do
       let stack = [VmInt 1, VmString "X"]
+      (boolOperatorExec "<" (<) 0 [] [] stack) `shouldThrow` anyException
+    it "fail if top of stack is not numbers" $ do
+      let stack = [VmInt 1, VmString "abc"]
       (boolOperatorExec "<" (<) 0 [] [] stack) `shouldThrow` anyException
