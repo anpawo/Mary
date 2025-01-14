@@ -1,3 +1,27 @@
+{-
+-- EPITECH PROJECT, 2024
+-- glados
+-- File description:
+-- Spec
+-}
+
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+module LibSpec (spec) where
+
+import Test.Hspec
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Data.Either (isLeft)
+import Data.Void (Void)
+import Control.Monad (void)
+
+import Utils.Lib
+
+spec :: Spec
+spec = do
+  functionSpec
+  operatorSpec
+
 functionSpec :: Spec
 functionSpec = do
   describe "choicetry" $ do
@@ -8,6 +32,7 @@ functionSpec = do
       run (choicetry [p1,p2]) "hi"    `shouldBe` Right "p2"
       (run (choicetry [p1,p2]) "x" :: Either (ParseErrorBundle String Void) String)
         `shouldSatisfy` isLeft
+
   describe "run" $ do
     it "parses successfully" $
       run (string "test") "test" `shouldBe` Right "test"
