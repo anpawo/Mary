@@ -10,6 +10,20 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+execSpec :: Spec
+execSpec = do
+  describe "exec" $ do
+    it "runs an entire program returning final stack top" $ do
+      let prog =
+            [ Push (VmInt 10)
+            , Push (VmInt 2)
+            , Push (VmFunc "+")
+            , Call
+            , Ret
+            ]
+      v <- runProg prog []
+      v `shouldBe` VmInt 12
+
 operatorExecSpec :: Spec
 operatorExecSpec = do
   describe "operatorExec" $ do
