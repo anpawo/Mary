@@ -10,6 +10,21 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+convStructInstrToValSpec :: Spec
+convStructInstrToValSpec = do
+  describe "convStructInstrToVal" $ do
+    it "handles empty struct" $ do
+      convStructInstrToVal [] dummyEnv `shouldReturn` []
+    it "handles simple struct" $ do
+      let s = [("fieldA", [Push (VmInt 100), Ret])]
+      convStructInstrToVal s dummyEnv `shouldReturn` [("fieldA", VmInt 100)]
+    it "handles multiple fields" $ do
+      let s =
+            [ ("fA", [Push (VmInt 1), Ret])
+            , ("fB", [Push (VmInt 2), Ret])
+            ]
+      convStructInstrToVal s dummyEnv `shouldReturn` [("fA", VmInt 1), ("fB", VmInt 2)]
+
 countParamFuncSpec :: Spec
 countParamFuncSpec = do
   describe "countParamFunc" $ do
