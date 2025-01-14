@@ -64,6 +64,14 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
 
-<binary_operator> ::= "==" | "<" | ">" | "<=" | ">="
+<binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
+
+<struct_def> ::= "struct" <whitespace> <identifier> <whitespace>? "{" <variable> ("," <variable>)* "}"
+
+<operator_def> ::= 
 ```
+<!-- todo mettre les operateurs [ '|', '^', '&', '~', '!', '$' , '.', '=', ':',] -->
 <!-- todo ajouter les constraints dans tout les types -->
+<!-- todo ajouter la definition pour définir les opérateurs -->
+<!-- todo ajouter la definition pour définir les structures -->
+<!-- todo ajouter la définition d'un fichier (<struct_def> | <function> | <operator_def>) -->
