@@ -22,6 +22,8 @@ spec = do
   literalSpec
   identifierSpec
   tokenSpec
+  eqSpec
+  ordSpec
 
 tokenSpec :: SpecWith ()
 tokenSpec = describe "token" $ do
@@ -37,6 +39,7 @@ tokenSpec = describe "token" $ do
       it "then" $ show ThenKw ==> "then"
       it "else" $ show ElseKw ==> "else"
       it "return" $ show ReturnKw ==> "return"
+      it "atom" $ show AtomKw ==> "atom"
       it "while" $ show WhileKw ==> "while"
 
     describe "symbols" $ do
@@ -176,3 +179,64 @@ subexpressionSpec = describe "subexpression" $ do
     let f1 = FunctionCall "aaa" []
         f2 = FunctionCall "zzz" []
     (f1 < f2) `shouldBe` True
+
+  describe "additional coverage for SubExpression Ord" $ do
+    it "compare function calls with different arity" $ do
+      let f1 = FunctionCall "f" [VariableCall "x"]
+          f2 = FunctionCall "f" [VariableCall "x", VariableCall "y"]
+      (f1 < f2) `shouldBe` True
+      (f2 < f1) `shouldBe` False
+    it "compare function call with variable call" $ do
+      let f = FunctionCall "fun" []
+          v = VariableCall "var"
+      (f < v) `shouldBe` False
+      (v < f) `shouldBe` True
+
+eqSpec :: SpecWith ()
+eqSpec = describe "additional coverage for Type eq" $ do
+  it "StructType different names" $
+    (StructType "foo" == StructType "bar") `shouldBe` False
+  it "ArrType different inner types" $
+    (ArrType IntType == ArrType BoolType) `shouldBe` False
+  it "ConstraintType same name, different content" $
+    (ConstraintType (Just "num") [IntType] == ConstraintType (Just "num") [FloatType, IntType])
+      `shouldBe` True
+  it "ConstraintType c@(...) == (ConstraintType _ ts) when c ∉ ts" $
+    let c1 = ConstraintType Nothing [BoolType]
+        c2 = ConstraintType (Just "maybe") [ConstraintType Nothing [IntType], FloatType]
+    in (c1 == c2) `shouldBe` False
+  it "ConstraintType c@(...) == (ConstraintType _ ts) when c ∈ ts" $
+    let c1 = ConstraintType Nothing [BoolType]
+        c2 = ConstraintType (Just "maybe") [c1, FloatType]
+    in (c1 == c2) `shouldBe` True
+  it "(ConstraintType Nothing [IntType]) == BoolType -> False" $
+    (ConstraintType Nothing [IntType] == BoolType) `shouldBe` False
+  it "(ConstraintType Nothing [IntType]) == IntType -> True" $
+    (ConstraintType Nothing [IntType] == IntType) `shouldBe` True
+  it "(ConstraintType (Just \"something\") []) == (ConstraintType (Just \"other\") []) -> False" $
+    (ConstraintType (Just "something") [] == ConstraintType (Just "other") []) `shouldBe` False
+
+
+ordSpec :: SpecWith ()
+ordSpec = describe "additional coverage for MyToken eq/ord" $ do
+  it "MyToken eq on keywords" $ do
+    (FunctionKw == FunctionKw) `shouldBe` True
+    (FunctionKw == OperatorKw) `shouldBe` False
+  it "MyToken eq on same constructor with different fields" $ do
+    (ImportKw "x" == ImportKw "x") `shouldBe` True
+    (ImportKw "x" == ImportKw "y") `shouldBe` False
+  it "MyToken eq on Type" $ do
+    (Type IntType == Type IntType) `shouldBe` True
+    (Type IntType == Type BoolType) `shouldBe` False
+  it "MyToken eq on Literal" $ do
+    (Literal (IntLit 2) == Literal (IntLit 2)) `shouldBe` True
+    (Literal (IntLit 2) == Literal (IntLit 3)) `shouldBe` False
+  it "MyToken eq on Identifier" $ do
+    (Identifier (TextId "a") == Identifier (TextId "a")) `shouldBe` True
+    (Identifier (TextId "a") == Identifier (TextId "b")) `shouldBe` False
+  it "MyToken ord on keywords" $ do
+    (FunctionKw < OperatorKw) `shouldBe` True
+    (ReturnKw < IfKw) `shouldBe` False
+  it "MyToken ord with mixed constructors" $ do
+    (FunctionKw < CurlyOpen) `shouldBe` True
+    (ParenClose < ImportKw "abc") `shouldBe` False
