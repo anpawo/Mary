@@ -85,7 +85,7 @@ test-suite glados-test
       TokenSpec
       ArgParserSpec
       LibSpec
-      -- VirtualMachineSpec 
+      VirtualMachineSpec 
       Paths_glados
   autogen-modules:
       Paths_glados
