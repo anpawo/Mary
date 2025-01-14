@@ -152,10 +152,6 @@ isTypeSpec = describe "isType function" $ do
     it "returns False for a BoolLit with IntType" $ do
       isType IntType (BoolLit True) `shouldBe` False
 
-    -- it "returns False for an ArrLitPre with incorrect element type" $ do
-    --   let tokens = [[Token "true"], [Token "false"]]
-    --   isType (ArrType IntType) (ArrLitPre BoolType tokens) `shouldBe` False
-
     it "returns False for NullLit with non-null type" $ do
       isType IntType NullLit `shouldBe` False
 
@@ -181,10 +177,40 @@ getSpec = describe "get functions" $ do
       getNames ctx `shouldBe` ["struct1", "fn1", "op1"]
 
   describe "getLitType" $ do
-    it "returns the correct type for a literal" $ do
+    it "returns the correct type for an IntLit" $ do
       getLitType (IntLit 42) `shouldBe` IntType
+
     it "returns the correct type for a StructLit" $ do
       getLitType (StructLit "myStruct" []) `shouldBe` StructType "myStruct"
+
+    it "returns the correct type for a CharLit" $ do
+      getLitType (CharLit 'c') `shouldBe` CharType
+
+    it "returns the correct type for a BoolLit" $ do
+      getLitType (BoolLit True) `shouldBe` BoolType
+
+    it "returns the correct type for a FloatLit" $ do
+      getLitType (FloatLit 1.5) `shouldBe` FloatType
+
+    it "returns the correct type for a StringLit" $ do
+      getLitType (StringLit "yo") `shouldBe` StrType
+
+    it "returns the correct type for an ArrLitPre" $ do
+      getLitType (ArrLitPre IntType [[Lit (IntLit 1), Lit (IntLit 2)]]) `shouldBe` ArrType IntType
+
+    it "returns the correct type for an ArrLit" $ do
+      getLitType (ArrLit IntType [Lit (IntLit 1), Lit (IntLit 2)]) `shouldBe` ArrType IntType
+
+    it "returns the correct type for a StructLitPre" $ do
+      getLitType (StructLitPre "myStruct" [("name", [Lit (StringLit "marius")]), ("age", [Lit (IntLit 19)])]) `shouldBe` StructType "myStruct"
+
+    it "returns the correct type for a ClosureLit" $ do
+      getLitType (ClosureLit "plus" [IntType, IntType] IntType) `shouldBe` ClosureType [IntType, IntType] IntType
+
+    it "returns the correct type for a NullLit" $ do
+      getLitType NullLit `shouldBe` NullType
+
+
 
 structureSpec :: SpecWith ()
 structureSpec = describe "structure parsing" $ do
