@@ -1,4 +1,4 @@
-type number2 = int | float;
+type number2 = int | float
 
 function test(a: number2, b: type number2) -> number2 {
     return a;
