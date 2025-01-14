@@ -9,7 +9,7 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO, shouldContain)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO, shouldContain, expectationFailure)
 import Test.Hspec.Runner ()
 import Text.RawString.QQ
 import Text.Megaparsec ()
@@ -73,7 +73,7 @@ treeBuilderSpec = describe "treeBuilder functions" $ do
       let result = runParser (fixOp group) "" group
       case result of
         Left err -> err `shouldContain` "Expected field after '.'"
-        Right _ -> expectationFailure "Expected error"
+        Right _ -> expectationFailure "Expected error, but got success"
 
     it "processes a list of GVar and GOp" $ do
       let group = [GVar 0 "a", GOp 1 "+" [], GVar 2 "b"]
