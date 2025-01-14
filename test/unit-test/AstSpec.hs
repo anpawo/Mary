@@ -280,20 +280,20 @@ isTypeSpec = describe "isType function" $ do
       isType StrType (StringLit "hello") `shouldBe` True
 
     -- it "returns True for an ArrLitPre with an appropriate type" $ do
-    --   let tokens = [[Token "1"], [Token "2"]]
-    --   isType (ArrayType IntType) (ArrLitPre IntType tokens) `shouldBe` True
+    --   let tokens = [[Literal (IntLit 1), Literal (IntLit 2)]]
+    --   isType (ArrType IntType) (ArrLitPre IntType tokens) `shouldBe` True
 
-    -- it "returns True for an ArrLit with an appropriate type" $ do
-    --   let elements = [SubExpression (IntLit 1), SubExpression (IntLit 2)]
-    --   isType (ArrType IntType) (ArrLit IntType elements) `shouldBe` True
+    it "returns True for an ArrLit with an appropriate type" $ do
+      let elements = [Lit (IntLit 1), Lit (IntLit 2)]
+      isType (ArrType IntType) (ArrLit IntType elements) `shouldBe` True
 
     -- it "returns True for a StructLitPre with matching fields" $ do
-    --   let fields = [("name", [Token "\"marius\""]), ("age", [Token "19"])]
+    --   let fields = [("name", [Literal (StringLit "\"marius\"")]), ("age", [Literal (IntLit 19)])]
     --   isType (StructType "Person") (StructLitPre "Person" fields) `shouldBe` True
 
-    -- it "returns True for a StructLit with matching fields" $ do
-    --   let fields = [("name", SubExpression (StringLit "marius")), ("age", SubExpression (IntLit 19))]
-    --   isType (StructType "Person") (StructLit "Person" fields) `shouldBe` True
+    it "returns True for a StructLit with matching fields" $ do
+      let fields = [("name", Lit (StringLit "marius")), ("age", Lit (IntLit 19))]
+      isType (StructType "Person") (StructLit "Person" fields) `shouldBe` True
 
     it "returns True for NullLit with NullType" $ do
       isType NullType NullLit `shouldBe` True
