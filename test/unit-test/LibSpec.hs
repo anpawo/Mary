@@ -1,3 +1,14 @@
+  describe "additional coverage for initialPos \"\"" $ do
+    it "sets parser state to line 1 col 1 after (&>)" $ do
+      let p1 = string "some" >> return "leftover"
+      let p2 = fail "forced failure"
+      let r = run (p1 &> p2) "someDATA"
+      case r of
+        Left bundle ->
+          errorBundlePretty bundle `shouldContain` "1:1"
+        Right _ ->
+          expectationFailure "Expected an error at line 1 col 1"
+
 operatorSpec :: Spec
 operatorSpec = do
   describe "(&>)" $ do
