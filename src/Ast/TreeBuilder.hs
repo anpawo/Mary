@@ -59,13 +59,13 @@ getGroup :: Ctx -> LocalVariable -> Parser Group
 getGroup ctx locVar = getOffset >>= (\offset -> choice
     [ eof *> fail errEndSubexpr
     , try $ GOp offset <$> (textIdentifier >>= \s -> if s == "is" then pure s else empty) <*> pure []
-    , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar) (tok ParenClose) <|> fail errEmptyParen))
+    , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar <|> failN errEndParen) (tok ParenClose) <|> failN errEmptyParen))
     , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
     , try $ GLit offset <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of
       Just (Structure _ []) -> pure $ StructLit atom []
       _ -> empty)
     , try $ GVar offset <$> textIdentifier <* notFollowedBy (tok ParenOpen)
-    , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs offset))
+    , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs offset <|> failN errEndParen))
     , GOp offset <$> operatorIdentifier <*> pure []
     ]) . (+1)
   where
@@ -89,7 +89,7 @@ mountGroup ctx [GGr idx [x@(GVar _ n)]] = case find (\a -> isFn a && getName a =
   _ -> pure x
 mountGroup ctx [GGr _ group] = mountGroup ctx group
 mountGroup ctx group = calcPrec ctx Nothing (-1) 1 group >>= \case
-    Nothing -> let errIdx = getGrIdx (head group) in (getOffset >>= (failI errIdx . errTooManyExpr) . subtract errIdx)
+    Nothing -> let errIdx = getGrIdx (head group) in (getOffset >>= (failI errIdx . errInvalidExpr) . subtract errIdx)
     (Just (x, name))
       | x <= 0 -> failI (getGrIdx (head group)) $ errMissingOperand "left" name
       | x >= length group - 1 -> failI (getGrIdx (last group)) $ errMissingOperand "right" name
@@ -187,5 +187,5 @@ fixOp ((GFn idx name gr):xs) = ((:) . GFn idx name <$> fixOp gr) <*> fixOp xs
 fixOp (x@(GLit {}):xs) = (x:) <$> fixOp xs
 
 subexpression :: Ctx -> LocalVariable -> Parser a -> Parser SubExpression
-subexpression ctx locVar endSubexpr = someTill (getGroup ctx locVar) endSubexpr <|> failN errEmptyExpr >>= fixOp >>=
+subexpression ctx locVar endSubexpr = someTill (getGroup ctx locVar <|> failN errEndExpr) endSubexpr <|> failN errEmptyExpr >>= fixOp >>=
   mountGroup ctx >>= \m -> validateMount ctx locVar m *> toSubexpr ctx m
