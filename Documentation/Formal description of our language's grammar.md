@@ -26,7 +26,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <number> ::= <digit>+
 
-<arguments> ::= <variable> | <function> ("," <variable> | <function_type>)*
+<arguments> ::= <variable> | <function_type> ("," <variable> | <function_type>)*
 
 <variable> ::= <identifier> ":" <type>
 
