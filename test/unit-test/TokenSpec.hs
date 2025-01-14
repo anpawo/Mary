@@ -177,3 +177,26 @@ subexpressionSpec = describe "subexpression" $ do
     let f1 = FunctionCall "aaa" []
         f2 = FunctionCall "zzz" []
     (f1 < f2) `shouldBe` True
+ordSpec :: SpecWith ()
+ordSpec = describe "additional coverage for MyToken eq/ord" $ do
+  it "MyToken eq on keywords" $ do
+    (FunctionKw == FunctionKw) `shouldBe` True
+    (FunctionKw == OperatorKw) `shouldBe` False
+  it "MyToken eq on same constructor with different fields" $ do
+    (ImportKw "x" == ImportKw "x") `shouldBe` True
+    (ImportKw "x" == ImportKw "y") `shouldBe` False
+  it "MyToken eq on Type" $ do
+    (Type IntType == Type IntType) `shouldBe` True
+    (Type IntType == Type BoolType) `shouldBe` False
+  it "MyToken eq on Literal" $ do
+    (Literal (IntLit 2) == Literal (IntLit 2)) `shouldBe` True
+    (Literal (IntLit 2) == Literal (IntLit 3)) `shouldBe` False
+  it "MyToken eq on Identifier" $ do
+    (Identifier (TextId "a") == Identifier (TextId "a")) `shouldBe` True
+    (Identifier (TextId "a") == Identifier (TextId "b")) `shouldBe` False
+  it "MyToken ord on keywords" $ do
+    (FunctionKw < OperatorKw) `shouldBe` True
+    (ReturnKw < IfKw) `shouldBe` False
+  it "MyToken ord with mixed constructors" $ do
+    (FunctionKw < CurlyOpen) `shouldBe` True
+    (ParenClose < ImportKw "abc") `shouldBe` False
