@@ -92,12 +92,18 @@ variableCreation ctx locVar = do
 
 variableAssignation :: Ctx -> LocalVariable -> Parser Expression
 variableAssignation ctx locVar = do
-  n <- try $ textIdentifier <* tok Assign
+  (n, isCompound) <- try $ (,) <$> textIdentifier <*> (tok Assign <|> tok AssignAdd <|> tok AssignSub <|> tok AssignMul <|> tok AssignDiv)
   offset <- getOffset
   t <- case find ((== n) . snd) locVar of
     Nothing -> fail $ errVariableNotBound n
     Just (t, _) -> pure t
-  x <- subexpression ctx locVar (tok SemiColon)
+  x <- subexpression ctx locVar (tok SemiColon) >>= \e -> case isCompound of
+    Assign -> pure e
+    AssignAdd -> pure $ FunctionCall "+" [VariableCall n, e] 
+    AssignSub -> pure $ FunctionCall "-" [VariableCall n, e] 
+    AssignMul -> pure $ FunctionCall "*" [VariableCall n, e] 
+    AssignDiv -> pure $ FunctionCall "/" [VariableCall n, e] 
+    _ -> fail $ errImpossibleCase "compound assign"
   t' <- getType ctx locVar x
   if t == t'
     then return $ Variable (t, n) x

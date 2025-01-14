@@ -175,6 +175,10 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             ,  commaSym
             ,  pipeSym
             ,  assignSym
+            ,  assignAddSym
+            ,  assignSubSym
+            ,  assignMulSym
+            ,  assignDivSym
 
             -- Keyword
             , functionKw
@@ -278,6 +282,10 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
         arrowSym = try $ symbol "->" $> Arrow
         pipeSym = try $ symbol "|" $> Pipe
         assignSym = try $ symbol "=" $> Assign
+        assignAddSym = try $ symbol "+=" $> AssignAdd
+        assignSubSym = try $ symbol "-=" $> AssignSub
+        assignMulSym = try $ symbol "*=" $> AssignMul
+        assignDivSym = try $ symbol "/=" $> AssignDiv
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw

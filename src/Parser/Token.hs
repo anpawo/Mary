@@ -132,7 +132,11 @@ data MyToken
   | Colon --             \|  :   -> definition in structure
   | Comma --             \|  ,   -> separate arguments for functions
   | Pipe --              \|  |   -> separate types for constraints
-  | Assign --            \|  |   -> create a varible or assign a new value to an alreayd existing one
+  | Assign --            \|  =   -> compound assignment operators
+  | AssignAdd --         \|  +=  -> compound assignment operators
+  | AssignSub --         \|  -=  -> compound assignment operators
+  | AssignMul --         \|  *=  -> compound assignment operators
+  | AssignDiv --         \|  /=  -> compound assignment operators
   -- Type
   | Type { typing :: Type }
   -- Literal
@@ -167,6 +171,10 @@ instance Show MyToken where
   show Comma = ","
   show Pipe = "|"
   show Assign = "="
+  show AssignAdd = "+="
+  show AssignSub = "-="
+  show AssignMul = "*="
+  show AssignDiv = "/="
 
   show (Type t) = show t
   show (Literal l) = show l
