@@ -177,6 +177,31 @@ subexpressionSpec = describe "subexpression" $ do
     let f1 = FunctionCall "aaa" []
         f2 = FunctionCall "zzz" []
     (f1 < f2) `shouldBe` True
+eqSpec :: SpecWith ()
+eqSpec = describe "additional coverage for Type eq" $ do
+  it "StructType different names" $
+    (StructType "foo" == StructType "bar") `shouldBe` False
+  it "ArrType different inner types" $
+    (ArrType IntType == ArrType BoolType) `shouldBe` False
+  it "ConstraintType same name, different content" $
+    (ConstraintType (Just "num") [IntType] == ConstraintType (Just "num") [FloatType, IntType])
+      `shouldBe` True
+  it "ConstraintType c@(...) == (ConstraintType _ ts) when c ∉ ts" $
+    let c1 = ConstraintType Nothing [BoolType]
+        c2 = ConstraintType (Just "maybe") [ConstraintType Nothing [IntType], FloatType]
+    in (c1 == c2) `shouldBe` False
+  it "ConstraintType c@(...) == (ConstraintType _ ts) when c ∈ ts" $
+    let c1 = ConstraintType Nothing [BoolType]
+        c2 = ConstraintType (Just "maybe") [c1, FloatType]
+    in (c1 == c2) `shouldBe` True
+  it "(ConstraintType Nothing [IntType]) == BoolType -> False" $
+    (ConstraintType Nothing [IntType] == BoolType) `shouldBe` False
+  it "(ConstraintType Nothing [IntType]) == IntType -> True" $
+    (ConstraintType Nothing [IntType] == IntType) `shouldBe` True
+  it "(ConstraintType (Just \"something\") []) == (ConstraintType (Just \"other\") []) -> False" $
+    (ConstraintType (Just "something") [] == ConstraintType (Just "other") []) `shouldBe` False
+
+
 ordSpec :: SpecWith ()
 ordSpec = describe "additional coverage for MyToken eq/ord" $ do
   it "MyToken eq on keywords" $ do
