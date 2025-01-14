@@ -10,6 +10,37 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+callInstrSpec :: Spec
+callInstrSpec = do
+  describe "callInstr" $ do
+    it "handles set" $ do
+      let prog = [Push (VmStruct "person" [("age", VmInt 20)]), Push (VmString "age"), Push (VmInt 30), Push (VmFunc "set"), Call]
+      v <- runProg prog []
+      v `shouldBe` VmStruct "person" [("age", VmInt 30)]
+    it "handles is" $ do
+      let prog = [Push (VmInt 3), Push (VmString "int"), Push (VmFunc "is"), Call]
+      v <- runProg prog []
+      v `shouldBe` VmBool True
+    it "handles print" $ do
+      let prog = [Push (VmInt 999), Push (VmFunc "print"), Call]
+      out <- capture_ (runProg prog [])
+      out `shouldSatisfy` isInfixOf "999"
+    it "handles length with string" $ do
+      let prog = [Push (VmString "abcd"), Push (VmFunc "length"), Call]
+      v <- runProg prog []
+      v `shouldBe` VmInt 4
+    it "handles length with array" $ do
+      let prog = [Push (VmArray "int" [VmInt 1, VmInt 2]), Push (VmFunc "length"), Call]
+      v <- runProg prog []
+      v `shouldBe` VmInt 2
+    it "handles toChar with int" $ do
+      let prog = [Push (VmInt 65), Push (VmFunc "toChar"), Call]
+      v <- runProg prog []
+      v `shouldBe` VmChar 'A'
+    it "handles unknown call => operatorCallFunc or fail" $ do
+      let prog = [Push (VmInt 123), Push (VmFunc "someUnknown"), Call]
+      (runProg prog []) `shouldThrow` anyException
+
 pushInstrSpec :: Spec
 pushInstrSpec = do
   describe "pushInstr" $ do
