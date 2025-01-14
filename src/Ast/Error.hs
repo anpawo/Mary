@@ -89,7 +89,7 @@ errExpectedArgName :: String
 errExpectedArgName = printf "expected the name of the argument made of letters."
 
 errExpectedArgs :: String
-errExpectedArgs = printf "expected a '%s' followed by the arguments" $ blue "("
+errExpectedArgs = printf "expected a '%s' followed by the arguments." $ blue "("
 
 errMisingBody :: String
 errMisingBody = printf "the body of a function cannot be empty."
