@@ -78,14 +78,13 @@ test-suite glados-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      ArgParserSpec
       AstSpec
       CompilerDataSpec
       CompilerSpec
+      LibSpec
       TokenizerSpec
       TokenSpec
-      ArgParserSpec
-      LibSpec
-      -- VirtualMachineSpec 
       Paths_glados
   autogen-modules:
       Paths_glados

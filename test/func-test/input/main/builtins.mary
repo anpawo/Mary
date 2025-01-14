@@ -5,7 +5,7 @@
 
 import list
 
-function main() -> int {
+function main() -> void {
     // arithmetic
     print(3 + 2);
     print(3 - 2);

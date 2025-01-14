@@ -102,7 +102,7 @@ function foldl(f: (any, any) -> any, acc: any, l: list) -> any {
     {
         return acc;
     }
-    foldl(f, f(l.data, acc), l.next);
+    return foldl(f, f(l.data, acc), l.next);
 }
 
 function foldr(f: (any, any) -> any, acc: any, l: list) -> any {
