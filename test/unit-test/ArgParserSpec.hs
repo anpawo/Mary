@@ -44,3 +44,40 @@ instance Show Arguments where
     ++ ", argColorblind=" ++ show (argColorblind a)
     ++ ", argImportBuiltins=" ++ show (argImportBuiltins a)
     ++ "}"
+
+spec :: Spec
+spec = do
+  functionSpec
+
+functionSpec :: Spec
+functionSpec = do
+  describe "parseArguments" $ do
+    it "parses no arguments" $
+      parseArguments [] `shouldBe` Right defaultArguments
+    it "parses --token" $
+      parseArguments ["--token"] `shouldBe`
+        Right defaultArguments { argOutputType = (argOutputType defaultArguments) { tokenTy = True } }
+    it "parses --ast" $
+      parseArguments ["--ast"] `shouldBe`
+        Right defaultArguments { argOutputType = (argOutputType defaultArguments) { astTy = True } }
+    it "parses --bytecode" $
+      parseArguments ["--bytecode"] `shouldBe`
+        Right defaultArguments { argOutputType = (argOutputType defaultArguments) { bytecodeTy = True } }
+    it "parses --import" $
+      parseArguments ["--import","myLib"] `shouldBe`
+        Right defaultArguments { argImportPath = "myLib" : argImportPath defaultArguments }
+    it "parses --optimize" $
+      parseArguments ["--optimize"] `shouldBe`
+        Right defaultArguments { argOptimize = True }
+    it "parses --help" $
+      parseArguments ["--help"] `shouldBe`
+        Right defaultArguments { argShowHelper = True }
+    it "parses --colorblind" $
+      parseArguments ["--colorblind"] `shouldBe`
+        Right defaultArguments { argColorblind = True }
+    it "parses --no-builtins" $
+      parseArguments ["--no-builtins"] `shouldBe`
+        Right defaultArguments { argImportBuiltins = False }
+    it "parses input file" $
+      parseArguments ["input.txt"] `shouldBe`
+        Right defaultArguments { argInputFile = Just "input.txt" }
