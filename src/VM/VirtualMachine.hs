@@ -14,6 +14,20 @@ module VM.VirtualMachine
     Program,
     Env,
     exec,
+    convArrInstrToVal,
+    convStructInstrToVal,
+    countParamFunc,
+    jumpIfFalseInstr,
+    exitCallFunc,
+    toIntCallFunc,
+    toFloatCallFunc,
+    operatorCallFunc,
+    callInstr,
+    pushInstr,
+    doCurrentInstr,
+    getcurrentInstr,
+    operatorExec,
+    boolOperatorExec
   )
 where
 
@@ -48,7 +62,7 @@ convStructInstrToVal ((name, v):rest) env =
 countParamFunc :: [Instruction] -> Int -> Int
 countParamFunc [] nb = nb
 countParamFunc (Store _: rest) nb = countParamFunc rest (nb + 1)
-countParamFunc (_: rest) nb = nb
+countParamFunc (_: rest) nb       = countParamFunc rest nb
 
 jumpIfFalseInstr :: Instruction -> Int -> Env -> Program -> Stack -> IO Value
 jumpIfFalseInstr (JumpIfFalse n) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
@@ -147,7 +161,7 @@ doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = cas
       Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
     _ -> fail ("Variable " ++ name ++ " is not a structure")
   Nothing -> fail ("Variable " ++ name ++ " not found")
-doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
+doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is (v : stack)
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
   Nothing -> fail ("Variable or function " ++ name ++ " not found")
