@@ -10,6 +10,23 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 import VM.VirtualMachine
+operatorExecSpec :: Spec
+operatorExecSpec = do
+  describe "operatorExec" $ do
+    it "int plus int" $ do
+      let stack = [VmInt 1, VmInt 2]
+      v <- operatorExec "+" (+) 0 [] [] stack
+      v `shouldBe` VmInt 3
+    it "float minus float" $ do
+      let stack = [VmFloat 3.5, VmFloat 5.2]
+      v <- operatorExec "-" (-) 0 [] [] stack
+      case v of
+        VmFloat f -> f `shouldSatisfy` (\n -> abs (n - 1.7) < 1e-9)
+        _         -> expectationFailure "Expected a VmFloat"
+    it "fail if different types" $ do
+      let stack = [VmInt 1, VmChar 'c']
+      (operatorExec "+" (+) 0 [] [] stack) `shouldThrow` anyException
+
 boolOperatorExecSpec :: Spec
 boolOperatorExecSpec = do
   describe "boolOperatorExec" $ do
