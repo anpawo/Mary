@@ -411,45 +411,6 @@ Explanation:
 
 ---
 
-### Pass Functions as argument
-
-Functions can be passed as arguments:
-
-```f#
-function add_two(x: int) -> int {
-    return x + 2;
-}
-
-print(add_two(5)); // Outputs 7
-
-function apply(f: (int) -> int, x: int) -> int {
-    return f(x);
-}
-
-print(apply((add_two), 10)); // Outputs 12
-```
-
----
-
-## 5. Advanced Features
-
-### Custom Operators
-
-Define custom operators using `operator`:
-
-```f#
-operator !! precedence 10 (l: list, index: int) -> null | any {
-    if index < 0 then {
-        return NULL;
-    } else {
-        if index == 0 then {
-            return l.data;
-        }
-        return l.next !! (index - 1);
-    }
-}
-```
-
 ### Custom Data Structures
 
 Using lists and structures:
@@ -481,5 +442,52 @@ struct person {
 function getname(p: struct person) -> str {
     return p.name;
 }
+```
+
+---
+
+## **Custom Operators**
+
+In Mary, we can define custom operators using `operator` keyword:
+
+**Syntax:**
+
+```c
+operator <operator_symbol> precedence <int> (<parameters>) -> <return_type> {
+  <operator_body>
+}
+```
+
+```f#
+operator !! precedence 10 (l: list, index: int) -> null | any {
+    if index < 0 then {
+        return NULL;
+    } else {
+        if index == 0 then {
+            return l.data;
+        }
+        return l.next !! (index - 1);
+    }
+}
+```
+
+---
+
+## **Pass Functions as argument**
+
+Functions can be passed as arguments:
+
+```f#
+function add_two(x: int) -> int {
+    return x + 2;
+}
+
+print(add_two(5)); // Outputs 7
+
+function apply(f: (int) -> int, x: int) -> int {
+    return f(x);
+}
+
+print(apply((add_two), 10)); // Outputs 12
 ```
 
