@@ -78,6 +78,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents any value that can be assigned to a variable.
 
 <binary_expression> ::= <binary_operation> | <bool> | <number> | <float> | <identifier>
+; Binary expressions include operations and simple values.
 
 <binary_operation> ::= <binary_expression> <whitespace> <binary_operator> <whitespace> <binary_expression>
 
