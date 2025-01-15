@@ -96,6 +96,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents a return statement with an optional value.
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
+; Defines mathematical operators.
 
 <binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
 
