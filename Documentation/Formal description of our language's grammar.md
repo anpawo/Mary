@@ -66,6 +66,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Refers to a specific struct type by its name.
 
 <body> ::= (<whitespace> <statement> <whitespace>)+
+; The body of a function contains one or more statements separated by whitespace.
 
 <statement> ::= <declaration> | <binary_expression> | <control_structure> | <return_statement>
 
