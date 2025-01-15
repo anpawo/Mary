@@ -9,20 +9,20 @@
 
 module AstSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, runIO)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
 import Test.Hspec.Runner ()
 import Text.RawString.QQ
 import Text.Megaparsec ()
 import Text.Megaparsec.Error (ParseErrorBundle(..))
 import Data.Either (isLeft)
 import Data.Void (Void)
-import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty()
 
 import Parser.Tokenizer
 import Parser.Token
 import Ast.Ast
 import Ast.Error
-import Ast.DeclarationParser
+import Ast.DeclarationParser()
 import Ast.Parser
 import Utils.Lib
 import Utils.ArgParser
