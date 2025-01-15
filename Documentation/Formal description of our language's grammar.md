@@ -72,6 +72,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; A statement can be a declaration, a constraint definition, a binary expression, a control structure, or a return statement.
 
 <declaration> ::= <variable> "=" <value> ";"
+; Declares and initializes a variable.
 
 <value> ::= <identifier> | <function_call> | <string> | <number> | <float> | <bool>
 
