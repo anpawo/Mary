@@ -14,6 +14,7 @@ import Data.List (intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Megaparsec (errorBundlePretty)
 
+import Opti.Optimizer (optimizeAST)
 import Utils.Lib (run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize)
