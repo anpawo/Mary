@@ -81,6 +81,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Binary expressions include operations and simple values.
 
 <binary_operation> ::= <binary_expression> <whitespace> <binary_operator> <whitespace> <binary_expression>
+; Describes a binary operation using two expressions and an operator.
 
 <control_structure> ::= <if_statement> | <while_loop>
 
