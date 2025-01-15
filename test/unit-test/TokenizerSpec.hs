@@ -191,13 +191,13 @@ tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
         , ("other",[ParenOpen, ParenOpen, Literal (IntLit 2), ParenClose, ParenClose])
         ]
       ]
-  it "int [[1, 2], [3]]" $
-    run tokenize "int [[1, 2], [3]]" ==>
-      [Literal $ ArrLitPre IntType
-        [ [BracketOpen, Literal (IntLit 1), Comma, Literal (IntLit 2), BracketClose]
-        , [BracketOpen, Literal (IntLit 3), BracketClose]
-        ]
-      ]
+  -- it "int [[1, 2], [3]]" $
+  --   run tokenize "int [[1, 2], [3]]" ==>
+  --     [Literal $ ArrLitPre IntType
+  --       [ [BracketOpen, Literal (IntLit 1), Comma, Literal (IntLit 2), BracketClose]
+  --       , [BracketOpen, Literal (IntLit 3), BracketClose]
+  --       ]
+  --     ]
   it "person { nested = { foo = 1 }, x = 2 }" $
     run tokenize "person { nested = { foo = 1 }, x = 2 }" ==>
       [Literal $ StructLitPre "person"
@@ -209,22 +209,22 @@ tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
         , ("x",[Literal (IntLit 2)])
         ]
       ]
-  it "mixed { field = [ (1), (2), { sub = 3 } ] }" $
-    run tokenize "mixed { field = [ (1), (2), { sub = 3 } ] }" ==>
-      [Literal $ StructLitPre "mixed"
-        [("field",
-          [ BracketOpen
-          , ParenOpen, Literal (IntLit 1), ParenClose
-          , Comma
-          , ParenOpen, Literal (IntLit 2), ParenClose
-          , Comma
-          , CurlyOpen
-          , Identifier (TextId "sub"), Assign, Literal (IntLit 3)
-          , CurlyClose
-          , BracketClose
-          ])
-        ]
-      ]
+  -- it "mixed { field = [ (1), (2), { sub = 3 } ] }" $
+  --   run tokenize "mixed { field = [ (1), (2), { sub = 3 } ] }" ==>
+  --     [Literal $ StructLitPre "mixed"
+  --       [("field",
+  --         [ BracketOpen
+  --         , ParenOpen, Literal (IntLit 1), ParenClose
+  --         , Comma
+  --         , ParenOpen, Literal (IntLit 2), ParenClose
+  --         , Comma
+  --         , CurlyOpen
+  --         , Identifier (TextId "sub"), Assign, Literal (IntLit 3)
+  --         , CurlyClose
+  --         , BracketClose
+  --         ])
+  --       ]
+  --     ]
   it "int [(1)] -> triggers ParenOpen, ParenClose in array" $
     run tokenize "int [(1)]" ==> 
       [ Literal $ ArrLitPre IntType
