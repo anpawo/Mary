@@ -68,7 +68,8 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <body> ::= (<whitespace> <statement> <whitespace>)+
 ; The body of a function contains one or more statements separated by whitespace.
 
-<statement> ::= <declaration> | <binary_expression> | <control_structure> | <return_statement>
+<statement> ::= <declaration> | <constraint_def> | <binary_expression> | <control_structure> | <return_statement>
+; A statement can be a declaration, a constraint definition, a binary expression, a control structure, or a return statement.
 
 <declaration> ::= <variable> "=" <value> ";"
 
