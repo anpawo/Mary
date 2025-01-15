@@ -42,6 +42,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines a list of arguments, which can be variables or function types, separated by commas.
 
 <variable> ::= <identifier> ":" <type>
+; Declares a variable with a name and type.
 
 <identifier> ::= <letter> (<letter> | <digit>)*
 
