@@ -9,6 +9,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines a function with a name, arguments, return type, and body.
 
 <whitespace> ::= " "
+; Represents a single space character.
 
 <function_name> ::= <letter> (<letter> | <digit>)*
 
