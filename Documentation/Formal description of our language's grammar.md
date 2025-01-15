@@ -102,6 +102,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines binary comparison and logical operators.
 
 <struct_def> ::= "struct" <whitespace> <identifier> <whitespace>? "{" <variable> ("," <variable>)* "}"
+; Defines a struct with a name and one or more variables.
 
 <operator_def> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <whitespace> "->" <whitespace>? <return_type> <whitespace>? "{" <body> "}"
 
