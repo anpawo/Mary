@@ -69,17 +69,18 @@ instance Show Type where
   show (ConstraintType Nothing t) = intercalate " | " (map show t)
 
 data Literal
-  = CharLit Char --                                                 \| 'c'   -> may be a list of char
-  | BoolLit Bool --                                                 \| true | false
-  | IntLit { intLiteralValue :: Int} --                                  \| 2
-  | FloatLit Double --                                              \| 1.5
-  | StringLit String --                                             \| "yo"   -> may be a list of char
-  | ArrLitPre Type [[MyToken]] --                                   \| before computation of the elements
-  | ArrLit Type [SubExpression] --                                  \| [1, 2, 3]
-  | StructLitPre String [(String, [MyToken])] --                    \| before computation of the elements
-  | StructLit String [(String, SubExpression)] --                   \| {name: "marius", age: 19}
-  | NullLit --                                                      \| null
-  | ClosureLit String [Type] Type --                               \| (+)
+  = CharLit Char --                               \| 'c'   -> may be a list of char
+  | BoolLit Bool --                               \| true | false
+  | IntLit { intLiteralValue :: Int} --           \| 2
+  | FloatLit Double --                            \| 1.5
+  | StringLit String --                           \| "yo"   -> may be a list of char
+  | ArrLitPre Type [[MyToken]] --                 \| before computation of the elements
+  | ListLitPre [[MyToken]] --                     \| before computation of the elements
+  | ArrLit Type [SubExpression] --                \| [1, 2, 3]
+  | StructLitPre String [(String, [MyToken])] --  \| before computation of the elements
+  | StructLit String [(String, SubExpression)] -- \| {name: "marius", age: 19}
+  | NullLit --                                    \| null
+  | ClosureLit String [Type] Type --              \| (+)
   deriving (Eq, Ord)
 
 instance Show Literal where
@@ -90,11 +91,12 @@ instance Show Literal where
   show (IntLit x) = show x
   show (FloatLit x) = show x
   show (StringLit x) = show x
-  show (ArrLitPre n x) = printf "%s [%s]" (show n) (show x)
+  show (ArrLitPre n x) = printf "%s%s" (show n) (show $ map head x)
   show (ArrLit t x) = printf "%s [%s]" (show t) $ intercalate ", " $ map show x
   show (StructLitPre n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(n', v) -> printf "%s = %s" n' (unwords $ map show v)) x
   show (StructLit n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(k, v) -> printf "%s = %s" k (show v)) x
   show NullLit = "NULL"
+  show (ListLitPre a) = printf "%s" $ show $ map head a
 
 data Identifier
   = TextId { textIdName :: String} --   \| factorial, add_2, x
