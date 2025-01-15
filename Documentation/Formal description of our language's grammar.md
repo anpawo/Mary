@@ -3,6 +3,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 ```BNF
 <file> ::= (<function> | <operator_definition> | <struct_definition> | <constraint_def>)+
+; A Mary file can contain one or more definitions including functions, operator definitions, structure definitions, or type constraints.
 
 <function> ::= "function" <whitespace> <function_name> <whitespace>? "(" <arguments> ")" <whitespace> "->" <whitespace> <return_type> <whitespace> "{" <body> "}"
 
