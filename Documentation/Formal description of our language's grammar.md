@@ -93,6 +93,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents a while loop structure.
 
 <return_statement> ::= "return" (<whitespace> <value>)? ";"
+; Represents a return statement with an optional value.
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
 
