@@ -34,7 +34,7 @@ import Data.Foldable (find, traverse_)
 import Ast.TokenParser
 import Data.Functor (($>))
 import Control.Applicative ((<|>), Alternative (empty))
-import Data.List (singleton, intercalate)
+import Data.List (singleton)
 import Data.Maybe (fromJust, isNothing)
 import Control.Monad (when, unless)
 import Text.Printf (printf)
@@ -47,41 +47,41 @@ data Group
   | GOp { getIndex :: Int, gopName :: String, gopArgs :: [Group]}
   deriving (Show)
 
-validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
-validLit ctx locVar (ListLitPre toks) = validLit ctx locVar $ foldr (\toks' acc -> StructLitPre "elem" [("data", toks'), ("next", [Literal acc])]) (StructLit "empty" []) toks
-validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
+validLit :: Int -> Ctx -> LocalVariable -> Literal -> Parser Literal
+validLit o ctx locVar (ListLitPre toks) = validLit o ctx locVar $ foldr (\toks' acc -> StructLitPre "elem" [("data", toks'), ("next", [Literal acc])]) (StructLit "empty" []) toks
+validLit o ctx locVar (StructLitPre name toks) = validLit o ctx locVar . StructLit name =<< mapM tosub toks
   where
     tosub :: (String, [MyToken]) -> Parser (String, SubExpression)
     tosub (n, v) = case (,) n <$> run (subexpression ctx locVar eof) v of
-      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError "struct error" [] v err) (intercalate "  " $ map show v)
+      Left err -> fail $ printf ";%s%s" (show o) $ prettyPrintError "struct error" [] v err
       Right suc -> pure suc
-validLit ctx locVar (ArrLitPre t toks) = validLit ctx locVar . ArrLit t =<< mapM tosub toks
+validLit o ctx locVar (ArrLitPre t toks) = validLit o ctx locVar . ArrLit t =<< mapM tosub toks
   where
     tosub :: [MyToken] -> Parser SubExpression
     tosub v = case run (subexpression ctx locVar eof) v of
-      Left err -> fail $ printf ";%stokens: %s" (prettyPrintError "array error" [] v err) (intercalate "  " $ map show v)
+      Left err -> fail $ printf ";%s%s" (show o) $ prettyPrintError "array error" [] v err
       Right suc -> pure suc
-validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
+validLit _ ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) subexpr >>= \case
     kv'
       | kv == kv' -> pure st
       | otherwise -> fail $ errInvalidStructure name kv
   _ -> fail $ errStructureNotBound name
-validLit ctx locVar arr@(ArrLit t subexp) = mapM (getType ctx locVar) subexp >>= (\ok -> if ok then pure arr else fail $ errInvalidArray (show t)) . all (== t)
-validLit _ _ lit = pure lit
+validLit _ ctx locVar arr@(ArrLit t subexp) = mapM (getType ctx locVar) subexp >>= (\ok -> if ok then pure arr else fail $ errInvalidArray (show t)) . all (== t)
+validLit _ _ _ lit = pure lit
 
 getGroup :: Ctx -> LocalVariable -> Parser Group
-getGroup ctx locVar = getOffset >>= (\offset -> choice
+getGroup ctx locVar = getOffset >>= (\o -> choice
     [ eof *> fail errEndSubexpr
-    , try $ GOp offset <$> (textIdentifier >>= \s -> if s == "is" then pure s else empty) <*> pure []
-    , GGr offset <$> (tok ParenOpen *> (someTill (getGroup ctx locVar <|> failN errEndParen) (tok ParenClose) <|> failN errEmptyParen))
-    , GLit offset <$> (validLit ctx locVar . literal =<< satisfy isLiteral)
-    , try $ GLit offset <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of
+    , try $ GOp o <$> (textIdentifier >>= \s -> if s == "is" then pure s else empty) <*> pure []
+    , GGr o <$> (tok ParenOpen *> (someTill (getGroup ctx locVar <|> failN errEndParen) (tok ParenClose) <|> failN errEmptyParen))
+    , GLit o <$> (validLit o ctx locVar . literal =<< satisfy isLiteral)
+    , try $ GLit o <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of
       Just (Structure _ []) -> pure $ StructLit atom []
       _ -> empty)
-    , try $ GVar offset <$> textIdentifier <* notFollowedBy (tok ParenOpen)
-    , GFn offset <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs offset <|> failN errEndParen))
-    , GOp offset <$> operatorIdentifier <*> pure []
+    , try $ GVar o <$> textIdentifier <* notFollowedBy (tok ParenOpen)
+    , GFn o <$> textIdentifier <*> (tok ParenOpen *> (tok ParenClose $> [] <|> getAllArgs o <|> failN errEndParen))
+    , GOp o <$> operatorIdentifier <*> pure []
     ]) . (+1)
   where
     getAllArgs offset = do
