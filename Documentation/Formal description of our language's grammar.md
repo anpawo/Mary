@@ -2,7 +2,7 @@ Below is a formal description of our programming language `Mary`.
 This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
 ```BNF
-<file> ::= (<function> | <operator_definition> | <struct_definition>)+
+<file> ::= (<function> | <operator_definition> | <struct_definition> | <constraint_def>)+
 
 <function> ::= "function" <whitespace> <function_name> <whitespace>? "(" <arguments> ")" <whitespace> "->" <whitespace> <return_type> <whitespace> "{" <body> "}"
 
@@ -32,9 +32,13 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <identifier> ::= <letter> (<letter> | <digit>)*
 
-<type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | <struct_type> | <function_type>
+<constraint_def> ::= "type" <whitespace> <identifier> <whitespace> "=" <whitespace> <type> <whitespace> "|" <whitespace> <type> <whitespace>? ";"
 
-<return_type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | <struct_type>
+<constraint> ::= <identifier>
+
+<type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | <struct_type> | <function_type> | <constraint>
+
+<return_type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | <struct_type> | <constraint>
 
 <function_type> ::= <identifier> ":" "(" <arguments> ")" "->" <return_type>
 
@@ -75,6 +79,3 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ```
 <!-- todo mettre les operateurs [ '|', '^', '&', '~', '!', '$' , '.', '=', ':',] -->
 <!-- todo ajouter les constraints dans tout les types -->
-<!-- todo ajouter la definition pour définir les opérateurs -->
-<!-- todo ajouter la definition pour définir les structures -->
-<!-- todo ajouter la définition d'un fichier (<struct_def> | <function> | <operator_def>) -->
