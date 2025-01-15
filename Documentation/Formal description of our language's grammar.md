@@ -23,9 +23,11 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
 ; Represents any uppercase or lowercase letter.
 
-<string> ::=  "\"" <word>+ "\""
+<digit> ::= "0" | "1" | ... | "9"
+; Represents a single digit.
 
-<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+<string> ::=  "\"" <character>* "\""
+; A string is enclosed in double quotes and consists of apossibly empty list of characters
 
 <float> ::= <digit>+ "." <digit>+
 
