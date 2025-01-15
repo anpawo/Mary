@@ -39,6 +39,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents an integer value.
 
 <arguments> ::= <variable> | <function_type> ("," <whitespace>? <variable> | <function_type>)*
+; Defines a list of arguments, which can be variables or function types, separated by commas.
 
 <variable> ::= <identifier> ":" <type>
 
