@@ -99,6 +99,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines mathematical operators.
 
 <binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
+; Defines binary comparison and logical operators.
 
 <struct_def> ::= "struct" <whitespace> <identifier> <whitespace>? "{" <variable> ("," <variable>)* "}"
 
