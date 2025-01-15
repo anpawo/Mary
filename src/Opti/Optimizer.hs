@@ -10,9 +10,20 @@ module Opti.Optimizer (optimizeAST) where
 import Ast.Ast
 import Parser.Token (Literal(..))
 
+printDebug :: Bool
+printDebug = True -- if true prints ast before and after optimization
+
 optimizeAST :: [Ast] -> IO [Ast]
 optimizeAST asts = do
+    if printDebug
+      then do
+        print asts
+      else return ()
     let astsOpt = map optimizeAst asts
+    if printDebug
+      then do
+        print astsOpt
+      else return ()
     return astsOpt
 
 optimizeAst :: Ast -> Ast
