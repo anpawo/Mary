@@ -60,6 +60,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Specifies the return type of a function.
 
 <function_type> ::= <identifier> ":" "(" <arguments> ")" "->" <return_type>
+; Represents a function type with its arguments and return type.
 
 <struct_type> ::= <identifier> ":" "struct " <name_of_struct>
 
