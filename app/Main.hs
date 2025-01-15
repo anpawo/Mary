@@ -14,6 +14,7 @@ import Data.List (intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Megaparsec (errorBundlePretty)
 
+import Opti.Optimizer (optimizeAST)
 import Utils.Lib (run)
 import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize)
@@ -40,9 +41,11 @@ glados args = toToken
             (builtins, imports) <- resolveImports args tokens
             case run (tokenToAst builtins imports) tokens of
                 Left err -> putStrLn ((if argColorblind args then colorblindMode else id) $ prettyPrintError (fromJust $ argInputFile args) pos tokens err) >> exitWith (ExitFailure 1)
-                Right ast
-                    | astTy $ argOutputType args -> print ast
-                    | otherwise -> toBytecode ast
+                Right ast -> do
+                    ast' <- if argOptimize args then optimizeAST ast else return ast
+                    if astTy (argOutputType args)
+                    then print ast'
+                    else toBytecode ast'
 
         toBytecode ast = case compiler ast of
             Left err -> print err >> exitWith (ExitFailure 1)
