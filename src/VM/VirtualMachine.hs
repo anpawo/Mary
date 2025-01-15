@@ -122,8 +122,8 @@ callInstr "append" ind env is (VmChar c : VmString str : stack) = exec (ind + 1)
 callInstr "append" ind env is (x : VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (arr ++ [x]):stack) -- type is not checked
 callInstr "at" ind env is (VmInt i : VmString str : stack) = exec (ind + 1) env is (VmChar (str !! i):stack) -- bounds not checked
 callInstr "at" ind env is (VmInt i : VmArray typeName arr : stack) = exec (ind + 1) env is (arr !! i:stack) -- bounds not checked
-callInstr "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str ++ str'):stack)
-callInstr "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr ++ arr'):stack) else fail "Cannot concat two arrays of different type"
+callInstr "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str' ++ str) : stack)
+callInstr "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr' ++ arr) : stack) else fail "Cannot concat two arrays of different type"
 --
 callInstr "toString" ind env is (v : stack) = exec (ind + 1) env is (VmString (show v):stack)
 callInstr "toChar" ind env is (VmChar c : stack) = exec (ind + 1) env is (VmChar c:stack)
