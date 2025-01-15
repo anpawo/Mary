@@ -2,7 +2,9 @@ Below is a formal description of our programming language `Mary`.
 This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
 ```BNF
-<function> ::= "function" <whitespace> <function_name> <whitespace> "(" <arguments> ")" <whitespace> "->" <whitespace> <type> <whitespace> "{" <body> "}"
+<file> ::= (<function> | <operator_definition> | <struct_definition>)+
+
+<function> ::= "function" <whitespace> <function_name> <whitespace>? "(" <arguments> ")" <whitespace> "->" <whitespace> <return_type> <whitespace> "{" <body> "}"
 
 <whitespace> ::= " "
 
@@ -24,7 +26,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <number> ::= <digit>+
 
-<arguments> ::= <variable> | <function> ("," <variable> | <function_type>)*
+<arguments> ::= <variable> | <function_type> ("," <whitespace>? <variable> | <function_type>)*
 
 <variable> ::= <identifier> ":" <type>
 
@@ -62,6 +64,17 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 
 <operator> ::= "+" | "-" | "*" | "/" | "%"
 
-<binary_operator> ::= "==" | "<" | ">" | "<=" | ">="
+<binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
+
+<struct_def> ::= "struct" <whitespace> <identifier> <whitespace>? "{" <variable> ("," <variable>)* "}"
+
+<operator_def> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <whitespace> "->" <whitespace>? <return_type> <whitespace>? "{" <body> "}"
+
+<operator_name> ::= .. any word or combination of ASCII characters that is not already assigned ..
+
 ```
+<!-- todo mettre les operateurs [ '|', '^', '&', '~', '!', '$' , '.', '=', ':',] -->
 <!-- todo ajouter les constraints dans tout les types -->
+<!-- todo ajouter la definition pour définir les opérateurs -->
+<!-- todo ajouter la definition pour définir les structures -->
+<!-- todo ajouter la définition d'un fichier (<struct_def> | <function> | <operator_def>) -->
