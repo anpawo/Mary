@@ -171,6 +171,7 @@ getLitType (StructLit n _) = StructType n
 getLitType (StructLitPre n _) = StructType n
 getLitType (ArrLitPre t _) = t
 getLitType (ClosureLit _ argsTy retTy) = ClosureType argsTy retTy
+getLitType (ListLitPre _) = ConstraintType Nothing [StructType "empty", StructType "elem"]
 getLitType NullLit = NullType
 
 notTaken :: [String] -> String -> Parser String
