@@ -57,6 +57,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines all supported types in Mary, including basic, structured, and constrained types.
 
 <return_type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | <struct_type> | <constraint>
+; Specifies the return type of a function.
 
 <function_type> ::= <identifier> ":" "(" <arguments> ")" "->" <return_type>
 
