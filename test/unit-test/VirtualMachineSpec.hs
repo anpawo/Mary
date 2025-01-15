@@ -371,7 +371,6 @@ conversionOperatorSpec = describe "conversionOperator" $ do
     v <- runProg prog []
     v `shouldBe` VmInt 123
 
-  it "toInt from string parse fail => Null" $ do
+  it "toInt from string parse fail => error" $ do
     let prog = [Push (VmString "abc"), Push (VmFunc "toInt"), Call]
-    v <- runProg prog []
-    v `shouldBe` VmNull
+    (runProg prog []) `shouldThrow` anyException

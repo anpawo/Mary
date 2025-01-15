@@ -18,16 +18,10 @@ module VM.VirtualMachine
     convStructInstrToVal,
     countParamFunc,
     jumpIfFalseInstr,
-    exitCallFunc,
-    toIntCallFunc,
-    toFloatCallFunc,
-    operatorCallFunc,
     callInstr,
     pushInstr,
     doCurrentInstr,
     getcurrentInstr,
-    operatorExec,
-    boolOperatorExec
   )
 where
 
@@ -69,81 +63,11 @@ jumpIfFalseInstr (JumpIfFalse n) ind env is (VmBool False : stack) = exec (ind +
 jumpIfFalseInstr (JumpIfFalse _) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
 jumpIfFalseInstr (JumpIfFalse _) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
 
-exitCallFunc :: Int -> Env -> Program -> Stack -> IO Value
-exitCallFunc ind env is (VmInt 0:stack) = exitSuccess
-exitCallFunc ind env is (VmInt status:stack) = exitWith $ ExitFailure status
-exitCallFunc ind env is _ = fail "error with exit func"
-
-toIntCallFunc :: Int -> Env -> Program -> Stack -> IO Value
-toIntCallFunc ind env is (VmChar c:stack) = exec (ind + 1) env is (VmInt (ord c):stack)
-toIntCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmInt (fromEnum v):stack)
-toIntCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmInt v:stack)
-toIntCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmInt (floor v):stack)
-toIntCallFunc ind env is (VmString v:stack) = case readMaybe v of
-  Just i -> exec (ind + 1) env is (VmInt i:stack)
-  Nothing -> exec (ind + 1) env is (VmNull:stack)
-toIntCallFunc ind env is _ = fail "error with toInt func"
-
-toFloatCallFunc :: Int -> Env -> Program -> Stack -> IO Value
-toFloatCallFunc ind env is (VmBool v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral $ fromEnum v):stack)
-toFloatCallFunc ind env is (VmFloat v:stack) = exec (ind + 1) env is (VmFloat v:stack)
-toFloatCallFunc ind env is (VmInt v:stack) = exec (ind + 1) env is (VmFloat (fromIntegral v):stack)
-toFloatCallFunc ind env is (VmString v:stack) = case readMaybe v of
-  Just f -> exec (ind + 1) env is (VmFloat f:stack)
-  Nothing -> exec (ind + 1) env is (VmNull:stack)
-toFloatCallFunc ind env is _ = fail "error with toInt func"
-
-operatorCallFunc :: String -> Int -> Env -> Program -> Stack -> IO Value
-operatorCallFunc "+" ind env is stack = operatorExec "+" (+) ind env is stack
-operatorCallFunc "-" ind env is stack = operatorExec "-" (-) ind env is stack
-operatorCallFunc "*" ind env is stack = operatorExec "*" (*) ind env is stack
-operatorCallFunc "/" ind env is (VmInt 0 : VmInt _ : stack) = fail "Division by 0 is prohibited for integers"
-operatorCallFunc "/" ind env is (VmFloat 0.0 : VmFloat _ : stack) = fail "Division by 0 is prohibited for floats"
-operatorCallFunc "/" ind env is (VmInt a : VmInt b : stack) = exec (ind + 1) env is (VmInt (div b a) : stack)
-operatorCallFunc "/" ind env is (VmFloat a : VmFloat b : stack) = exec (ind + 1) env is (VmFloat (b / a) : stack)
-operatorCallFunc "<" ind env is stack = boolOperatorExec "<" (<) ind env is stack
-operatorCallFunc ">" ind env is stack = boolOperatorExec ">" (>) ind env is stack
-operatorCallFunc "==" ind env is (a : b : rest) = exec (ind + 1) env is (VmBool (a == b) : rest)
-operatorCallFunc "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
-  Just x -> exec (ind + 1) env is (x : rest)
-  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
-operatorCallFunc "." ind env is (VmString fieldName : VmString name : rest) = case lookup name env of
-    Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
-      Just val -> exec (ind + 1) env is (val : rest)
-    _ -> fail ". expected a structure to access value"
-operatorCallFunc name ind env is _ = fail "Invalid function/operator call."
-
 callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
-callInstr "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
-  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." field name
-  _ -> exec (ind + 1) env is (VmStruct name (map (\(n, v') -> if n == field then (n, v) else (n, v')) fields):stack)
-callInstr "is" ind env is (VmString t : v : stack) = exec (ind + 1) env is (VmBool (typeCheck v t):stack)
-callInstr "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
--- arr and str
-callInstr "length" ind env is (VmString str : stack) = exec (ind + 1) env is (VmInt (length str):stack)
-callInstr "length" ind env is (VmArray _ arr : stack) = exec (ind + 1) env is (VmInt (length arr):stack)
-callInstr "insert" ind env is (VmChar c : VmInt i :VmString str : stack) = exec (ind + 1) env is (VmString (take i str ++ [c] ++ drop i str):stack)
-callInstr "insert" ind env is (x : VmInt i :VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (take i arr ++ [x] ++ drop i arr):stack) -- type is not checked
-callInstr "append" ind env is (VmChar c : VmString str : stack) = exec (ind + 1) env is (VmString (str ++ [c]):stack)
-callInstr "append" ind env is (x : VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (arr ++ [x]):stack) -- type is not checked
-callInstr "at" ind env is (VmInt i : VmString str : stack) = exec (ind + 1) env is (VmChar (str !! i):stack) -- bounds not checked
-callInstr "at" ind env is (VmInt i : VmArray typeName arr : stack) = exec (ind + 1) env is (arr !! i:stack) -- bounds not checked
-callInstr "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str' ++ str):stack)
-callInstr "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr' ++ arr):stack) else fail "Cannot concat two arrays of different type"
---
-callInstr "toString" ind env is (v : stack) = exec (ind + 1) env is (VmString (show v):stack)
-callInstr "toChar" ind env is (VmChar c : stack) = exec (ind + 1) env is (VmChar c:stack)
-callInstr "toChar" ind env is (VmInt c : stack) = exec (ind + 1) env is (VmChar (chr c):stack)
-callInstr "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
-callInstr "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
-callInstr "exit" ind env is stack = exitCallFunc ind env is stack
-callInstr "toInt" ind env is stack = toIntCallFunc ind env is stack
-callInstr "toFloat" ind env is stack = toFloatCallFunc ind env is stack
 callInstr name ind env is stack = case lookup name env of
-    Just [Push (VmClosure closureName)] -> callInstr closureName ind env is stack -- may not be the move
+    Just [Push (VmClosure closureName)] -> callInstr closureName ind env is stack -- consume closure
     Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
-    Nothing -> operatorCallFunc name ind env is stack
-
+    Nothing -> builtinOperator name ind env is stack
 
 pushInstr :: Value -> Int -> Env -> Program -> Stack -> IO Value
 pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is (VmStruct structName values : stack)
@@ -177,12 +101,106 @@ getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing
 exec :: Int -> Env -> Program -> Stack -> IO Value
 exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
 
-operatorExec :: String -> (forall a. Num a => a -> a -> a) -> Int -> Env -> Program -> Stack -> IO Value
-operatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmInt (func b a) : rest)
-operatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmFloat (func b a) : rest)
-operatorExec name _ _ _ _ _ = fail $ name ++ " expects two numbers on the stack"
+builtinOperator :: String -> Int -> Env -> Program -> Stack -> IO Value
+-- io
+builtinOperator "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
+builtinOperator "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
+builtinOperator "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
+builtinOperator "exit" ind env is (VmInt n:stack) = if n == 0 then exitSuccess else exitWith $ ExitFailure n
+-- struct
+builtinOperator "." ind env is (VmString fieldName : VmStruct name fields : rest) = case lookup fieldName fields of
+  Just x -> exec (ind + 1) env is (x : rest)
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." fieldName name
+builtinOperator "." ind env is (VmString fieldName : VmString name : rest) = case lookup name env of
+    Just [Push (VmStruct _ fields)] -> case lookup fieldName fields of
+      Just val -> exec (ind + 1) env is (val : rest)
+    _ -> fail ". expected a structure to access value"
+builtinOperator "set" ind env is (v : VmString field : VmStruct name fields : stack) = case find ((== field) . fst) fields of
+  Nothing -> fail $ printf "Cannot access field `%s` of struct `%s`." field name
+  _ -> exec (ind + 1) env is (VmStruct name (map (\(n, v') -> if n == field then (n, v) else (n, v')) fields):stack)
+-- conversion
+builtinOperator "toString" ind env is (v : stack) = exec (ind + 1) env is (VmString (show v):stack)
+builtinOperator "toFloat"  ind env is (x:stack) = either fail (\v -> exec (ind + 1) env is (v:stack)) (conversionOperator ToFloat x)
+builtinOperator "toInt"    ind env is (x:stack) = either fail (\v -> exec (ind + 1) env is (v:stack)) (conversionOperator ToInt x)
+builtinOperator "toChar"   ind env is (x:stack) = either fail (\v -> exec (ind + 1) env is (v:stack)) (conversionOperator ToChar x)
+-- misc
+builtinOperator "length" ind env is (VmString str : stack) = exec (ind + 1) env is (VmInt (length str):stack)
+builtinOperator "length" ind env is (VmArray _ arr : stack) = exec (ind + 1) env is (VmInt (length arr):stack)
+builtinOperator "insert" ind env is (VmChar c : VmInt i :VmString str : stack) = exec (ind + 1) env is (VmString (take i str ++ [c] ++ drop i str):stack)
+builtinOperator "insert" ind env is (x : VmInt i :VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (take i arr ++ [x] ++ drop i arr):stack) -- type is not checked
+builtinOperator "append" ind env is (VmChar c : VmString str : stack) = exec (ind + 1) env is (VmString (str ++ [c]):stack)
+builtinOperator "append" ind env is (x : VmArray typeName arr : stack) = exec (ind + 1) env is (VmArray typeName (arr ++ [x]):stack) -- type is not checked
+builtinOperator "at" ind env is (VmInt i : VmString str : stack) = exec (ind + 1) env is (VmChar (str !! i):stack) -- bounds not checked
+builtinOperator "at" ind env is (VmInt i : VmArray typeName arr : stack) = exec (ind + 1) env is (arr !! i:stack) -- bounds not checked
+builtinOperator "concat" ind env is (VmString str : VmString str' : stack) = exec (ind + 1) env is (VmString (str' ++ str):stack)
+builtinOperator "concat" ind env is (VmArray t arr : VmArray t' arr' : stack) = if t == t' then exec (ind + 1) env is (VmArray t (arr' ++ arr):stack) else fail "Cannot concat two arrays of different type"
+builtinOperator name ind env insts (a:b:stack) = either fail (\v -> exec (ind + 1) env insts (v:stack)) (arithmeticOperator name b a)
+builtinOperator name _ _ _ _ = fail $ printf "Invalid operands for operator '%s'" name
 
-boolOperatorExec :: String -> (forall a. Ord a => a -> a -> Bool) -> Int -> Env -> Program -> Stack -> IO Value
-boolOperatorExec _ func ind env is (VmInt a : VmInt b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
-boolOperatorExec _ func ind env is (VmFloat a : VmFloat b : rest) = exec (ind + 1) env is (VmBool (func b a) : rest)
-boolOperatorExec name _ _ _ _ _ = fail $ name ++ " expects two numbers on the stack"
+
+data Conversion = ToInt | ToFloat | ToChar deriving (Show)
+
+conversionOperator :: Conversion -> Value -> Either String Value
+-- toChar
+conversionOperator ToChar (VmChar c) = Right $ VmChar c
+conversionOperator ToChar (VmInt c)  = Right $ VmChar $ chr c
+
+-- toInt
+conversionOperator ToInt (VmChar c)   = Right $ VmInt $ ord c
+conversionOperator ToInt (VmBool v)   = Right $ VmInt $ fromEnum v
+conversionOperator ToInt (VmInt v)    = Right $ VmInt v
+conversionOperator ToInt (VmFloat v)  = Right $ VmInt $ floor v
+conversionOperator ToInt (VmString v) = maybe (Left "Invalid string for toInt") (Right . VmInt) (readMaybe v)
+
+-- toFloat
+conversionOperator ToFloat (VmBool v)   = Right $ VmFloat $ fromIntegral $ fromEnum v
+conversionOperator ToFloat (VmFloat v)  = Right $ VmFloat v
+conversionOperator ToFloat (VmInt v)    = Right $ VmFloat $ fromIntegral v
+conversionOperator ToFloat (VmString v) = maybe (Left "Invalid string for toFloat") (Right . VmFloat) (readMaybe v)
+
+-- error
+conversionOperator name _ = Left $ printf "Invalid value for '%s'" $ show name
+
+
+arithmeticOperator :: String -> Value -> Value -> Either String Value
+-- comparison
+arithmeticOperator "==" l r = Right $ VmBool $ l == r
+arithmeticOperator "is" v (VmString t) = Right $ VmBool (typeCheck v t)
+-- int int
+arithmeticOperator "+" (VmInt l) (VmInt r) = Right $ VmInt $ l + r
+arithmeticOperator "-" (VmInt l) (VmInt r) = Right $ VmInt $ l - r
+arithmeticOperator "*" (VmInt l) (VmInt r) = Right $ VmInt $ l * r
+arithmeticOperator "/" (VmInt l) (VmInt 0) = Left "Division by zero"
+arithmeticOperator "/" (VmInt l) (VmInt r) = Right $ VmInt $ l `div` r
+arithmeticOperator "<" (VmInt l) (VmInt r) = Right $ VmBool $ l < r
+
+-- float float
+arithmeticOperator "+" (VmFloat l) (VmFloat r) = Right $ VmFloat $ l + r
+arithmeticOperator "-" (VmFloat l) (VmFloat r) = Right $ VmFloat $ l - r
+arithmeticOperator "*" (VmFloat l) (VmFloat r) = Right $ VmFloat $ l * r
+arithmeticOperator "/" (VmFloat l) (VmFloat 0) = Left "Division by zero"
+arithmeticOperator "/" (VmFloat l) (VmFloat r) = Right $ VmFloat $ l / r
+arithmeticOperator "<" (VmFloat l) (VmFloat r) = Right $ VmBool $ l < r
+
+-- int float
+arithmeticOperator "+" (VmInt l) (VmFloat r) = Right $ VmFloat $ fromIntegral l + r
+arithmeticOperator "-" (VmInt l) (VmFloat r) = Right $ VmFloat $ fromIntegral l - r
+arithmeticOperator "*" (VmInt l) (VmFloat r) = Right $ VmFloat $ fromIntegral l * r
+arithmeticOperator "/" (VmInt l) (VmFloat 0) = Left "Division by zero"
+arithmeticOperator "/" (VmInt l) (VmFloat r) = Right $ VmFloat $ fromIntegral l / r
+arithmeticOperator "<" (VmInt l) (VmFloat r) = Right $ VmBool $ fromIntegral l < r
+
+-- float int
+arithmeticOperator "+" (VmFloat l) (VmInt r) = Right $ VmFloat $ l + fromIntegral r
+arithmeticOperator "-" (VmFloat l) (VmInt r) = Right $ VmFloat $ l - fromIntegral r
+arithmeticOperator "*" (VmFloat l) (VmInt r) = Right $ VmFloat $ l * fromIntegral r
+arithmeticOperator "/" (VmFloat l) (VmInt 0) = Left "Division by zero"
+arithmeticOperator "/" (VmFloat l) (VmInt r) = Right $ VmFloat $ l / fromIntegral r
+arithmeticOperator "<" (VmFloat l) (VmInt r) = Right $ VmBool $ l < fromIntegral r
+
+-- string
+arithmeticOperator "+" (VmString l) (VmString r) = Right $ VmString $ l ++ r
+arithmeticOperator "*" (VmString l) (VmInt r)    = Right $ VmString $ concat $ replicate r l
+
+-- error
+arithmeticOperator op _ _ = Left $ printf "Invalid operands for operator '%s'" op
