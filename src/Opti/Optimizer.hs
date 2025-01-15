@@ -15,15 +15,9 @@ printDebug = True -- if true prints ast before and after optimization
 
 optimizeAST :: [Ast] -> IO [Ast]
 optimizeAST asts = do
-    if printDebug
-      then do
-        print asts
-      else return ()
+    if printDebug then print asts else return ()
     let astsOpt = map optimizeAst asts
-    if printDebug
-      then do
-        print astsOpt
-      else return ()
+    if printDebug then print astsOpt else return ()
     return astsOpt
 
 optimizeAst :: Ast -> Ast
@@ -43,6 +37,18 @@ optimizeSubExpr :: SubExpression -> SubExpression
 optimizeSubExpr fc@(FunctionCall { fnCallName = "+", fnCallArgs = args }) =
   case args of
     [Lit (IntLit x), Lit (IntLit y)] -> Lit (IntLit (x + y))
+    _ -> fc { fnCallArgs = map optimizeSubExpr args }
+optimizeSubExpr fc@(FunctionCall { fnCallName = "-", fnCallArgs = args }) =
+  case args of
+    [Lit (IntLit x), Lit (IntLit y)] -> Lit (IntLit (x - y))
+    _ -> fc { fnCallArgs = map optimizeSubExpr args }
+optimizeSubExpr fc@(FunctionCall { fnCallName = "*", fnCallArgs = args }) =
+  case args of
+    [Lit (IntLit x), Lit (IntLit y)] -> Lit (IntLit (x * y))
+    _ -> fc { fnCallArgs = map optimizeSubExpr args }
+optimizeSubExpr fc@(FunctionCall { fnCallName = "/", fnCallArgs = args }) =
+  case args of
+    [Lit (IntLit x), Lit (IntLit y)] -> Lit (IntLit (x `div` y))
     _ -> fc { fnCallArgs = map optimizeSubExpr args }
 optimizeSubExpr fc@(FunctionCall { fnCallArgs = args }) =
   fc { fnCallArgs = map optimizeSubExpr args }
