@@ -16,5 +16,6 @@ function main() -> int {
     print(a.next.next.data);
     a.next = empty {};
     print(a);
+    print([1, 2, 3, "soleil"]);
     return 0;
 }
