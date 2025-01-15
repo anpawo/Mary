@@ -90,6 +90,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents an if-else conditional structure.
 
 <while_loop> ::= "while" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}"
+; Represents a while loop structure.
 
 <return_statement> ::= "return" (<whitespace> <value>)? ";"
 
