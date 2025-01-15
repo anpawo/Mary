@@ -33,6 +33,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; A floating-point number contains digits, a decimal point, and additional digits.
 
 <bool> ::= "true" | "false"
+; Represents a boolean value.
 
 <number> ::= "-"? <digit>+
 ; Represents an integer value.
