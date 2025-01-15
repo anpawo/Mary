@@ -24,6 +24,7 @@ dependencies:
 - containers >= 0.6.7
 - raw-strings-qq >= 1.0.0
 - directory
+- silently
 
 ghc-options:
 - -Wall
