@@ -134,7 +134,9 @@ errFunctionNotBound :: String -> String
 errFunctionNotBound = printf "function '%s' doesn't exist." . blue
 
 errStructureNotBound :: String -> String
-errStructureNotBound = printf "structure '%s' doesn't exist." . blue
+errStructureNotBound "empty" = printf "structure '%s' doesn't exist. (missing '%s')" (blue "empty") $ blue "import list"
+errStructureNotBound "elem"  = printf "structure '%s' doesn't exist. (missing '%s')" (blue "elem") $ blue "import list"
+errStructureNotBound n = printf "structure '%s' doesn't exist." $ blue n
 
 errStructureFieldNotBound :: String -> String -> String
 errStructureFieldNotBound name field = printf "structure '%s' doesn't have the field '%s'." (blue name) (blue field)
@@ -174,7 +176,9 @@ prettyPrintError fileName tokensPos tokens (ParseErrorBundle {bundleErrors = err
     case errors of
         (FancyError pos fancySet :| _) ->
             case 0 `elemAt` fancySet of
-                (ErrorFail (';': err)) -> err
+                (ErrorFail (';': input)) -> do
+                    (n, err) <- (reads input :: [(Int, String)])
+                    printf "\n%s %s" (filePosition fileName tokensPos (n - 1)) (dropWhile (/= '|') err)
                 (ErrorFail (':': input)) -> do
                     (n, err) <- (reads input :: [(Int, String)])
                     printf "\n%s |\n | %s%s%s\n |%s\n%s: %s\n" (filePosition fileName tokensPos (pos - 1)) tokCons (red (tokErr2 n)) (tokLeft2 n) (red (pointer2 n)) (red "error") err
