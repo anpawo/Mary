@@ -83,7 +83,7 @@ literalSpec = describe "literal" $ do
     it "1" $ show (IntLit 1) ==> "1"
     it "1.0" $ show (FloatLit 1) ==> "1.0"
     it "\"lol\"" $ show (StringLit "lol") ==> "\"lol\""
-    it "int [1]" $ show (ArrLitPre IntType [[Literal $ IntLit 1], [Literal $ IntLit 1]]) ==> "int [[[1],[1]]]"
+    it "int [1]" $ show (ArrLitPre IntType [[Literal $ IntLit 1], [Literal $ IntLit 1]]) ==> "int[1,1]"
     it "int [1]" $ show (ArrLit IntType [Lit $ IntLit 1, Lit $ IntLit 1]) ==> "int [Lit 1, Lit 1]"
     it "person { name = \"marius\", age = 1 }" $
       show (StructLitPre "person" [("name",[Literal $ StringLit "marius"]), ("age",[Literal $ IntLit 1])])
