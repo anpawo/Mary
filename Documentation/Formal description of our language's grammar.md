@@ -87,6 +87,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Control structures include conditional statements and loops.
 
 <if_statement> ::= "if" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}" ( <whitespace> "else" <whitespace> "{" <body> "}")?
+; Represents an if-else conditional structure.
 
 <while_loop> ::= "while" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}"
 
