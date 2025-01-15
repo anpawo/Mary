@@ -11,7 +11,7 @@ import Ast.Ast
 import Parser.Token (Literal(..))
 
 printDebug :: Bool
-printDebug = True -- if true prints ast before and after optimization
+printDebug = False -- if true prints ast before and after optimization
 
 optimizeAST :: [Ast] -> IO [Ast]
 optimizeAST asts = do
