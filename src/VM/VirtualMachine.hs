@@ -85,7 +85,7 @@ doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = cas
       Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
     _ -> fail ("Variable " ++ name ++ " is not a structure")
   Nothing -> fail ("Variable " ++ name ++ " not found")
-doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is (v : stack)
+doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
   Nothing -> fail ("Variable or function " ++ name ++ " not found")

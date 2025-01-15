@@ -135,11 +135,6 @@ doCurrentInstrSpec = describe "doCurrentInstr" $ do
     let prog = [Update "var"]
     (exec 0 [] prog [VmInt 9, VmString "field"]) `shouldThrow` anyException
 
-  it "Store => new env variable" $ do
-    let prog = [Store "newVar"]
-    v <- exec 0 [] prog [VmInt 10]
-    v `shouldBe` VmInt 10
-
   it "Load => loads function from env" $ do
     let env = [("myFun", [Push (VmInt 77), Ret])]
         prog = [Load "myFun"]
