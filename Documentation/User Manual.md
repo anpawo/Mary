@@ -162,8 +162,8 @@ Represents a type constraint for variables, often combining multiple allowed typ
 
 Declare and initialize variables using the following syntax:
 
-```c
-<variable> ::= <variable_name>: <type> = <value>;
+```BNF
+<variable> ::= <variable_name>: <type> "=" <value>;
 ```
 
 ### Examples:
@@ -197,10 +197,10 @@ Declare and initialize variables using the following syntax:
 In Mary, functions are defined using the `function` keyword, followed by the function name, parameters, return type, and body.
 
 **Syntax:**
-```c
-function ::= function <function_name>(<parameters>) -> <return_type> {
+```BNF
+<function> ::= "function" <function_name> "(" <parameters> ")" "->" <return_type> "{"
   <function_body>
-}
+"}"
 ```
 
 **Example**
@@ -336,8 +336,8 @@ The `if` construct evaluates a condition and executes the corresponding block of
 
 **Syntax:**
 
-```
-condition ::= if < bool | fonction<bool> > then { <body> } else { <body> }
+```BNF
+<if> ::= "if" <boolean expression> "then" "{" <body> "}" "else" "{" <body> "}"
 ```
 
 Example:
@@ -367,8 +367,8 @@ A loop repeatedly executes a block of code as long as the condition evaluates to
 
 **Syntax:**
 
-```
-loop ::= while < bool | fonction<bool> > then { <body> }
+```BNF
+<while_loop> ::= "while" <boolean_expression> "then" "{" <body> "}"
 ```
 
 Example:
@@ -440,8 +440,8 @@ In Mary, structures are defined using the struct keyword, where each structure c
 
 **Syntax:**
 
-```c
-structure ::= struct <struct_name> { field }
+```BNF
+<structure> ::= "struct" <struct_name> "{" <fields> "}"
 ```
 ```c
 struct date {
@@ -471,10 +471,10 @@ In Mary, we can define custom operators using `operator` keyword, where preceden
 
 **Syntax:**
 
-```c
-operator ::= operator <operator_symbol> precedence <int> (<parameters>) -> <return_type> {
+```BNF
+<operator> ::= "operator" <operator_symbol> "precedence" <int> "(" <parameters> ")" "->" <return_type> "{"
   <operator_body>
-}
+"}"
 ```
 
 ```f#
@@ -494,6 +494,12 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
 ## 11. Constraint type
 
 In Mary, we can create our own custom types.
+
+**Syntax:**
+
+```BNF
+<constraint> ::= "type" <name> ":" <type> "|" <type> ";"
+```
 
 Example: 
 ```
