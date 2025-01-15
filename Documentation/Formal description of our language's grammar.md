@@ -105,6 +105,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines a struct with a name and one or more variables.
 
 <operator_def> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <whitespace> "->" <whitespace>? <return_type> <whitespace>? "{" <body> "}"
+; Defines a custom operator with precedence, arguments, a return type, and a body.
 
 <operator_name> ::= .. any word or combination of ASCII characters that is not already assigned ..
 
