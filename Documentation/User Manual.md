@@ -13,25 +13,29 @@ Welcome to the user manual for the GLaDOS programming language. This document wi
     - [Running GLaDOS](#running-glados)
     - [Hello, World!](#hello-world)
   - [2. Syntax and Basics](#2-syntax-and-basics)
-    - [Variables and Bindings](#variables-and-bindings)
+  - [3. Data Types](#3-data-types)
+    - [CharType](#chartype)
+    - [BoolType](#booltype)
+    - [IntType](#inttype)
+    - [FloatType](#floattype)
+    - [StrType](#strtype)
+    - [ArrType](#arrtype)
+    - [AnyType](#anytype)
+    - [ConstraintType](#constrainttype)
+  - [4. Variable and Binding Syntax](#4-variable-and-binding-syntax)
+  - [5. Function](#5-function)
+    - [Writing Functions](#writing-functions)
     - [Built-in Functions](#built-in-functions)
-  - [3. Control Structures](#3-control-structures)
-    - [Conditionals](#conditionals)
-      - [`if`](#if)
-    - [Loops and Recursion](#loops-and-recursion)
-  - [4. Functions](#4-functions)
-    - [Defining Functions](#defining-functions)
-    - [Higher-Order Functions](#higher-order-functions)
-  - [5. Advanced Features](#5-advanced-features)
-    - [Custom Operators](#custom-operators)
-    - [Closures](#closures)
-  - [6. Error Handling](#6-error-handling)
-    - [Common Errors](#common-errors)
-    - [Debugging Tips](#debugging-tips)
-  - [7. Examples](#7-examples)
-    - [Factorial Function](#factorial-function)
-    - [Fibonacci Sequence](#fibonacci-sequence)
-    - [Custom Data Structures](#custom-data-structures)
+  - [6. Condition](#6-condition)
+    - [Using if](#using-if)
+  - [7. Loops and Recursion](#7-loops-and-recursion)
+    - [Using Loops](#using-loops)
+    - [Using Recursion](#using-recursion)
+  - [8. Import](#8-import)
+  - [9. Custom Data Structures](#9-custom-data-structures)
+  - [10. Custom Operators](#10-custom-operators)
+  - [11. Constraint type](#11-constraint-type)
+  - [12. Pass Functions as argument](#12-pass-functions-as-argument)
 
 ---
 
@@ -39,7 +43,7 @@ Welcome to the user manual for the GLaDOS programming language. This document wi
 
 ### Installation
 
-1. Download the latest release of GLaDOS from the [official repository](#https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde).
+1. Download the latest release of GLaDOS from the [official repository](https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde).
 Download the latest release by clicking on `Releases` then `Assets` and downloading the release you want.
 
 2. Ensure you have [Haskell](https://www.haskell.org/) installed on your machine.
@@ -83,17 +87,17 @@ Hello, World!
 ## 2. Syntax and Basics
 
 Our language is iterative, and takes direct inspiration from Python, TypeScript as well as C. In the following chapters we will see how to write our language.
-The following examples are non-exhaustive and you are encouraged to read the [Formal description of our language's grammar](#https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde/blob/Documentation/Documentation/Formal%20description%20of%20our%20language%27s%20grammar.md)
-by clicking the link or going to the [official repository](#https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde)
+The following examples are non-exhaustive and you are encouraged to read the [Formal description of our language's grammar](https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde/blob/Documentation/Documentation/Formal%20description%20of%20our%20language%27s%20grammar.md)
+by clicking the link or going to the [official repository](https://github.com/EpitechPromo2027/B-FUN-500-PAR-5-2-glados-zacharie.rodde)
 and clicking on `Documentation` and then on `Formal description of our language's grammar.md`.
 
-This file contains detailed descriptions of our language's grammar using the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
+This file contains detailed descriptions of our language's grammar using the [BNF notation](https://letmegooglethat.com/?q=BNF+notation).
 
 ---
 
-## **Data Types**
+## 3. Data Types
 
-### **CharType**
+### CharType
 Represents a single character.
 - Example: `'a'`, `'1'`, `'$'`
 - **Usage:**
@@ -101,35 +105,35 @@ Represents a single character.
   c: char = 'x';
   ```
 
-### **BoolType**
+### BoolType
 Represents a Boolean value (`true` or `false`).
 - **Usage:**
   ```c
   isReady: bool = true;
   ```
 
-### **IntType**
+### IntType
 Represents an integer value (whole number).
 - **Usage:**
   ```c
   count: int = 42;
   ```
 
-### **FloatType**
+### FloatType
 Represents a floating-point number (decimal values).
 - **Usage:**
   ```c
   pi: float = 3.14;
   ```
 
-### **StrType**
+### StrType
 Represents a string (a sequence of characters). Equivalent to an array of `char`.
 - **Usage:**
   ```c
   message: str = "Hello, world!";
   ```
 
-### **ArrType**
+### ArrType
 Represents an array of elements of a specific type.
 - **Usage:**
   ```c
@@ -137,7 +141,7 @@ Represents an array of elements of a specific type.
   words: arr[str] = ["hello", "world"];
   ```
 
-### **AnyType**
+### AnyType
 Represents a dynamic type that can hold any value
 - **Usage:**
   ```c
@@ -145,7 +149,7 @@ Represents a dynamic type that can hold any value
   x = "Dynamic typing";
   ```
 
-### **4. ConstraintType**
+### ConstraintType
 Represents a type constraint for variables, often combining multiple allowed types.
 - **Usage:**
   ```c
@@ -154,7 +158,7 @@ Represents a type constraint for variables, often combining multiple allowed typ
 
 ---
 
-## **Variable and Binding Syntax**
+## 4. Variable and Binding Syntax
 
 Declare and initialize variables using the following syntax:
 
@@ -162,7 +166,7 @@ Declare and initialize variables using the following syntax:
 <variable> ::= <variable_name>: <type> = <value>;
 ```
 
-### **Examples:**
+### Examples:
 
 1. **Integer Variable:**
    ```c
@@ -186,9 +190,9 @@ Declare and initialize variables using the following syntax:
 
 ---
 
-## **Function**
+## 5. Function
 
-### **Writing Functions**
+### Writing Functions
 
 In Mary, functions are defined using the `function` keyword, followed by the function name, parameters, return type, and body.
 
@@ -213,7 +217,7 @@ function test_loop(a: int) -> int {
 }
 ```
 
-### **Key Points for Writing Functions:**
+### Key Points for Writing Functions:
 1. **Parameter Declaration:** Specify each parameter's name and type inside the parentheses.
 2. **Return Type:** Use `->` followed by the type of the value the function returns. Use `void` if no value is returned.
 3. **Body:** Enclose the function logic within `{}`.
@@ -228,9 +232,9 @@ function main() -> int {
 }
 ```
 
-## **Built-in Functions**
+### Built-in Functions
 
-built-in functions include in Mary:
+Built-in functions include in Mary:
 
 - **Arithmetic Operators**
 
@@ -324,7 +328,7 @@ built-in functions include in Mary:
 
 ---
 
-## **Condition**
+## 6. Condition
 
 ### Using if
 
@@ -355,7 +359,7 @@ Explanation:
 
 ---
 
-## **Loops and Recursion**
+## 7. Loops and Recursion
 
 ### Using Loops
 
@@ -411,7 +415,7 @@ Explanation:
 
 ---
 
-## **Import**
+## 8. Import
 
 In Mary, we can import file or lib using `import` keyword:
 
@@ -430,7 +434,7 @@ function main() -> int {
 
 ---
 
-## **Custom Data Structures**
+## 9. Custom Data Structures
 
 In Mary, structures are defined using the struct keyword, where each structure contains fields.
 
@@ -461,7 +465,7 @@ function getname(p: struct person) -> str {
 
 ---
 
-## **Custom Operators**
+## 10. Custom Operators
 
 In Mary, we can define custom operators using `operator` keyword, where precedence refers to the priority order of the operator:
 
@@ -487,7 +491,7 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
 ```
 ---
 
-## **Constraint type**
+## 11. Constraint type
 
 In Mary, we can create our own custom types.
 
@@ -498,7 +502,7 @@ type number2: float | int;
 
 ---
 
-## **Pass Functions as argument**
+## 12. Pass Functions as argument
 
 Functions can be passed as arguments:
 
