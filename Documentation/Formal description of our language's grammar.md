@@ -84,6 +84,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Describes a binary operation using two expressions and an operator.
 
 <control_structure> ::= <if_statement> | <while_loop>
+; Control structures include conditional statements and loops.
 
 <if_statement> ::= "if" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}" ( <whitespace> "else" <whitespace> "{" <body> "}")?
 
