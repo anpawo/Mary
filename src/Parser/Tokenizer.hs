@@ -23,7 +23,7 @@ import Data.Void (Void)
 import Data.List (singleton)
 import Data.Functor (($>), (<&>))
 
-import Control.Applicative ((<|>), some, empty)
+import Control.Applicative ((<|>), some, empty, optional)
 import Control.Monad (void, liftM2)
 
 import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead), SourcePos (..), getSourcePos)
@@ -167,8 +167,6 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             ,  curlyCloseSym
             ,  parenOpenSym
             ,  parenCloseSym
-            ,  bracketOpenSym
-            ,  bracketCloseSym
             ,  arrowSym
             ,  semicolonSym
             ,  colonSym
@@ -196,6 +194,10 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             -- Literal
             , Literal <$> parseLit
 
+            -- Temp
+            ,  bracketOpenSym
+            ,  bracketCloseSym
+
             -- Type
             , Type <$> parseType
 
@@ -216,9 +218,11 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             , StringLit <$> (quote *> manyTill anySingle quote)
             , NullLit <$ string "NULL"
             , do
-                ty <- parseType <* spaces
-                args <- char '[' *> spaces *> ((char ']' $> []) <|> arrayArgs)
-                return $ ArrLitPre ty args
+                ty <- optional parseType
+                args <- spaces *> char '[' *> spaces *> ((char ']' $> []) <|> arrayArgs)
+                case ty of
+                    Nothing -> return $ ListLitPre args
+                    Just ty' -> return $ ArrLitPre ty' args
             , do
                 name <- some textIdentifier <* spaces
                 args <- char '{' *> spaces *> ((char '}' $> []) <|> structArgs)
@@ -253,7 +257,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
                         -- in function / array / struct
                         oneArg :: Int -> Int -> Int -> Parser [MyToken]
                         oneArg inFunction inArray inStruct = do
-                            let oneTok = spaces *> tokens
+                            let oneTok = spaces *> tokens <* spaces
                             t <- lookAhead oneTok
                             case t of
                                 ParenOpen    -> (:) <$> oneTok <*> oneArg (inFunction + 1) inArray inStruct
