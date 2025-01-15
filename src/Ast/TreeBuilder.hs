@@ -48,6 +48,7 @@ data Group
   deriving (Show)
 
 validLit :: Ctx -> LocalVariable -> Literal -> Parser Literal
+validLit ctx locVar (ListLitPre toks) = validLit ctx locVar $ foldr (\toks' acc -> StructLitPre "elem" [("data", toks'), ("next", [Literal acc])]) (StructLit "empty" []) toks
 validLit ctx locVar (StructLitPre name toks) = validLit ctx locVar . StructLit name =<< mapM tosub toks
   where
     tosub :: (String, [MyToken]) -> Parser (String, SubExpression)
@@ -66,9 +67,8 @@ validLit ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a &
       | kv == kv' -> pure st
       | otherwise -> fail $ errInvalidStructure name kv
   _ -> fail $ errStructureNotBound name
-validLit ctx locVar arr@(ArrLit t subexp) = any (/= t) <$> mapM (getType ctx locVar) subexp $> arr
+validLit ctx locVar arr@(ArrLit t subexp) = mapM (getType ctx locVar) subexp >>= (\ok -> if ok then pure arr else fail $ errInvalidArray (show t)) . all (== t)
 validLit _ _ lit = pure lit
-
 
 getGroup :: Ctx -> LocalVariable -> Parser Group
 getGroup ctx locVar = getOffset >>= (\offset -> choice
