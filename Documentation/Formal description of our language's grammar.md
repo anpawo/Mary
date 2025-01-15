@@ -12,6 +12,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Represents a single space character.
 
 <function_name> ::= <letter> (<letter> | <digit>)*
+; Function names must start with a letter and can be followed by letters or digits.
 
 <function_call> ::= <function_name> "(" <arguments> ")" ";"
 
