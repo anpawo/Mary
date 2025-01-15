@@ -48,6 +48,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; An identifier is a sequence of letters or digits starting with a letter.
 
 <constraint_def> ::= "type" <whitespace> <identifier> <whitespace> "=" <whitespace> <type> <whitespace> "|" <whitespace> <type> <whitespace>? ";"
+; Defines a type constraint as a union of two or more types.
 
 <constraint> ::= <identifier>
 
