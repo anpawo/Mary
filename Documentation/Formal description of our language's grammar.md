@@ -45,6 +45,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Declares a variable with a name and type.
 
 <identifier> ::= <letter> (<letter> | <digit>)*
+; An identifier is a sequence of letters or digits starting with a letter.
 
 <constraint_def> ::= "type" <whitespace> <identifier> <whitespace> "=" <whitespace> <type> <whitespace> "|" <whitespace> <type> <whitespace>? ";"
 
