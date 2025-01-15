@@ -107,8 +107,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <operator_def> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <whitespace> "->" <whitespace>? <return_type> <whitespace>? "{" <body> "}"
 ; Defines a custom operator with precedence, arguments, a return type, and a body.
 
-<operator_name> ::= .. any word or combination of ASCII characters that is not already assigned ..
-
+<operator_name> ::= .. Any word or combination of ASCII characters that is not already assigned ..
+; Defines a unique name for a custom operator.
 ```
 <!-- todo mettre les operateurs [ '|', '^', '&', '~', '!', '$' , '.', '=', ':',] -->
-<!-- todo ajouter les constraints dans tout les types -->
