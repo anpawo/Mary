@@ -51,6 +51,7 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 ; Defines a type constraint as a union of two or more types.
 
 <constraint> ::= <identifier>
+; Represents a previously defined type constraint.
 
 <type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | <struct_type> | <function_type> | <constraint>
 
