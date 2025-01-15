@@ -62,9 +62,8 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <function_type> ::= <identifier> ":" "(" <arguments> ")" "->" <return_type>
 ; Represents a function type with its arguments and return type.
 
-<struct_type> ::= <identifier> ":" "struct " <name_of_struct>
-
-<name_of_struct> ::= <letter> (<letter> | <digit>)*
+<struct_type> ::= <identifier> ":" "struct " <identifier>
+; Refers to a specific struct type by its name.
 
 <body> ::= (<whitespace> <statement> <whitespace>)+
 
