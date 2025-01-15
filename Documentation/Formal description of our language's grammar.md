@@ -29,11 +29,13 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <string> ::=  "\"" <character>* "\""
 ; A string is enclosed in double quotes and consists of apossibly empty list of characters
 
-<float> ::= <digit>+ "." <digit>+
+<float> ::= "-"? <digit>+ "." <digit>+
+; A floating-point number contains digits, a decimal point, and additional digits.
 
 <bool> ::= "true" | "false"
 
-<number> ::= <digit>+
+<number> ::= "-"? <digit>+
+; Represents an integer value.
 
 <arguments> ::= <variable> | <function_type> ("," <whitespace>? <variable> | <function_type>)*
 
