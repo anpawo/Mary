@@ -78,3 +78,4 @@ tests:
     - hspec
     - containers
     - directory
+    - silently
