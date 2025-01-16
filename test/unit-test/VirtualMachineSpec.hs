@@ -432,6 +432,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push $ VmInt 0, Load "a", Ret]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "'a' is not bound"
+  
+  -- push
+  it "push" $ do
+    let prog = [Push $ VmPreLambda [] [Push $ VmInt 0], Ret]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Right (VmLambda [] [Push $ VmInt 0])
 
   
 
