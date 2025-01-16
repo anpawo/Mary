@@ -470,6 +470,12 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     v <- runProg prog []
     v `shouldBe` VmString "hellohello"
 
+  -- error invalid operands
+  it "str + 0" $ do
+    let prog = [Push (VmString "hello"), Push (VmInt 0), Push (VmFunc "+"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Invalid operands for operator '+'"
+
   -- float
   it "float - float" $ do
     let prog = [Push (VmFloat 5.5), Push (VmFloat 3.2), Push (VmFunc "-"), Call]
