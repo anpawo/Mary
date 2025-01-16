@@ -2,12 +2,24 @@
 -- EPITECH PROJECT, 2024
 -- glados
 -- File description:
--- Main
+-- Optimizer
 -}
 
 {-# LANGUAGE LambdaCase #-}
 
-module Opti.Optimizer (optimizeAST) where
+module Opti.Optimizer 
+  (
+    optimizeAST, 
+    reachableFunctions, 
+    collectCallsAst, 
+    collectCallsExpr, 
+    eliminateUnused, 
+    optimizeExpr, 
+    fixOptSubExpr, 
+    optimizeSubExpr, 
+    collectCallsSubExpr
+  )
+  where
 
 import Ast.Ast
 import Parser.Token (Literal(..))
