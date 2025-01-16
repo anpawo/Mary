@@ -358,6 +358,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmInt 1), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
     v `shouldBe` Left 1
+  
+  -- operator "."
+  it "struct: person.name " $ do
+    let prog = [Push (VmStruct "?" []), Push (VmString "???"), Push (VmFunc "."), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Cannot access field `???` of struct `?`."
 
 
 arithmeticOperatorSpec :: Spec
