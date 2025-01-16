@@ -345,7 +345,7 @@ isTypeSpec = describe "isType function" $ do
       isType NullType NullLit `shouldBe` True
 
     it "returns True for a ClosureLit with matching parameters and return type" $ do
-      isType (ClosureType [IntType] BoolType) (ClosureLit "func" [IntType] BoolType) `shouldBe` True
+      isType (FunctionType [IntType] BoolType) (ClosureLit "func" [IntType] BoolType) `shouldBe` True
 
   describe "non-matching types" $ do
     it "returns False for an IntLit with FloatType" $ do
@@ -364,7 +364,7 @@ isTypeSpec = describe "isType function" $ do
       isType IntType NullLit `shouldBe` False
 
     it "returns False for a ClosureLit with mismatched return type" $ do
-      isType (ClosureType [IntType] StrType) (ClosureLit "func" [IntType] BoolType) `shouldBe` False
+      isType (FunctionType [IntType] StrType) (ClosureLit "func" [IntType] BoolType) `shouldBe` False
 
 getSpec :: SpecWith ()
 getSpec = describe "get functions" $ do
@@ -413,7 +413,7 @@ getSpec = describe "get functions" $ do
       getLitType (StructLitPre "myStruct" [("name", [Literal (StringLit "marius")]), ("age", [Literal (IntLit 19)])]) `shouldBe` StructType "myStruct"
 
     it "returns the correct type for a ClosureLit" $ do
-      getLitType (ClosureLit "plus" [IntType, IntType] IntType) `shouldBe` ClosureType [IntType, IntType] IntType
+      getLitType (ClosureLit "plus" [IntType, IntType] IntType) `shouldBe` FunctionType [IntType, IntType] IntType
 
     it "returns the correct type for a NullLit" $ do
       getLitType NullLit `shouldBe` NullType
