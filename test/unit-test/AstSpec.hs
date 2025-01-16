@@ -7,7 +7,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}
 
-module AstSpec (spec) where
+module AstSpec (spec) where 
 
 import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
 import Test.Hspec.Runner ()
