@@ -1,0 +1,8 @@
+[test.compounds]
+cmd = "../../glados --import ../../stdlib input/compound.mary"
+stdout = """
+3
+2
+4
+2
+"""

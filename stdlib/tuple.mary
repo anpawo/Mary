@@ -1,0 +1,23 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - tuple
+//
+
+struct tuple {
+    a: any,
+    b: any
+}
+
+operator ,, precedence 10 (a: any, b: any) -> tuple {
+    return tuple { a = a, b = b };
+}
+
+function make_tuple(a: any, b: any) -> tuple {
+    return a ,, b;
+}
+
+function swap(t: tuple) -> tuple {
+    return tuple { a = t.b, b = t.a };
+}

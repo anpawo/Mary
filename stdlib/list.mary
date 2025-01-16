@@ -85,6 +85,18 @@ function map(f: (any) -> any, l: list) -> list {
     return elem { data = f(l.data), next = map(f, l.next) };
 }
 
+function find(p: (any) -> bool, l: list) -> any {
+    if l is "empty" then
+    {
+        return NULL;
+    }
+    if p(l.data) then
+    {
+        return l.data;
+    }
+    return find(p, l.next);
+}
+
 function filter(p: (any) -> bool, l: list) -> list {
     if l is "empty" then
     {

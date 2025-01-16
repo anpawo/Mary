@@ -4,7 +4,7 @@
 // 
 
 function main() -> void {
-    str line = getline();
+    line: str = getline();
     print(line);
     exit(toInt(line));
 }
