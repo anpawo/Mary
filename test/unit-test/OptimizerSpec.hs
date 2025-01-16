@@ -97,3 +97,12 @@ reachableSpec = describe "reachableFunctions" $ do
           ]
     let names = [ fnName f | f@(Function {}) <- asts ]
     names `shouldBe` ["funA", "funB", "main"]
+
+defaultAstSpec :: Spec
+defaultAstSpec = describe "collectCallsAst and optimizeAST default behavior" $ do
+  it "returns an empty list for collectCallsAst when given a non-function AST" $ do
+    let ast = Structure { structName = "Dummy", structMember = [] }
+    collectCallsAst ast `shouldBe` []
+  it "leaves non-function AST nodes unchanged when optimizing" $ do
+    let ast = Structure { structName = "Dummy", structMember = [] }
+    optimizeAST [ast] `shouldBe` [ast]
