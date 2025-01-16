@@ -9,16 +9,14 @@ module Opti.Optimizer (optimizeAST) where
 
 import Ast.Ast
 import Parser.Token (Literal(..))
+import Debug.Trace (trace)
 
-printDebug :: Bool
-printDebug = True -- if true prints ast before and after optimization
-
-optimizeAST :: [Ast] -> IO [Ast]
-optimizeAST asts = do
-    if printDebug then print asts else return ()
-    let astsOpt = map optimizeAst asts
-    if printDebug then print astsOpt else return ()
-    return astsOpt
+optimizeAST :: [Ast] -> [Ast]
+optimizeAST asts =
+  let _ = trace ("AST de départ:\n" ++ show asts) ()
+      optimized = map optimizeAst asts
+      _ = trace ("AST optimisé:\n" ++ show optimized) ()
+  in optimized
 
 optimizeAst :: Ast -> Ast
 optimizeAst fun@(Function { fnBody = body }) = fun { fnBody = map optimizeExpr body }
