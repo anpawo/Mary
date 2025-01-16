@@ -1,0 +1,52 @@
+//
+// EPITECH PROJECT, 2025
+// Glados
+// File description:
+// Mary Standard library - dict
+//
+
+import tuple
+import list
+
+type dict = list
+
+function same_key(a: tuple, b: tuple) -> bool {
+    return a.a == b.a;
+}
+
+function dict_add(d: dict, t: tuple) -> dict {
+    if d is "empty" then
+    {
+        return elem { data = t, next = empty };
+    }
+    if same_key(d.data, t) then
+    {
+        return elem { data = t, next = d.next };
+    }
+    return elem { data = d.data, next = dict_add(d.next, t)};
+}
+
+function dict_set(d: dict, t: tuple) -> dict {
+    return dict_add(d, t);
+}
+
+function dict_get(d: dict, k: any) -> any | null {
+    x: any = find(\x -> x.a == k, d);
+    if x is "null" then
+    {
+        return x;
+    }
+    return x.b;
+}
+
+function dict_del(d: dict, k: any) -> dict {
+    if d is "empty" then
+    {
+        return d;
+    }
+    if d.data.a == k then
+    {
+        return d.next;
+    }
+    return elem { data = d.data, next = dict_del(d.next, k)};
+}
