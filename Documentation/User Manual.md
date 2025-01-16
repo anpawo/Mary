@@ -526,3 +526,38 @@ function apply(f: (int) -> int, x: int) -> int {
 print(apply((add_two), 10)); // Outputs 12
 ```
 
+---
+
+## 13. Lambda Functions
+
+There is two ways lambdas can be defined: Named or Unnamed
+
+**Syntax:**
+
+```BNF
+<unnamed_lambda> ::= "\" <arguments> "->" <subexpression>
+```
+```BNF
+<named_lambda> ::= <identifier> ":" <arguments> "->" <return_type> "=" <subexpression> ";"
+```
+
+Example:
+```cpp
+import list
+
+function test(c: int) -> (int) -> int { //this function returns an unnamed lambda
+    a: int = 1;
+    f: (int, int) -> int = (+);
+    return \b -> a + f(b, c);
+}
+
+function main() -> void {
+    f: (int) -> int = test(3);      //this is a named lambda
+    f2: () -> int = \-> f(4);       //this is a named lambda that returns a lambda
+    print(f(2));                    //Outputs 6
+    print(f2());                    //Outputs 8
+    print(map(\x -> x * 2, 1..10)); //map takes here as parameter an unnamed lambda and applies it to each element of the list [1, .. , 10]
+                                    //Outputs [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+}
+
+```
