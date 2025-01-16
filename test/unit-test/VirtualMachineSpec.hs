@@ -416,6 +416,13 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "st" [("age", VmInt 1)])])] prog []) `catch` failMsg
     v `shouldBe` Left "Structure 'st' doesn't have the field '???'."
   
+  -- ret
+  it "update ko 3" $ do
+    let prog = [Ret]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Ret expects at least one value on the stack"
+
+  
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
