@@ -22,21 +22,6 @@ first paragraph to define basic things of the language
 <space> ::= (" " | "\t" | "\n")+
 ; Represents a single space character.
 
-<string> ::=  "\"" <character>* "\""
-; A string is enclosed in double quotes and consists of apossibly empty list of characters
-
-<number> ::= "-"? <digit>+
-; Represents an integer value.
-
-<float> ::= "-"? <digit>+ "." <digit>+
-; A floating-point number contains digits, a decimal point, and additional digits.
-
-<bool> ::= "true" | "false"
-; Represents a boolean value.
-
-<null> ::= "NULL"
-; Represents the NULL value
-
 <identifier> ::= <letter> (<letter> | <digit>)*
 ; An identifier is a sequence of letters or digits starting with a letter.
 ```
@@ -44,6 +29,9 @@ first paragraph to define basic things of the language
 ```BNF
 
 <function> ::= "function" <space> <identifier> <space>? "(" <arguments>? ")" <space>? "->" <space>? <return_type> <space>? "{" <space>? <body> <space>? "}"
+; Defines a function with a name, arguments, return type, and body.
+
+<operator> ::= "operator" <space>? <symbol_identifier> <space>? ("precedence" <int>)? <space>? "(" <arguments>? ")" <space>? "->" <space>? <return_type> <space>? "{" <space>? <body> <space>? "}"
 ; Defines a function with a name, arguments, return type, and body.
 
 <arguments> ::= <variable> ( <space>? "," <space>? <variable>)*
@@ -75,56 +63,67 @@ first paragraph to define basic things of the language
 <body> ::= (<space>? <expression> <space>?)+
 ; The body of a function contains one or more statements separated by whitespace.
 
-<expression> ::= <declaration> | <constraint_def> | <binary_expression> | <control_structure> | <return_statement>
+<expression> ::= <declaration> | <return> | <if> | <while> | <sub_expression> ";"
 ; A expression can be a declaration, a constraint definition, a binary expression, a control structure, or a return expression.
 
-<declaration> ::= <variable> <space>? "=" <space>? <sub_expression> ";"
+<declaration> ::= <variable> <space>? "=" <space>? <sub_expression>
 ; Declares and initializes a variable.
 
-<sub_expression> ::= <identifier> | <function_call> | <literal>
+<sub_expression> ::= <identifier> | <function_call> | <literal> | <operator_call>
 ; Represents any value that can be assigned to a variable.
 
-<function_call> ::= <identifier> <space>? "(" ((<space> <identifier>)? | ( <space>? <identifier> <space>? "," <space>? <identifier>)+) <space>? ")"
+<operator_call> ::= <sub_expression> <space>? <symbol_identifier> <space>? <sub_expression>
+
+<function_call> ::= <identifier> <space>? "(" ((<space> <sub_expression>)? | ( <space>? <sub_expression> <space>? "," <space>? <sub_expression>)+) <space>? ")"
 ; Represents a call to a defined function.
 
+<literal>::= <char> | <string> | <int> | <float> | <bool> | <null> | <array> | <struct>
 
+<char> ::= "'" <character> "'"
 
-<literal>::= //todo
+<string> ::=  "\"" <character>* "\""
+; A string is enclosed in double quotes and consists of a possibly empty list of characters
 
+<int> ::= "-"? <digit>+
+; Represents an integer value.
 
+<float> ::= "-"? <digit>+ "." <digit>+
+; A floating-point number contains digits, a decimal point, and additional digits.
 
-<file> ::= (<function> | <operator> | <struct_definition> | <constraint>)+
-; A Mary file can contain one or more definitions including functions, operator definitions, structure definitions, or type constraints.
+<bool> ::= "true" | "false"
+; Represents a boolean value.
 
-<constraint> ::= "type" <space> <identifier> <space> "=" <space> <type> <space> "|" <space> <type> <space>? ";"
-; Defines a type constraint as a union of two or more types.
+<null> ::= "NULL"
+; Represents the NULL value
 
+<array> ::= <type> "[" <array_elements>? "]"
 
-<binary_expression> ::= <binary_operation> | <bool> | <number> | <float> | <identifier>
-; Binary expressions include operations and simple values.
+<array_elements> ::= <sub_expression> | (<sub_expression> <space>? "," <space>? <array_elements>)
 
-<binary_operation> ::= <binary_expression> <space> <binary_operator> <space> <binary_expression>
-; Describes a binary operation using two expressions and an operator.
+<struct> ::= <identifier> "{" <struct_elements>? "}"
 
-<control_structure> ::= <if_statement> | <while_loop>
-; Control structures include conditional statements and loops.
+<struct_elements> ::= (<identifier> "=" <space>? <sub_expression>) | (<identifier> "=" <sub_expression> <space>? "," <space>? <struct_elements>)
 
-<if_statement> ::= "if" <space> <binary_expression> <space> "then" <space> "{" <body> "}" ( <space> "else" <space> "{" <body> "}")?
-; Represents an if-else conditional structure.
-
-<while_loop> ::= "while" <space> <binary_expression> <space> "then" <space> "{" <body> "}"
-; Represents a while loop structure.
-
-<return_statement> ::= "return" (<space> <value>)? ";"
+<return> ::= "return" <space> <sub_expression>
 ; Represents a return expression with an optional value.
 
-<binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
-; Defines binary comparison and logical operators.
+<if> ::= "if" <space> <boolean_subexpression> <space> "then" <space>? "{" <body> "}" (<space>? "else" <space>? "{" <body> "}")?
+; Represents an if-else conditional structure.
 
-<struct_def> ::= "struct" <space> <identifier> <space>? "{" <variable> ("," <variable>)* "}"
-; Defines a struct with a name and one or more variables.
+<boolean_subexpression> ::= <sub_expression>
+; the result of the subexpression must be a boolean
 
-<operator> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <space> "->" <space>? <return_type> <space>? "{" <body> "}"
-; Defines a custom operator with precedence, arguments, a return type, and a body.
+<while> ::= "while" <space> <boolean_subexpression> <space> "then" <space>? "{" <body> "}"
+; Represents a while loop structure.
+
+<file> ::= (<function> | <operator> | <struct_def> | <atom_def> | <type_def>)+
+; A Mary file can contain one or more definitions including functions, operator definitions, structure definitions, or type constraints.
+
+<struct_def> ::= "struct" <space> <identifier> <space>? "{" <space>? (<variable> ("," <space>? <variable>)*)? "}"
+; Defines a struct with some fields.
+
+<atom_def> ::= "atom" <space> <identifier>
+
+<type_def> ::= "type" <space> <identifier> <space>? "=" <space>? <type> (<space>? "|" <space>? <type>)*
 ```
 <!-- todo mettre les operateurs [ '!', '$' , '.', '=', ':',] -->
