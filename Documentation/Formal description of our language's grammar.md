@@ -1,33 +1,91 @@
 Below is a formal description of our programming language `Mary`.
 This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+notation).
 
+
+first paragraph to define basic things of the language
 ```BNF
-<file> ::= (<function> | <operator_definition> | <struct_definition> | <constraint_def>)+
-; A Mary file can contain one or more definitions including functions, operator definitions, structure definitions, or type constraints.
+<symbol> ::= "+" | "-" | "*" | "/" | "%" | "=" | "<" | ">" | "|" | "^" | "&" | "~" | "!" | "$" | "." | ":"
+; Defines a unique name for a custom operator.
 
-<function> ::= "function" <whitespace> <function_name> <whitespace>? "(" <arguments> ")" <whitespace> "->" <whitespace> <return_type> <whitespace> "{" <body> "}"
-; Defines a function with a name, arguments, return type, and body.
+<symbol_identifier> ::= <symbol>+
+; Defines mathematical operators.
 
-<whitespace> ::= " "
-; Represents a single space character.
-
-<function_name> ::= <letter> (<letter> | <digit>)*
-; Function names must start with a letter and can be followed by letters or digits.
-
-<function_call> ::= <function_name> "(" <arguments> ")" ";"
-; Represents a call to a defined function.
-
-<character> ::= .. Any ASCII character ..
-; Represents any character in the ASCII table
-
-<letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
+<letter> ::= "a" |... | "z" | "A" | ... | "Z"
 ; Represents any uppercase or lowercase letter.
 
-<digit> ::= "0" | "1" | ... | "9"
+<digit> ::= "0" | ... | "9"
 ; Represents a single digit.
 
+<character> ::= " " | ... | "~"
+; Represents any printable character in the ASCII table
+
+<space> ::= (" " | "\t" | "\n")+
+; Represents a single space character.
+
+<identifier> ::= <letter> (<letter> | <digit>)*
+; An identifier is a sequence of letters or digits starting with a letter.
+```
+
+```BNF
+
+<function> ::= "function" <space> <identifier> <space>? "(" <arguments>? ")" <space>? "->" <space>? <return_type> <space>? "{" <space>? <body> <space>? "}"
+; Defines a function with a name, arguments, return type, and body.
+
+<operator> ::= "operator" <space>? <symbol_identifier> <space>? ("precedence" <int>)? <space>? "(" <arguments>? ")" <space>? "->" <space>? <return_type> <space>? "{" <space>? <body> <space>? "}"
+; Defines a function with a name, arguments, return type, and body.
+
+<arguments> ::= <variable> (<space>? "," <space>? <variable>)*
+; Defines a list of arguments, which can be variables or function types, separated by commas.
+
+<variable> ::= <identifier> <space>? ":" <space>? <type>
+; Declares a variable with a name and type.
+
+<type> ::= "int" | "float" | "string" | "bool" | "char" | "arr[" <space>? <type> <space>? "]" | "null" | <struct_type> | <function_type> | <constraint_type> | <identifier>
+; Defines all supported types in Mary, including basic, structured, and constrained types.
+; Identifier in types are either named constraints or structures with respectively the prefix type/struct
+
+<return_type> ::= <type> | "void" 
+; Specifies the return type of a function.
+
+<function_type> ::= "(" (<type> ("," <type>)*)? ")" "->" <return_type>
+; Represents a function type with its arguments and return type.
+
+<constraint_type> ::= <named_constraint> | <unnamed_constraint>
+; Represents a previously defined type constraint.
+
+<named_constraint> ::= "type" <space> <identifier>
+
+<unnamed_constraint> ::= (<type> "|" (<type> | <unnamed_constraint>))
+
+<struct_type> ::= "struct" <space> <identifier>
+; Refers to a specific struct type by its name.
+
+<body> ::= (<space>? <expression> <space>?)+
+; The body of a function contains one or more statements separated by whitespace.
+
+<expression> ::= <declaration> | <return> | <if> | <while> | <sub_expression> ";"
+; A expression can be a declaration, a constraint definition, a binary expression, a control structure, or a return expression.
+
+<declaration> ::= <variable> <space>? "=" <space>? <sub_expression>
+; Declares and initializes a variable.
+
+<sub_expression> ::= <identifier> | <function_call> | <literal> | <operator_call>
+; Represents any value that can be assigned to a variable.
+
+<operator_call> ::= <sub_expression> <space>? <symbol_identifier> <space>? <sub_expression>
+
+<function_call> ::= <identifier> <space>? "(" ((<space> <sub_expression>)? | ( <space>? <sub_expression> <space>? "," <space>? <sub_expression>)+) <space>? ")"
+; Represents a call to a defined function.
+
+<literal>::= <char> | <string> | <int> | <float> | <bool> | <null> | <array> | <struct>
+
+<char> ::= "'" <character> "'"
+
 <string> ::=  "\"" <character>* "\""
-; A string is enclosed in double quotes and consists of apossibly empty list of characters
+; A string is enclosed in double quotes and consists of a possibly empty list of characters
+
+<int> ::= "-"? <digit>+
+; Represents an integer value.
 
 <float> ::= "-"? <digit>+ "." <digit>+
 ; A floating-point number contains digits, a decimal point, and additional digits.
@@ -35,79 +93,38 @@ This documentation uses the [BNF notation](#https://letmegooglethat.com/?q=BNF+n
 <bool> ::= "true" | "false"
 ; Represents a boolean value.
 
-<number> ::= "-"? <digit>+
-; Represents an integer value.
+<null> ::= "NULL"
+; Represents the NULL value
 
-<arguments> ::= <variable> | <function_type> ("," <whitespace>? <variable> | <function_type>)*
-; Defines a list of arguments, which can be variables or function types, separated by commas.
+<array> ::= <type> "[" <array_elements>? "]"
 
-<variable> ::= <identifier> ":" <type>
-; Declares a variable with a name and type.
+<array_elements> ::= <sub_expression> | (<sub_expression> <space>? "," <space>? <array_elements>)
 
-<identifier> ::= <letter> (<letter> | <digit>)*
-; An identifier is a sequence of letters or digits starting with a letter.
+<struct> ::= <identifier> "{" <struct_elements>? "}"
 
-<constraint_def> ::= "type" <whitespace> <identifier> <whitespace> "=" <whitespace> <type> <whitespace> "|" <whitespace> <type> <whitespace>? ";"
-; Defines a type constraint as a union of two or more types.
+<lambda> ::= "\\" <arguments> "->" <subexpression>
 
-<constraint> ::= <identifier>
-; Represents a previously defined type constraint.
+<struct_elements> ::= (<identifier> "=" <space>? <sub_expression>) | (<identifier> "=" <sub_expression> <space>? "," <space>? <struct_elements>)
 
-<type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | "null" | <struct_type> | <function_type> | <constraint>
-; Defines all supported types in Mary, including basic, structured, and constrained types.
+<return> ::= "return" <space> <sub_expression>
+; Represents a return expression with an optional value.
 
-<return_type> ::= "int" | "float" | "string" | "void" | "bool" | "char" | "arr[" <type> "]" | <struct_type> | <constraint>
-; Specifies the return type of a function.
-
-<function_type> ::= <identifier> ":" "(" <arguments> ")" "->" <return_type>
-; Represents a function type with its arguments and return type.
-
-<struct_type> ::= <identifier> ":" "struct " <identifier>
-; Refers to a specific struct type by its name.
-
-<body> ::= (<whitespace> <statement> <whitespace>)+
-; The body of a function contains one or more statements separated by whitespace.
-
-<statement> ::= <declaration> | <constraint_def> | <binary_expression> | <control_structure> | <return_statement>
-; A statement can be a declaration, a constraint definition, a binary expression, a control structure, or a return statement.
-
-<declaration> ::= <variable> "=" <value> ";"
-; Declares and initializes a variable.
-
-<value> ::= <identifier> | <function_call> | <string> | <number> | <float> | <bool>
-; Represents any value that can be assigned to a variable.
-
-<binary_expression> ::= <binary_operation> | <bool> | <number> | <float> | <identifier>
-; Binary expressions include operations and simple values.
-
-<binary_operation> ::= <binary_expression> <whitespace> <binary_operator> <whitespace> <binary_expression>
-; Describes a binary operation using two expressions and an operator.
-
-<control_structure> ::= <if_statement> | <while_loop>
-; Control structures include conditional statements and loops.
-
-<if_statement> ::= "if" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}" ( <whitespace> "else" <whitespace> "{" <body> "}")?
+<if> ::= "if" <space> <boolean_subexpression> <space> "then" <space>? "{" <body> "}" (<space>? "else" <space>? "{" <body> "}")?
 ; Represents an if-else conditional structure.
 
-<while_loop> ::= "while" <whitespace> <binary_expression> <whitespace> "then" <whitespace> "{" <body> "}"
+<boolean_subexpression> ::= <sub_expression>
+; the result of the subexpression must be a boolean
+
+<while> ::= "while" <space> <boolean_subexpression> <space> "then" <space>? "{" <body> "}"
 ; Represents a while loop structure.
 
-<return_statement> ::= "return" (<whitespace> <value>)? ";"
-; Represents a return statement with an optional value.
+<file> ::= (<function> | <operator> | <struct_def> | <atom_def> | <type_def>)+
+; A Mary file can contain one or more definitions including functions, operator definitions, structure definitions, or type constraints.
 
-<operator> ::= "+" | "-" | "*" | "/" | "%"
-; Defines mathematical operators.
+<struct_def> ::= "struct" <space> <identifier> <space>? "{" <space>? (<variable> ("," <space>? <variable>)*)? "}"
+; Defines a struct with some fields.
 
-<binary_operator> ::= "==" | "<" | ">" | "|" | "^" | "&" | "~"
-; Defines binary comparison and logical operators.
+<atom_def> ::= "atom" <space> <identifier>
 
-<struct_def> ::= "struct" <whitespace> <identifier> <whitespace>? "{" <variable> ("," <variable>)* "}"
-; Defines a struct with a name and one or more variables.
-
-<operator_def> ::= "operator" <operator_name> "precedence" <number> "(" <arguments> ")" <whitespace> "->" <whitespace>? <return_type> <whitespace>? "{" <body> "}"
-; Defines a custom operator with precedence, arguments, a return type, and a body.
-
-<operator_name> ::= .. Any word or combination of ASCII characters that is not already assigned ..
-; Defines a unique name for a custom operator.
+<type_def> ::= "type" <space> <identifier> <space>? "=" <space>? <type> (<space>? "|" <space>? <type>)*
 ```
-<!-- todo mettre les operateurs [ '|', '^', '&', '~', '!', '$' , '.', '=', ':',] -->
