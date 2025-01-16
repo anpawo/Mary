@@ -48,7 +48,10 @@ optimizeSubExpr fc@(FunctionCall { fnCallName = "*", fnCallArgs = args }) =
     _ -> fc { fnCallArgs = map optimizeSubExpr args }
 optimizeSubExpr fc@(FunctionCall { fnCallName = "/", fnCallArgs = args }) =
   case args of
-    [Lit (IntLit x), Lit (IntLit y)] -> Lit (IntLit (x `div` y))
+    [Lit (IntLit x), Lit (IntLit y)] ->
+      if y == 0
+         then fc
+         else Lit (IntLit (x `div` y))
     _ -> fc { fnCallArgs = map optimizeSubExpr args }
 optimizeSubExpr fc@(FunctionCall { fnCallArgs = args }) =
   fc { fnCallArgs = map optimizeSubExpr args }
