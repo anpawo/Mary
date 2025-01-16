@@ -7,11 +7,12 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module VM.VirtualMachine
   (
     Stack,
-    Program,
+    Insts,
     Env,
     exec,
     convArrInstrToVal,
@@ -32,12 +33,11 @@ import Text.Printf (printf)
 import Data.List (find)
 import System.IO (stderr, hPrint)
 import Data.Char (ord, chr)
+import Data.Maybe (fromJust)
 
 type Stack = [Value]
-
-type Program = [Instruction]
-
-type Env = [EnvVar]
+type Insts = [Instruction]
+type Env = [(String, Insts)]
 
 convArrInstrToVal :: [[Instruction]] -> Env -> IO [Value]
 convArrInstrToVal [] _ = pure []
@@ -46,7 +46,7 @@ convArrInstrToVal (v:rest) env =
     convArrInstrToVal rest env >>= \restValues ->
     pure (value : restValues)
 
-convStructInstrToVal :: [(String, [Instruction])] -> Env -> IO [(String, Value)]
+convStructInstrToVal :: Env -> Env -> IO [(String, Value)]
 convStructInstrToVal [] _ = pure []
 convStructInstrToVal ((name, v):rest) env =
     exec 0 env v [] >>= \value ->
@@ -58,23 +58,25 @@ countParamFunc [] nb = nb
 countParamFunc (Store _: rest) nb = countParamFunc rest (nb + 1)
 countParamFunc (_: rest) nb       = countParamFunc rest nb
 
-jumpIfFalseInstr :: Instruction -> Int -> Env -> Program -> Stack -> IO Value
+jumpIfFalseInstr :: Instruction -> Int -> Env -> Insts -> Stack -> IO Value
 jumpIfFalseInstr (JumpIfFalse n) ind env is (VmBool False : stack) = exec (ind + n + 1) env is stack
 jumpIfFalseInstr (JumpIfFalse _) ind env is (VmBool True : stack) = exec (ind + 1) env is stack
 jumpIfFalseInstr (JumpIfFalse _) ind env is (_ : _) = fail "JumpIfFalse expects a boolean on the stack"
 
-callInstr :: String -> Int -> Env -> Program -> Stack -> IO Value
-callInstr name ind env is stack = case lookup name env of
-    Just [Push (VmClosure closureName)] -> callInstr closureName ind env is stack -- consume closure
-    Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
-    Nothing -> builtinOperator name ind env is stack
+callInstr :: String -> Int -> Env -> Insts -> Stack -> IO Value
+callInstr name idx env insts stack = case lookup name env of
+    Just [Push l@(VmLambda {..})] -> exec 0 (lbEnv ++ env) lbBody stack >>= \v -> exec (idx + 1) env insts (v: drop (countParamFunc lbBody 0) stack) -- lambda
+    Just [Push (VmClosure closureName)] -> callInstr closureName idx env insts stack -- consume closure
+    Just body -> exec 0 env body stack >>= \res -> exec (idx + 1) env insts (res : drop (countParamFunc body 0) stack)
+    Nothing -> builtinOperator name idx env insts stack
 
-pushInstr :: Value -> Int -> Env -> Program -> Stack -> IO Value
+pushInstr :: Value -> Int -> Env -> Insts -> Stack -> IO Value
 pushInstr (VmPreStruct structName fields) ind env is stack = convStructInstrToVal fields env >>= \values -> exec (ind + 1) env is (VmStruct structName values : stack)
 pushInstr (VmPreArray typeName arr) ind env is stack = convArrInstrToVal arr env >>= \values -> exec (ind + 1) env is (VmArray typeName values : stack)
+pushInstr (VmPreLambda {..}) ind env is stack = exec (ind + 1) env is (VmLambda (map (\n -> (n, fromJust $ lookup n env)) lbVarCaptured) lbBody :stack)
 pushInstr v ind env is stack = exec (ind + 1) env is (v : stack)
 
-doCurrentInstr :: Maybe Instruction -> Int -> Env -> Program -> Stack -> IO Value
+doCurrentInstr :: Maybe Instruction -> Int -> Env -> Insts -> Stack -> IO Value
 doCurrentInstr (Just Ret) ind _ is (x : _) = pure x
 doCurrentInstr (Just Ret) ind _ is [] = fail "Ret expects at least one value on the stack"
 doCurrentInstr (Just (Push v)) ind env is stack = pushInstr v ind env is stack
@@ -83,25 +85,25 @@ doCurrentInstr (Just (Update name)) ind env is (v : VmString field: stack) = cas
     [Push (VmStruct name' value)] -> case find ((== field) . fst) value of
       Just (fieldName, currValue) -> exec (ind + 1) ((name, [Push (VmStruct name' (map (\(n, currV) -> if n == field then (n, v) else (n, currV)) value))]) : env) is stack
       Nothing -> fail $ printf "Structure '%s' doesn't have the field '%s'." name' field
-    _ -> fail ("Variable " ++ name ++ " is not a structure")
-  Nothing -> fail ("Variable " ++ name ++ " not found")
+    _ -> fail (printf "'%s' is not a structure." name)
+  Nothing -> fail (printf "'%s' is not bound" name)
 doCurrentInstr (Just (Store name)) ind env is (v : stack) = exec (ind + 1) ((name, [Push v]) : env) is stack
 doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
-  Nothing -> fail ("Variable or function " ++ name ++ " not found")
+  Nothing -> fail (printf "'%s' is not bound" name)
 doCurrentInstr (Just Call) ind env is (VmFunc name: stack) = callInstr name ind env is stack
 doCurrentInstr (Just (JumpIfFalse n)) ind env is stack = jumpIfFalseInstr (JumpIfFalse n) ind env is stack
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
 doCurrentInstr Nothing ind _ is (x : _) = pure x
 doCurrentInstr Nothing ind _ is [] = pure VmVoid
 
-getcurrentInstr :: Int -> Program -> Maybe Instruction
+getcurrentInstr :: Int -> Insts -> Maybe Instruction
 getcurrentInstr ind is = if ind < length is then Just (is !! ind) else Nothing
 
-exec :: Int -> Env -> Program -> Stack -> IO Value
-exec ind env is = doCurrentInstr (getcurrentInstr ind is) ind env is
+exec :: Int -> Env -> Insts -> Stack -> IO Value
+exec idx env insts = doCurrentInstr (getcurrentInstr idx insts) idx env insts
 
-builtinOperator :: String -> Int -> Env -> Program -> Stack -> IO Value
+builtinOperator :: String -> Int -> Env -> Insts -> Stack -> IO Value
 -- io
 builtinOperator "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
 builtinOperator "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
