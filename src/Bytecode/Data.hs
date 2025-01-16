@@ -17,6 +17,7 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-# LANGUAGE InstanceSigs #-}
 
+
 module Bytecode.Data
   (
     --main
@@ -62,6 +63,8 @@ data Value
   | VmArray String [Value]
   | VmStruct String [(String, Value)]
   | VmClosure String
+  | VmPreLambda { lbVarCaptured :: [String], lbBody :: [Instruction]}
+  | VmLambda { lbEnv :: [(String, [Instruction])], lbBody :: [Instruction]}
   deriving (Eq)
 
 instance Show Value where
@@ -84,6 +87,7 @@ instance Show Value where
       formatList [("data", d), ("next", VmStruct "elem" l)] = printf "%s, %s" (show d) (formatList l)
   show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
   show VmVoid                          = "VmVoid"
+  show (VmLambda {})                   = "lambda"
 
 type EnvVar = (String, [Instruction])
 
