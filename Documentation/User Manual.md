@@ -36,6 +36,8 @@ Welcome to the user manual for the GLaDOS programming language. This document wi
   - [10. Custom Operators](#10-custom-operators)
   - [11. Constraint type](#11-constraint-type)
   - [12. Pass Functions as argument](#12-pass-functions-as-argument)
+  - [13. Lambda Functions](#13-lambda-functions)
+    - [Lambdas are closures](#lambdas-are-closures)
 
 ---
 
@@ -530,34 +532,59 @@ print(apply((add_two), 10)); // Outputs 12
 
 ## 13. Lambda Functions
 
-There is two ways lambdas can be defined: Named or Unnamed
+Lambda functions can be defined using `\` and then defining the function.
 
 **Syntax:**
 
 ```BNF
-<unnamed_lambda> ::= "\" <arguments> "->" <subexpression>
+<lambda> ::= "\" <arguments> "->" <subexpression>
 ```
+
+It is also possible to associate a lambda function to an identifier.
+
+**Syntax:**
 ```BNF
-<named_lambda> ::= <identifier> ":" <arguments> "->" <return_type> "=" <subexpression> ";"
+<lambda> ::= <identifier> ":" <arguments> "->" <return_type> "=" <subexpression> ";"
 ```
 
 Example:
 ```cpp
 import list
 
-function test(c: int) -> (int) -> int { //this function returns an unnamed lambda
+function test(c: int) -> (int) -> int { //this function returns a lambda function
     a: int = 1;
     f: (int, int) -> int = (+);
     return \b -> a + f(b, c);
 }
 
 function main() -> void {
-    f: (int) -> int = test(3);      //this is a named lambda
-    f2: () -> int = \-> f(4);       //this is a named lambda that returns a lambda
+    f: (int) -> int = test(3);      //this is a lambda associated to the "f" identifier
+    f2: () -> int = \-> f(4);       //this is a lambda associated to the "f2" identifier
     print(f(2));                    //Outputs 6
     print(f2());                    //Outputs 8
-    print(map(\x -> x * 2, 1..10)); //map takes here as parameter an unnamed lambda and applies it to each element of the list [1, .. , 10]
+    print(map(\x -> x * 2, 1..10)); //map takes here as parameter a lambda and applies it to each element of the list [1, .. , 10]
                                     //Outputs [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 }
 
+```
+
+### Lambdas are closures
+
+It is important to note that lambda functions are closures, meaning they can capture and remember variables from the environment in which they were created.
+
+Example:
+
+```cpp
+// The lambda function "remembers" the value of `factor` even after make_multiplier finishes executing
+function make_multiplier(factor: int) -> (int) -> int {
+    return \x -> x * factor;
+}
+
+function main () -> void {
+    double: (int) -> int = make_multiplier(2);  // Create a multiplier function with factor = 2
+    triple: (int) -> int = make_multiplier(3);  // Create a multiplier function with factor = 3
+    
+    print(double(5));                           // Output: 10 (5 * 2)
+    print(triple(5));                           // Output: 15 (5 * 3)
+}
 ```
