@@ -12,7 +12,7 @@ module VirtualMachineSpec (spec) where
 import Test.Hspec
 import Test.Hspec.QuickCheck ()
 import Control.Exception (catch)
-import System.IO.Silently (capture_)
+import System.IO.Silently (capture_, hCapture_)
 import System.Exit (ExitCode(..))
 import System.IO.Error ()
 import Data.Char (ord)
@@ -20,11 +20,14 @@ import Text.Printf ()
 import Data.Maybe ()
 import Text.Megaparsec.Error ()
 import GHC.IO.Exception (IOException(..))
+import qualified Data.ByteString as B
+import Test.Main (withStdin)
 
 -- import System.Random (randomRIO)
 
 import Bytecode.Data
 import VM.VirtualMachine
+import System.IO (stderr)
 
 runProg :: Insts -> Stack -> IO Value
 runProg = exec 0 []
@@ -321,12 +324,20 @@ builtinOperatorSpec = describe "builtinOperator" $ do
   it "fails if invalid operator" $ do
     let prog = [Push (VmInt 1), Push (VmInt 2), Push (VmFunc "???"), Call]
     runProg prog [] `shouldThrow` anyException
-  
+
   -- check error msg
   it "fail error msg invalid operator" $ do
     let prog = [Push (VmString "lol"), Push (VmInt 0), Push (VmFunc "+"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Invalid operands for operator '+'"
+
+  -- eprint
+  it "fail error msg invalid operator" $ do
+    let prog = [Push (VmString "lol"), Push (VmFunc "eprint"), Call]
+    v <- hCapture_ [stderr] $ runProg prog []
+    v `shouldBe` "lol\n"
+
+
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
@@ -377,27 +388,27 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     let prog = [Push (VmFloat 2), Push (VmFloat 3), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 5
-  
+
   it "float - float" $ do
     let prog = [Push (VmFloat 2), Push (VmFloat 3), Push (VmFunc "-"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat (-1)
-  
+
   it "float * float" $ do
     let prog = [Push (VmFloat 2), Push (VmFloat 3), Push (VmFunc "*"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 6
-  
+
   it "float / float" $ do
     let prog = [Push (VmFloat 4), Push (VmFloat 2), Push (VmFunc "/"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 2
-  
+
   it "float < float" $ do
     let prog = [Push (VmFloat 2), Push (VmFloat 3), Push (VmFunc "<"), Call]
     v <- runProg prog []
     v `shouldBe` VmBool True
-  
+
   it "float / 0" $ do
     let prog = [Push (VmFloat 2), Push (VmFloat 0), Push (VmFunc "/"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
@@ -408,27 +419,27 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 5
-  
+
   it "int - float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "-"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat (-1)
-  
+
   it "int * float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "*"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 6
-  
+
   it "int / float" $ do
     let prog = [Push (VmInt 4), Push (VmFloat 2), Push (VmFunc "/"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 2
-  
+
   it "int < float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "<"), Call]
     v <- runProg prog []
     v `shouldBe` VmBool True
-  
+
   it "int / 0" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 0), Push (VmFunc "/"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
@@ -439,27 +450,27 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 5
-  
+
   it "float - int" $ do
     let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "-"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat (-1)
-  
+
   it "float * int" $ do
     let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "*"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 6
-  
+
   it "float / int" $ do
     let prog = [Push (VmFloat 4), Push (VmInt 2), Push (VmFunc "/"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 2
-  
+
   it "float < int" $ do
     let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "<"), Call]
     v <- runProg prog []
     v `shouldBe` VmBool True
-  
+
   it "float / 0" $ do
     let prog = [Push (VmFloat 2), Push (VmInt 0), Push (VmFunc "/"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
@@ -470,7 +481,7 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     let prog = [Push (VmString "hello"), Push (VmString "world"), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmString "helloworld"
-  
+
   it "str * int" $ do
     let prog = [Push (VmString "hello"), Push (VmInt 2), Push (VmFunc "*"), Call]
     v <- runProg prog []
