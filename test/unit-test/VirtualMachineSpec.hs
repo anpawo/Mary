@@ -321,6 +321,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
   it "fails if invalid operator" $ do
     let prog = [Push (VmInt 1), Push (VmInt 2), Push (VmFunc "???"), Call]
     runProg prog [] `shouldThrow` anyException
+  
+  -- check error msg
+  it "fail error msg invalid operator" $ do
+    let prog = [Push (VmString "lol"), Push (VmInt 0), Push (VmFunc "+"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Invalid operands for operator '+'"
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
