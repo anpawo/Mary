@@ -25,6 +25,7 @@ dependencies:
 - raw-strings-qq >= 1.0.0
 - directory
 - silently
+- random >= 1.2.1.2
 
 ghc-options:
 - -Wall
@@ -79,3 +80,4 @@ tests:
     - hspec
     - containers
     - directory
+    - random

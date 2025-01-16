@@ -6,25 +6,31 @@
 -}
 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 module VirtualMachineSpec (spec) where
 
 import Test.Hspec
 import Test.Hspec.QuickCheck ()
-import Control.Exception ()
+import Control.Exception (catch)
 import System.IO.Silently (capture_)
 import System.Exit (ExitCode(..))
 import System.IO.Error ()
 import Data.Char (ord)
 import Text.Printf ()
 import Data.Maybe ()
-import Data.List (isInfixOf)
 import Text.Megaparsec.Error ()
+import GHC.IO.Exception (IOException(..))
+
+-- import System.Random (randomRIO)
 
 import Bytecode.Data
 import VM.VirtualMachine
 
 runProg :: Insts -> Stack -> IO Value
-runProg prog stack = exec 0 [] prog stack
+runProg = exec 0 []
+
+failMsg :: IOException -> IO (Either String a)
+failMsg (IOError {..}) = return $ Left ioe_description
 
 dummyEnv :: Env
 dummyEnv =
@@ -102,7 +108,7 @@ jumpIfFalseInstrSpec = describe "jumpIfFalseInstr" $ do
     v `shouldBe` VmInt 999
   it "fail if top not bool" $ do
     let prog = [JumpIfFalse 1]
-    (exec 0 [] prog [VmInt 1]) `shouldThrow` anyException
+    exec 0 [] prog [VmInt 1] `shouldThrow` anyException
 
 pushInstrSpec :: Spec
 pushInstrSpec = describe "pushInstr" $ do
@@ -125,15 +131,14 @@ pushInstrSpec = describe "pushInstr" $ do
 
 doCurrentInstrSpec :: Spec
 doCurrentInstrSpec = describe "doCurrentInstr" $ do
-  it "Ret with value" $ do
-    doCurrentInstr (Just Ret) 0 [] [] [VmInt 999] `shouldReturn` VmInt 999
+  it "Ret with value" $ doCurrentInstr (Just Ret) 0 [] [] [VmInt 999] `shouldReturn` VmInt 999
 
   it "Ret empty stack => fail" $
-    (doCurrentInstr (Just Ret) 0 [] [] []) `shouldThrow` anyException
+    doCurrentInstr (Just Ret) 0 [] [] [] `shouldThrow` anyException
 
   it "Update => missing struct => fail" $ do
     let prog = [Update "var"]
-    (exec 0 [] prog [VmInt 9, VmString "field"]) `shouldThrow` anyException
+    exec 0 [] prog [VmInt 9, VmString "field"] `shouldThrow` anyException
 
   it "Load => loads function from env" $ do
     let env = [("myFun", [Push (VmInt 77), Ret])]
@@ -143,18 +148,17 @@ doCurrentInstrSpec = describe "doCurrentInstr" $ do
 
   it "Load => fail not found" $ do
     let prog = [Load "nope"]
-    (exec 0 [] prog []) `shouldThrow` anyException
+    exec 0 [] prog [] `shouldThrow` anyException
 
   it "Call => top of stack not VmFunc => fail" $ do
     let prog = [Call]
-    (exec 0 [] prog [VmInt 5]) `shouldThrow` anyException
+    exec 0 [] prog [VmInt 5] `shouldThrow` anyException
 
   it "JumpBackward => negative index => fail or out of range" $ do
     let prog = [JumpBackward 1, Push (VmInt 1)]
-    (exec 0 [] prog []) `shouldThrow` anyException
+    exec 0 [] prog [] `shouldThrow` anyException
 
-  it "Nothing => end => returns top of stack" $ do
-    doCurrentInstr Nothing 0 [] [] [VmInt 10] `shouldReturn` VmInt 10
+  it "Nothing => end => returns top of stack" $ doCurrentInstr Nothing 0 [] [] [VmInt 10] `shouldReturn` VmInt 10
 
   it "Nothing => empty stack => returns VmVoid" $
     doCurrentInstr Nothing 0 [] [] [] `shouldReturn` VmVoid
@@ -189,33 +193,33 @@ execSpec = describe "exec" $ do
           , Push (VmFunc "concat")
           , Call
           ]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
 callInstrSpec :: Spec
 callInstrSpec = describe "callInstr" $ do
 
   it "calls closureName but fails after" $ do
     let prog = [Load "myClosure", Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "fails on unknown function" $ do
     let prog = [Push (VmFunc "nope"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
 builtinOperatorSpec :: Spec
 builtinOperatorSpec = describe "builtinOperator" $ do
   it "handles print" $ do
     let prog = [Push (VmInt 999), Push (VmFunc "print"), Call]
     out <- capture_ (runProg prog [])
-    out `shouldSatisfy` isInfixOf "999"
+    out `shouldBe` "999\n"
 
   it "handles exit code 0" $ do
     let prog = [Push (VmInt 0), Push (VmFunc "exit"), Call]
-    (runProg prog []) `shouldThrow` (== ExitSuccess)
+    runProg prog [] `shouldThrow` (== ExitSuccess)
 
   it "fails if exit top is not int" $ do
     let prog = [Push (VmFloat 3.14), Push (VmFunc "exit"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "handles set known field" $ do
     let prog =
@@ -236,7 +240,7 @@ builtinOperatorSpec = describe "builtinOperator" $ do
           , Push (VmFunc "set")
           , Call
           ]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "handles toString" $ do
     let prog = [Push (VmInt 999), Push (VmFunc "toString"), Call]
@@ -312,20 +316,58 @@ builtinOperatorSpec = describe "builtinOperator" $ do
 
   it "fails if concat array of different type" $ do
     let prog = [Push (VmArray "int" [VmInt 1]), Push (VmArray "float" [VmFloat 2.2]), Push (VmFunc "concat"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "fails if invalid operator" $ do
     let prog = [Push (VmInt 1), Push (VmInt 2), Push (VmFunc "???"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
-  it "int plus int" $ do
+  -- bool
+  it "1 == 1" $ do
+    let prog = [Push (VmInt 1), Push (VmInt 1), Push (VmFunc "=="), Call]
+    v <- runProg prog []
+    v `shouldBe` VmBool True
+
+  it "1 is int" $ do
+    let prog = [Push (VmInt 1), Push (VmString "int"), Push (VmFunc "is"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmBool True
+
+  -- int
+  it "int + int" $ do
     let prog = [Push (VmInt 2), Push (VmInt 3), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmInt 5
 
-  it "float minus float" $ do
+  it "int - int" $ do
+    let prog = [Push (VmInt 2), Push (VmInt 3), Push (VmFunc "-"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt (-1)
+
+  it "int * int" $ do
+    let prog = [Push (VmInt 2), Push (VmInt 3), Push (VmFunc "*"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 6
+
+  it "int / int" $ do
+    let prog = [Push (VmInt 2), Push (VmInt 3), Push (VmFunc "/"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 0
+
+  it "int / 0" $ do
+    let prog = [Push (VmInt 2), Push (VmInt 0), Push (VmFunc "/"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Division by zero"
+
+  it "int < int" $ do
+    let prog = [Push (VmInt 2), Push (VmInt 3), Push (VmFunc "<"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmBool True
+
+  -- float
+  it "float - float" $ do
     let prog = [Push (VmFloat 5.5), Push (VmFloat 3.2), Push (VmFunc "-"), Call]
     v <- runProg prog []
     case v of
@@ -334,7 +376,7 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
 
   it "fails with invalid operands" $ do
     let prog = [Push (VmBool True), Push (VmInt 1), Push (VmFunc "+"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
 conversionOperatorSpec :: Spec
 conversionOperatorSpec = describe "conversionOperator" $ do
@@ -343,23 +385,68 @@ conversionOperatorSpec = describe "conversionOperator" $ do
     v <- runProg prog []
     v `shouldBe` VmInt (ord 'a')
 
+  it "toInt from bool" $ do
+    let prog = [Push (VmBool True), Push (VmFunc "toInt"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 1
+
+  it "toInt from bool" $ do
+    let prog = [Push (VmInt 1), Push (VmFunc "toInt"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 1
+
+  it "toInt from float" $ do
+    let prog = [Push (VmFloat 1.0), Push (VmFunc "toInt"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 1
+
+  it "toInt fail" $ do
+    let prog = [Push (VmString "bad"), Push (VmFunc "toInt"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Invalid string for toInt"
+
+  it "toFloat from float" $ do
+    let prog = [Push (VmFloat 42.0), Push (VmFunc "toFloat"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat 42.0
+
+  it "toFloat from bool" $ do
+    let prog = [Push (VmBool True), Push (VmFunc "toFloat"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat 1.0
+
   it "toFloat from int" $ do
     let prog = [Push (VmInt 42), Push (VmFunc "toFloat"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 42.0
 
-  it "toChar from int" $ do
-    let prog = [Push (VmInt 97), Push (VmFunc "toChar"), Call]
+  it "toFloat from str" $ do
+    let prog = [Push (VmString "42.0"), Push (VmFunc "toFloat"), Call]
     v <- runProg prog []
-    v `shouldBe` VmChar 'a'
+    v `shouldBe` VmFloat 42.0
+
+  it "toFloat fail" $ do
+    let prog = [Push (VmString "bad"), Push (VmFunc "toFloat"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Invalid string for toFloat"
+
+  it "toChar fail" $ do
+    let prog = [Push (VmBool True), Push (VmFunc "toChar"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Invalid value for 'ToChar'"
+
+  it "toChar from char" $ do
+    let prog = [Push (VmChar 'c'), Push (VmFunc "toChar"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmChar 'c'
 
   it "fails toInt from struct" $ do
     let prog = [Push (VmStruct "stuff" []), Push (VmFunc "toInt"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "fails toFloat from array" $ do
     let prog = [Push (VmArray "int" []), Push (VmFunc "toFloat"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
 
   it "toInt from string parse ok" $ do
     let prog = [Push (VmString "123"), Push (VmFunc "toInt"), Call]
@@ -368,4 +455,4 @@ conversionOperatorSpec = describe "conversionOperator" $ do
 
   it "toInt from string parse fail => error" $ do
     let prog = [Push (VmString "abc"), Push (VmFunc "toInt"), Call]
-    (runProg prog []) `shouldThrow` anyException
+    runProg prog [] `shouldThrow` anyException
