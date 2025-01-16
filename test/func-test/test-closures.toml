@@ -1,0 +1,8 @@
+[test.closures]
+cmd = "../../glados --import ../../stdlib input/closures.mary"
+stdout = """
+5
+5
+3
+lol
+"""
