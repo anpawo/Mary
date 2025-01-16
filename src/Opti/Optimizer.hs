@@ -13,9 +13,9 @@ import Debug.Trace (trace)
 
 optimizeAST :: [Ast] -> [Ast]
 optimizeAST asts =
-  let _ = trace ("AST de départ:\n" ++ show asts) ()
+  let _ = trace (show asts) ()
       optimized = map optimizeAst asts
-      _ = trace ("AST optimisé:\n" ++ show optimized) ()
+      _ = trace (show optimized) ()
   in optimized
 
 optimizeAst :: Ast -> Ast
