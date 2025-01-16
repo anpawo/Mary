@@ -360,10 +360,15 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v `shouldBe` Left 1
   
   -- operator "."
-  it "struct: person.name " $ do
+  it "struct: person.name ko" $ do
     let prog = [Push (VmStruct "?" []), Push (VmString "???"), Push (VmFunc "."), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Cannot access field `???` of struct `?`."
+  
+  it "struct: person.name ok" $ do
+    let prog = [Push (VmStruct "?" [("age", VmInt 1)]), Push (VmString "age"), Push (VmFunc "."), Call]
+    v <- runProg prog []
+    v `shouldBe` VmInt 1
 
 
 arithmeticOperatorSpec :: Spec
