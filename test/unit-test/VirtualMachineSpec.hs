@@ -398,37 +398,66 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     v `shouldBe` Left "Division by zero"
 
   -- int float
-  it "float + float" $ do
+  it "int + float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "+"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 5
   
-  it "float - float" $ do
+  it "int - float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "-"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat (-1)
   
-  it "float * float" $ do
+  it "int * float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "*"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 6
   
-  it "float / float" $ do
+  it "int / float" $ do
     let prog = [Push (VmInt 4), Push (VmFloat 2), Push (VmFunc "/"), Call]
     v <- runProg prog []
     v `shouldBe` VmFloat 2
   
-  it "float < float" $ do
+  it "int < float" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 3), Push (VmFunc "<"), Call]
     v <- runProg prog []
     v `shouldBe` VmBool True
   
-  it "float / 0" $ do
+  it "int / 0" $ do
     let prog = [Push (VmInt 2), Push (VmFloat 0), Push (VmFunc "/"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Division by zero"
 
-  -- 
+  -- float int
+  it "float + int" $ do
+    let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "+"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat 5
+  
+  it "float - int" $ do
+    let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "-"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat (-1)
+  
+  it "float * int" $ do
+    let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "*"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat 6
+  
+  it "float / int" $ do
+    let prog = [Push (VmFloat 4), Push (VmInt 2), Push (VmFunc "/"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmFloat 2
+  
+  it "float < int" $ do
+    let prog = [Push (VmFloat 2), Push (VmInt 3), Push (VmFunc "<"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmBool True
+  
+  it "float / 0" $ do
+    let prog = [Push (VmFloat 2), Push (VmInt 0), Push (VmFunc "/"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Division by zero"
 
   -- float
   it "float - float" $ do
