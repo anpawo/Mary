@@ -32,6 +32,9 @@ import System.IO (stderr)
 runProg :: Insts -> Stack -> IO Value
 runProg = exec 0 []
 
+runProgWithEnv :: Env -> Insts -> Stack -> IO Value
+runProgWithEnv = exec 0
+
 failMsg :: IOException -> IO (Either String a)
 failMsg (IOError {..}) = return $ Left ioe_description
 
@@ -352,22 +355,27 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmInt 0), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
     v `shouldBe` Left 0
-  
+
   -- exit 1
   it "exit 1" $ do
     let prog = [Push (VmInt 1), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
     v `shouldBe` Left 1
-  
+
   -- operator "."
   it "struct: person.name ko" $ do
     let prog = [Push (VmStruct "?" []), Push (VmString "???"), Push (VmFunc "."), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Cannot access field `???` of struct `?`."
-  
+
   it "struct: person.name ok" $ do
     let prog = [Push (VmStruct "?" [("age", VmInt 1)]), Push (VmString "age"), Push (VmFunc "."), Call]
     v <- runProg prog []
+    v `shouldBe` VmInt 1
+  
+  it "struct: person.name ok 2" $ do
+    let prog = [Push (VmString "st"), Push (VmString "age"), Push (VmFunc "."), Call]
+    v <- runProgWithEnv [("st", [Push (VmStruct "" [("age", VmInt 1)])])] prog []
     v `shouldBe` VmInt 1
 
 
