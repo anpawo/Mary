@@ -71,6 +71,9 @@ operatorSpec = describe "optimizeSubExpr" $ do
   it "optimizes division" $ do
     let expr = FunctionCall "/" [Lit (IntLit 20), Lit (IntLit 4)]
     optimizeSubExpr expr `shouldBe` Lit (IntLit 5)
+  it "does not optimize division by zero" $ do
+    let expr = FunctionCall "/" [Lit (IntLit 20), Lit (IntLit 0)]
+    optimizeSubExpr expr `shouldBe` FunctionCall "/" [Lit (IntLit 20), Lit (IntLit 0)]
 
 callCollectionSpec :: Spec
 callCollectionSpec = describe "collectCalls functions" $ do
