@@ -86,3 +86,14 @@ callCollectionSpec = describe "collectCalls functions" $ do
   it "collects calls in a variable expression" $ do
     let expr = Variable (IntType, "y") (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
     collectCallsExpr expr `shouldBe` collectCallsSubExpr (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
+
+reachableSpec :: Spec
+reachableSpec = describe "reachableFunctions" $ do
+  it "collects function names from the AST using a list comprehension" $ do
+    let asts =
+          [ Function { fnName = "funA", fnArgs = [], fnRetType = IntType, fnBody = [] }
+          , Function { fnName = "funB", fnArgs = [], fnRetType = IntType, fnBody = [] }
+          , Function { fnName = "main", fnArgs = [], fnRetType = VoidType, fnBody = [] }
+          ]
+    let names = [ fnName f | f@(Function {}) <- asts ]
+    names `shouldBe` ["funA", "funB", "main"]
