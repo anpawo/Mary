@@ -336,7 +336,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmString "lol"), Push (VmFunc "eprint"), Call]
     v <- hCapture_ [stderr] $ runProg prog []
     v `shouldBe` "lol\n"
-
+  
+  -- getline
+  it "fail error msg invalid operator" $ do
+    let prog = [Push (VmFunc "getline"), Call]
+    v <- withStdin (B.pack [65]) $ runProg prog []
+    v `shouldBe` VmString "A"
 
 
 arithmeticOperatorSpec :: Spec
