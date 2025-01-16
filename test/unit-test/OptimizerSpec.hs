@@ -106,3 +106,18 @@ defaultAstSpec = describe "collectCallsAst and optimizeAST default behavior" $ d
   it "leaves non-function AST nodes unchanged when optimizing" $ do
     let ast = Structure { structName = "Dummy", structMember = [] }
     optimizeAST [ast] `shouldBe` [ast]
+
+optimizeExprPatternsSpec :: Spec
+optimizeExprPatternsSpec = describe "optimizeExpr patterns" $ do
+  it "optimizes an IfThenElse expression by processing the condition and sub-expressions" $ do
+    let cond = FunctionCall "+" [Lit (IntLit 2), Lit (IntLit 3)]
+        thenPart = [Variable (IntType, "a") (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 2)])]
+        elsePart = [SubExpression (FunctionCall "-" [Lit (IntLit 10), Lit (IntLit 4)])]
+        expr = IfThenElse cond thenPart elsePart
+        optimizedExpr = optimizeExpr expr
+    case optimizedExpr of
+      IfThenElse cond' thenEs elseEs -> do
+        cond' `shouldBe` Lit (IntLit 5)
+        thenEs `shouldSatisfy` (not . null)
+        elseEs `shouldSatisfy` (not . null)
+      _ -> expectationFailure "Expected an IfThenElse expression"
