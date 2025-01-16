@@ -1,0 +1,18 @@
+//
+//
+//
+//
+
+import dict
+
+function main() -> void {
+    d: dict = [1 ,, "un", 2 ,, "deux", 3 ,, "trois"];
+    print(dict_get(d, 1));
+    print(dict_get(d, 4));
+    d = dict_add(d, 4 ,, "quatre");
+    print(dict_get(d, 4));
+    d = dict_set(d, 4 ,, "four");
+    print(dict_get(d, 4));
+    d = dict_del(d, 4);
+    print(dict_get(d, 4));
+}
