@@ -33,11 +33,12 @@ import Utils.Lib
 import Data.Foldable (find, traverse_)
 import Ast.TokenParser
 import Data.Functor (($>))
-import Control.Applicative ((<|>), Alternative (empty))
+import Control.Applicative ((<|>), Alternative (empty, some))
 import Data.List (singleton)
 import Data.Maybe (fromJust, isNothing)
 import Control.Monad (when, unless)
 import Text.Printf (printf)
+import Data.Tuple (swap)
 
 data Group
   = GGr { getIndex :: Int, ggValue :: [Group]}
@@ -70,12 +71,47 @@ validLit _ ctx locVar st@(StructLit name subexpr) =  case find (\a -> isStruct a
 validLit _ ctx locVar arr@(ArrLit t subexp) = mapM (getType ctx locVar) subexp >>= (\ok -> if ok then pure arr else fail $ errInvalidArray (show t)) . all (== t)
 validLit _ _ _ lit = pure lit
 
+
+parseLambdaArgs :: Ctx -> [String] -> Parser [(Type, String)]
+parseLambdaArgs ctx names = (,) <$> (textIdentifier >>= notTaken names) <*> parseArgType >>=
+  \a -> tok Arrow $> [swap a] <|> (swap a:) <$> parseLambdaArgs ctx (fst a : names)
+  where parseArgType = tok Colon *> types ctx False True <|> pure AnyType
+
+parseLambdaBody :: Ctx -> LocalVariable -> Parser SubExpression
+parseLambdaBody ctx vars = some (getGroup ctx vars) >>= mountGroup ctx >>= \m -> validateMount ctx vars m *> toSubexpr ctx m
+
+getCapturedVariable :: LocalVariable -> SubExpression -> [String]
+getCapturedVariable vars (VariableCall n)
+  | any ((== n) . snd) vars = [n]
+  | otherwise = []
+getCapturedVariable vars (FunctionCall n args)
+  | any ((== n) . snd) vars = n : concatMap (getCapturedVariable vars) args
+  | otherwise = concatMap (getCapturedVariable vars) args
+getCapturedVariable vars (Lit (ArrLit _ xs)) = concatMap (getCapturedVariable vars) xs
+getCapturedVariable vars (Lit (StructLit _ xs)) = concatMap (getCapturedVariable vars . snd) xs
+getCapturedVariable vars (Lit (LambdaLit {lambdaBody = x})) = getCapturedVariable vars x
+getCapturedVariable _ (Lit _) = []
+
+-- may fail with lambda returning lambdas
+parseLambda :: Ctx -> LocalVariable -> Parser MyToken
+parseLambda ctx vars = tok BackSlash *> do
+  args <- (tok Arrow $> []) <|> parseLambdaArgs ctx (map snd vars ++ getNames ctx)
+  -- trace (show args) pure ()
+  body <- parseLambdaBody ctx (vars ++ args)
+  -- trace (show body) pure ()
+  retTy <- getType ctx (vars ++ args) body
+  -- trace (show retTy) pure ()
+  let captured = getCapturedVariable vars body
+  -- trace (show captured) pure ()
+  return $ Literal $ LambdaLit captured args body retTy
+
+
 getGroup :: Ctx -> LocalVariable -> Parser Group
 getGroup ctx locVar = getOffset >>= (\o -> choice
     [ eof *> fail errEndSubexpr
     , try $ GOp o <$> (textIdentifier >>= \s -> if s == "is" then pure s else empty) <*> pure []
     , GGr o <$> (tok ParenOpen *> (someTill (getGroup ctx locVar <|> failN errEndParen) (tok ParenClose) <|> failN errEmptyParen))
-    , GLit o <$> (validLit o ctx locVar . literal =<< satisfy isLiteral)
+    , GLit o <$> (validLit o ctx locVar . literal =<< (satisfy isLiteral <|> parseLambda ctx locVar))
     , try $ GLit o <$> (textIdentifier >>= \atom -> case find (\a -> isStruct a && getName a == atom) ctx of
       Just (Structure _ []) -> pure $ StructLit atom []
       _ -> empty)
@@ -150,7 +186,7 @@ getGrType :: Ctx -> LocalVariable -> Group -> Type -> Parser ()
 getGrType ctx _ (GOp index name _) expected = let t = opRetType $ fromJust $ find (\a -> isOp a && getName a == name) ctx in
   when (t /= expected) (failI index $ errInvalidOpType name (show expected) (show t))
 getGrType ctx locVar (GFn index name _) expected = case find ((== name) . snd) locVar of
-  Just (ClosureType _ t, _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
+  Just (FunctionType _ t, _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
   _ -> case find (\a -> isFn a && getName a == name) ctx of
     Just (Function _ _ t _) -> when (t /= expected) (failI index $ errInvalidFnType name (show expected) (show t))
     _ -> failI index $ errFunctionNotBound name
@@ -172,7 +208,7 @@ validateMount ctx locVar (GFn index name args) = case find (\a -> isFn a && getN
       expected = length args'
       found = length args
   _ -> case find ((== name) . snd) locVar of
-    Just (ClosureType args' _, _)
+    Just (FunctionType args' _, _)
       | expected /= found -> failI index $ errInvalidNumberOfArgument name expected found
       | otherwise -> mapM_ (\(t, g) -> getGrType ctx locVar g t) (zip args' args) >> traverse_ (validateMount ctx locVar) args
       where

@@ -15,6 +15,7 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# HLINT ignore "Eta reduce" #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Bytecode.Compiler
   (
@@ -50,6 +51,7 @@ convertLiteral (StringLit s) = VmString s
 convertLiteral (ArrLit t arr) = VmPreArray (show t) $ map compileSubExpression arr
 convertLiteral (StructLit name structMember) = VmPreStruct name $ concatMap convertLitStruct structMember
 convertLiteral NullLit = VmNull
+convertLiteral (LambdaLit {..}) = VmPreLambda lambdaCapture $ compileParams lambdaArgs ++ compileSubExpression lambdaBody
 
 compileSubExpression :: SubExpression -> [Instruction]
 compileSubExpression (VariableCall varName) = [Load varName]

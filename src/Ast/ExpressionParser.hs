@@ -67,7 +67,7 @@ exprReturn ctx locVar retT = tok ReturnKw *> case retT of
             | fnRetType == retT -> return $ Return subexpr
             | otherwise -> failI offset $ errRetType (show retT) (show fnRetType)
           Nothing -> case fromJust $ find ((== name) . snd) locVar of
-            (ClosureType _ closureRetType, _)
+            (FunctionType _ closureRetType, _)
               | closureRetType == retT -> return $ Return subexpr
               | otherwise -> failI offset $ errRetType (show retT) (show closureRetType)
             _ -> failN $ errImpossibleCase "exprReturn function call"

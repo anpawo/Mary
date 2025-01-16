@@ -108,16 +108,16 @@ typeSpec = describe "type" $ do
       (ConstraintType (Just "number") [IntType, FloatType] == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
     it "int == type integer" $
       (IntType == ConstraintType (Just "integer") [IntType, BoolType]) ==> True
-    it "ClosureType [IntType] FloatType == ClosureType [IntType] FloatType -> True" $
-      (ClosureType [IntType] FloatType == ClosureType [IntType] FloatType) ==> True
-    it "ClosureType [IntType] FloatType == ClosureType [BoolType] FloatType -> False" $
-      (ClosureType [IntType] FloatType == ClosureType [BoolType] FloatType) ==> False
-    it "AnyType == (ClosureType [IntType] FloatType) -> False" $
-      (AnyType == ClosureType [IntType] FloatType) ==> False
+    it "FunctionType [IntType] FloatType == FunctionType [IntType] FloatType -> True" $
+      (FunctionType [IntType] FloatType == FunctionType [IntType] FloatType) ==> True
+    it "FunctionType [IntType] FloatType == FunctionType [BoolType] FloatType -> False" $
+      (FunctionType [IntType] FloatType == FunctionType [BoolType] FloatType) ==> False
+    it "AnyType == (FunctionType [IntType] FloatType) -> False" $
+      (AnyType == FunctionType [IntType] FloatType) ==> False
     it "AnyType == IntType -> True" $
       (AnyType == IntType) ==> True
-    it "(ClosureType [IntType] FloatType) == AnyType -> False" $
-      (ClosureType [IntType] FloatType == AnyType) ==> False
+    it "(FunctionType [IntType] FloatType) == AnyType -> False" $
+      (FunctionType [IntType] FloatType == AnyType) ==> False
     it "BoolType == AnyType -> True" $
       (BoolType == AnyType) ==> True
 
@@ -132,8 +132,8 @@ typeSpec = describe "type" $ do
     it "arr[int]" $ show (ArrType IntType) ==> "arr[int]"
     it "struct person" $ show (StructType "person") ==> "person"
     it "any" $ show AnyType ==> "any"
-    it "ClosureType [IntType,BoolType] -> float" $
-      show (ClosureType [IntType, BoolType] FloatType) ==> "(int, bool) -> float"
+    it "FunctionType [IntType,BoolType] -> float" $
+      show (FunctionType [IntType, BoolType] FloatType) ==> "(int, bool) -> float"
     it "ConstraintType (Just \"number\") [IntType, FloatType]" $
       show (ConstraintType (Just "number") [IntType, FloatType]) ==> "number"
     it "ConstraintType Nothing [IntType, BoolType]" $
@@ -142,7 +142,7 @@ typeSpec = describe "type" $ do
       let c = ConstraintType Nothing [StrType, NullType]
       crTyTypes c ==> [StrType, NullType]
     it "field usage fnTyArgs/fnTyRet" $ do
-      let clos = ClosureType [IntType, FloatType] StrType
+      let clos = FunctionType [IntType, FloatType] StrType
       fnTyArgs clos ==> [IntType, FloatType]
       fnTyRet clos ==> StrType
   

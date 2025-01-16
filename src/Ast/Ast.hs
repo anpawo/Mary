@@ -123,7 +123,7 @@ types ctx canBeVoid canBeConstraint = oneTy >>= \t -> if canBeConstraint then no
       | otherwise                             = fail $ errStructureNotBound name
 
     closureType :: Parser Type
-    closureType = liftM2 ClosureType (tok ParenOpen *> ((tok ParenClose $> []) <|> args)) (tok Arrow *> types ctx True True)
+    closureType = liftM2 FunctionType (tok ParenOpen *> ((tok ParenClose $> []) <|> args)) (tok Arrow *> types ctx True True)
       where args = types ctx False True >>= \t -> (tok ParenClose $> [t]) <|> (tok Comma *> ((t :) <$> args))
 
 
@@ -133,7 +133,7 @@ getType ctx locVar (FunctionCall name _) = case find (\a -> (isFn a || isOp a) &
   Just (Function {..}) -> pure fnRetType
   Just (Operator {..}) -> pure opRetType
   _ -> case find ((== name) . snd) locVar of
-    Just (ClosureType _ retType, _) -> pure retType
+    Just (FunctionType _ retType, _) -> pure retType
     _ -> fail $ errFunctionNotBound name
 getType ctx locVar (Lit struct@(StructLit name lit)) = case find (\a -> isStruct a && getName a == name) ctx of
   Just (Structure _ kv) -> mapM (\(n, v) -> (,) n <$> getType ctx locVar v) lit >>= \case
@@ -156,7 +156,8 @@ isType (StructType n) (StructLit n' _) = n == n'
 isType (ConstraintType _ t) lit = any (`isType` lit) t
 isType VoidType _ = False
 isType NullType NullLit = True
-isType (ClosureType argsTy retTy) (ClosureLit _ argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+isType (FunctionType argsTy retTy) (ClosureLit _ argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+isType (FunctionType argsTy retTy) (LambdaLit _ argsTy' _ retTy') = argsTy == map fst argsTy' && retTy == retTy'
 isType AnyType (ClosureLit {}) = False
 isType AnyType _ = True
 isType _ _ = False -- any other combination
@@ -171,9 +172,10 @@ getLitType (ArrLit t _) = t
 getLitType (StructLit n _) = StructType n
 getLitType (StructLitPre n _) = StructType n
 getLitType (ArrLitPre t _) = t
-getLitType (ClosureLit _ argsTy retTy) = ClosureType argsTy retTy
+getLitType (ClosureLit _ argsTy retTy) = FunctionType argsTy retTy
 getLitType (ListLitPre _) = ConstraintType Nothing [StructType "empty", StructType "elem"]
 getLitType NullLit = NullType
+getLitType (LambdaLit {..}) = FunctionType (map fst lambdaArgs) lambdaRetTy
 
 notTaken :: [String] -> String -> Parser String
 notTaken names name

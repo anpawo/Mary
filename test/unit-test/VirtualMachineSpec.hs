@@ -23,7 +23,7 @@ import Text.Megaparsec.Error ()
 import Bytecode.Data
 import VM.VirtualMachine
 
-runProg :: Program -> Stack -> IO Value
+runProg :: Insts -> Stack -> IO Value
 runProg prog stack = exec 0 [] prog stack
 
 dummyEnv :: Env
@@ -172,7 +172,7 @@ getcurrentInstrSpec = describe "getcurrentInstr" $ do
 
 execSpec :: Spec
 execSpec = describe "exec" $ do
-  it "runs an entire program returning final stack top" $ do
+  it "runs an entire Insts returning final stack top" $ do
     let prog =
           [ Push (VmInt 10)
           , Push (VmInt 2)
@@ -182,7 +182,7 @@ execSpec = describe "exec" $ do
     v <- runProg prog []
     v `shouldBe` VmInt 12
 
-  it "fails with invalid operator in program" $ do
+  it "fails with invalid operator in Insts" $ do
     let prog =
           [ Push (VmInt 10)
           , Push (VmInt 2)

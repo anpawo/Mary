@@ -5,6 +5,7 @@
 -- MyToken
 -}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..), SubExpression(..)) where
 
@@ -29,16 +30,16 @@ data Type
   | AnyType --                                                         \| any
   | StructType { stTyName :: String} --                                \| struct <name> (the real parsing of the structure is done in the Ast)
   | ConstraintType { crTyName :: Maybe String, crTyTypes :: [Type]} -- \| int | float
-  | ClosureType { fnTyArgs :: [Type], fnTyRet :: Type }
+  | FunctionType { fnTyArgs :: [Type], fnTyRet :: Type }
   deriving (Ord)
 
 instance Eq Type where
   (StructType n) == (StructType n') = n == n'
   (ArrType t) == (ArrType t') = t == t'
-  (ClosureType argsTy retTy) == (ClosureType argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
-  AnyType == (ClosureType {}) = False
+  (FunctionType argsTy retTy) == (FunctionType argsTy' retTy') = argsTy == argsTy' && retTy == retTy'
+  AnyType == (FunctionType {}) = False
   AnyType == _ = True
-  (ClosureType {}) == AnyType = False
+  (FunctionType {}) == AnyType = False
   _ == AnyType = True
   (ConstraintType (Just n) _) == (ConstraintType (Just n') _) | n == n' = True
   c@(ConstraintType _ _) == (ConstraintType _ ts) = c `elem` ts
@@ -54,7 +55,7 @@ instance Eq Type where
   _ == _ = False
 
 instance Show Type where
-  show (ClosureType argsTy retTy) = printf "(%s) -> %s" (intercalate ", " $ map show argsTy) (show retTy)
+  show (FunctionType argsTy retTy) = printf "(%s) -> %s" (intercalate ", " $ map show argsTy) (show retTy)
   show CharType = "char"
   show NullType = "null"
   show VoidType = "void"
@@ -81,6 +82,7 @@ data Literal
   | StructLit String [(String, SubExpression)] -- \| {name: "marius", age: 19}
   | NullLit --                                    \| null
   | ClosureLit String [Type] Type --              \| (+)
+  | LambdaLit { lambdaCapture :: [String], lambdaArgs :: [(Type, String)], lambdaBody :: SubExpression, lambdaRetTy :: Type} -- \| (\(a: int, b: int) -> int = a + b)
   deriving (Eq, Ord)
 
 instance Show Literal where
@@ -97,6 +99,7 @@ instance Show Literal where
   show (StructLit n x) = printf "%s { %s }" n $ intercalate ", " $ map (\(k, v) -> printf "%s = %s" k (show v)) x
   show NullLit = "NULL"
   show (ListLitPre a) = printf "%s" $ show $ map head a
+  show (LambdaLit {..}) = printf "%s(%s) -> %s" (show lambdaCapture) (show lambdaArgs) (show lambdaRetTy)
 
 data Identifier
   = TextId { textIdName :: String} --   \| factorial, add_2, x
@@ -139,6 +142,7 @@ data MyToken
   | AssignSub --         \|  -=  -> compound assignment operators
   | AssignMul --         \|  *=  -> compound assignment operators
   | AssignDiv --         \|  /=  -> compound assignment operators
+  | BackSlash --         \|  \   -> lambda creation
   -- Type
   | Type { typing :: Type }
   -- Literal
@@ -177,6 +181,7 @@ instance Show MyToken where
   show AssignSub = "-="
   show AssignMul = "*="
   show AssignDiv = "/="
+  show BackSlash = "\\"
 
   show (Type t) = show t
   show (Literal l) = show l
