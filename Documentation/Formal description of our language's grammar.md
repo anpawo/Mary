@@ -34,7 +34,7 @@ first paragraph to define basic things of the language
 <operator> ::= "operator" <space>? <symbol_identifier> <space>? ("precedence" <int>)? <space>? "(" <arguments>? ")" <space>? "->" <space>? <return_type> <space>? "{" <space>? <body> <space>? "}"
 ; Defines a function with a name, arguments, return type, and body.
 
-<arguments> ::= <variable> ( <space>? "," <space>? <variable>)*
+<arguments> ::= <variable> (<space>? "," <space>? <variable>)*
 ; Defines a list of arguments, which can be variables or function types, separated by commas.
 
 <variable> ::= <identifier> <space>? ":" <space>? <type>
@@ -102,6 +102,8 @@ first paragraph to define basic things of the language
 
 <struct> ::= <identifier> "{" <struct_elements>? "}"
 
+<lambda> ::= "\\" <arguments> "->" <subexpression>
+
 <struct_elements> ::= (<identifier> "=" <space>? <sub_expression>) | (<identifier> "=" <sub_expression> <space>? "," <space>? <struct_elements>)
 
 <return> ::= "return" <space> <sub_expression>
@@ -126,4 +128,3 @@ first paragraph to define basic things of the language
 
 <type_def> ::= "type" <space> <identifier> <space>? "=" <space>? <type> (<space>? "|" <space>? <type>)*
 ```
-<!-- todo mettre les operateurs [ '!', '$' , '.', '=', ':',] -->
