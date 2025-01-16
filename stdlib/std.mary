@@ -50,3 +50,16 @@ operator || precedence 3 (a: bool, b: bool) -> bool {
         return b;
     }
 }
+
+operator $ precedence 0 (f: (any) -> any, x: any) -> any {
+    return f(x);
+}
+
+
+operator <> precedence 9 (f: (any) -> any, g: (any) -> any) -> (any) -> any {
+    return \x -> f(g(x));
+}
+
+operator <>> precedence 9 (f: (any) -> any, g: (any, any) -> any) -> (any, any) -> any {
+    return \x y -> f(g(x, y));
+}
