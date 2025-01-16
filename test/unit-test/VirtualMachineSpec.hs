@@ -401,6 +401,21 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "st" [("age", VmInt 1)])])] prog []) `catch` failMsg
     v `shouldBe` Right (VmStruct "st" [("age", VmInt 0)])
   
+  it "update ko" $ do
+    let prog = [Push (VmString "age"), Push $ VmInt 0, Update "???", Load "st"]
+    v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "st" [("age", VmInt 1)])])] prog []) `catch` failMsg
+    v `shouldBe` Left "'???' is not bound"
+  
+  it "update ko 2" $ do
+    let prog = [Push (VmString "age"), Push $ VmInt 0, Update "???"]
+    v <- (Right <$> runProgWithEnv [("st", [Push (VmInt 0)])] prog []) `catch` failMsg
+    v `shouldBe` Left "'???' is not bound"
+  
+  it "update ko 3" $ do
+    let prog = [Push (VmString "???"), Push $ VmInt 0, Update "st", Load "st"]
+    v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "st" [("age", VmInt 1)])])] prog []) `catch` failMsg
+    v `shouldBe` Left "Structure 'st' doesn't have the field '???'."
+  
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
