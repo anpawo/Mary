@@ -35,6 +35,10 @@ runProg = exec 0 []
 failMsg :: IOException -> IO (Either String a)
 failMsg (IOError {..}) = return $ Left ioe_description
 
+failCode :: ExitCode -> IO (Either Int a)
+failCode (ExitFailure n) = return $ Left n
+failCode ExitSuccess = return $ Left 0
+
 dummyEnv :: Env
 dummyEnv =
   [ ("f", [Push (VmInt 999)])
@@ -332,16 +336,23 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v `shouldBe` Left "Invalid operands for operator '+'"
 
   -- eprint
-  it "fail error msg invalid operator" $ do
+  it "eprint" $ do
     let prog = [Push (VmString "lol"), Push (VmFunc "eprint"), Call]
     v <- hCapture_ [stderr] $ runProg prog []
     v `shouldBe` "lol\n"
-  
+
   -- getline
-  it "fail error msg invalid operator" $ do
+  it "getline" $ do
     let prog = [Push (VmFunc "getline"), Call]
     v <- withStdin (B.pack [65]) $ runProg prog []
     v `shouldBe` VmString "A"
+
+  -- exit
+  it "exit 0" $ do
+    let prog = [Push (VmInt 0), Push (VmFunc "exit"), Call]
+    v <- (Right <$> runProg prog []) `catch` failCode
+    v `shouldBe` Left 0
+
 
 
 arithmeticOperatorSpec :: Spec
