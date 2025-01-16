@@ -83,3 +83,6 @@ callCollectionSpec = describe "collectCalls functions" $ do
       (collectCallsSubExpr cond ++
        concatMap collectCallsExpr thenExprs ++
        concatMap collectCallsExpr elseExprs)
+  it "collects calls in a variable expression" $ do
+    let expr = Variable (IntType, "y") (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
+    collectCallsExpr expr `shouldBe` collectCallsSubExpr (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
