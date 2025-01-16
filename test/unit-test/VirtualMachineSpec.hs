@@ -382,7 +382,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmString "st"), Push (VmString "age"), Push (VmFunc "."), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left ". expected a structure to access value"
-
+  
+  -- function set
+  it "struct: set(person, name, 2) ko" $ do
+    let prog = [Push (VmStruct "st" []), Push (VmString "age"), Push $ VmInt 0, Push (VmFunc "set"), Call]
+    v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "" [("old", VmInt 1)])])] prog []) `catch` failMsg
+    v `shouldBe` Left "Cannot access field `age` of struct `st`."
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
