@@ -1,0 +1,10 @@
+// 
+// 
+// 
+// 
+
+function main() -> void {
+    f: () -> () -> void = \-> \-> print("ok");
+    f2: () -> void = f();
+    f2();
+}

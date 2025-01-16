@@ -5,3 +5,9 @@ stdout = """
 8
 [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
 """
+
+[test.lambda_inside_lambda]
+cmd = "../../glados --import ../../stdlib input/lambda/lambda_inside_lambda.mary"
+stdout = """
+ok
+"""
