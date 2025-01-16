@@ -41,3 +41,18 @@ functionSpec = describe "eliminateUnused" $ do
                   ]
               }
           ]
+    let optimizedAsts = optimizeAST asts
+    length optimizedAsts `shouldBe` 1
+    let mainFun = head optimizedAsts
+    case mainFun of
+      Function { fnName = name, fnBody = body } -> do
+        name `shouldBe` "main"
+        case body of
+          [ Variable (_, _) varVal
+            , SubExpression (FunctionCall callName args)
+            ] -> do
+              varVal `shouldBe` Lit (IntLit (-6))
+              callName `shouldBe` "print"
+              args `shouldBe` [VariableCall "a"]
+          _ -> expectationFailure "Unexpected structure in function body"
+      _ -> expectationFailure "Expected a Function AST node"
