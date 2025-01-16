@@ -56,3 +56,9 @@ functionSpec = describe "eliminateUnused" $ do
               args `shouldBe` [VariableCall "a"]
           _ -> expectationFailure "Unexpected structure in function body"
       _ -> expectationFailure "Expected a Function AST node"
+
+operatorSpec :: Spec
+operatorSpec = describe "optimizeSubExpr" $ do
+  it "optimizes addition" $ do
+    let expr = FunctionCall "+" [Lit (IntLit 3), Lit (IntLit 4)]
+    optimizeSubExpr expr `shouldBe` Lit (IntLit 7)
