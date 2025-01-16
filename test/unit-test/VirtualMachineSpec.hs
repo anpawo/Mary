@@ -459,6 +459,17 @@ arithmeticOperatorSpec = describe "arithmeticOperator" $ do
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Division by zero"
 
+  -- string string
+  it "str + str" $ do
+    let prog = [Push (VmString "hello"), Push (VmString "world"), Push (VmFunc "+"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmString "helloworld"
+  
+  it "str * int" $ do
+    let prog = [Push (VmString "hello"), Push (VmInt 2), Push (VmFunc "*"), Call]
+    v <- runProg prog []
+    v `shouldBe` VmString "hellohello"
+
   -- float
   it "float - float" $ do
     let prog = [Push (VmFloat 5.5), Push (VmFloat 3.2), Push (VmFunc "-"), Call]
