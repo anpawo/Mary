@@ -1,0 +1,20 @@
+// 
+// 
+// 
+// 
+
+import list
+
+function lambda(c: int) -> (int) -> int {
+    a: int = 1;
+    f: (int, int) -> int = (+);
+    return \b -> a + f(b, c);
+}
+
+function main() -> void {
+    f: (int) -> int = lambda(3);
+    f2: () -> int = \-> f(4);
+    print(f(2));
+    print(f2());
+    print(map(\x -> x * 2, 1..10));
+}
