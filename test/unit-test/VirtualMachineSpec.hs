@@ -417,10 +417,16 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v `shouldBe` Left "Structure 'st' doesn't have the field '???'."
   
   -- ret
-  it "update ko 3" $ do
+  it "ret" $ do
     let prog = [Ret]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Ret expects at least one value on the stack"
+  
+  -- store
+  it "store" $ do
+    let prog = [Push $ VmInt 0, Store "a", Load "a", Ret]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Right (VmInt 0)
 
   
 
