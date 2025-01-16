@@ -92,17 +92,12 @@ getCapturedVariable vars (Lit (StructLit _ xs)) = concatMap (getCapturedVariable
 getCapturedVariable vars (Lit (LambdaLit {lambdaBody = x})) = getCapturedVariable vars x
 getCapturedVariable _ (Lit _) = []
 
--- may fail with lambda returning lambdas
 parseLambda :: Ctx -> LocalVariable -> Parser MyToken
 parseLambda ctx vars = tok BackSlash *> do
   args <- (tok Arrow $> []) <|> parseLambdaArgs ctx (map snd vars ++ getNames ctx)
-  -- trace (show args) pure ()
   body <- parseLambdaBody ctx (vars ++ args)
-  -- trace (show body) pure ()
   retTy <- getType ctx (vars ++ args) body
-  -- trace (show retTy) pure ()
   let captured = getCapturedVariable vars body
-  -- trace (show captured) pure ()
   return $ Literal $ LambdaLit captured args body retTy
 
 
