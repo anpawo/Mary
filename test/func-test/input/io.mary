@@ -1,0 +1,10 @@
+// 
+// 
+// 
+// 
+
+function main() -> void {
+    line: str = getline();
+    print(line);
+    exit(toInt(line));
+}
