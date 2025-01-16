@@ -347,12 +347,13 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     v <- withStdin (B.pack [65]) $ runProg prog []
     v `shouldBe` VmString "A"
 
-  -- exit
+  -- exit 0
   it "exit 0" $ do
     let prog = [Push (VmInt 0), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
     v `shouldBe` Left 0
   
+  -- exit 1
   it "exit 1" $ do
     let prog = [Push (VmInt 1), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
