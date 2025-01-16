@@ -12,3 +12,12 @@ import Data.Set()
 import Opti.Optimizer
 import Ast.Ast
 import Parser.Token (Literal(..), Type(..))
+
+spec :: Spec
+spec = do
+  functionSpec
+  operatorSpec
+  callCollectionSpec
+  reachableSpec
+  defaultAstSpec
+  optimizeExprPatternsSpec
