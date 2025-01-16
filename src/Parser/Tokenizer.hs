@@ -58,7 +58,7 @@ textIdentifier :: Parser Char
 textIdentifier = alphaNumChar <|> underscore
 
 operatorIdentifier :: Parser Char
-operatorIdentifier = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$' , '.', '=', ':', '%']
+operatorIdentifier = oneOf ['+', '-', '*', '/', '<', '>', '|', '^', '&', '~', '!', '$', '.', '=', ':', '%', ',']
 
 underscore :: Parser Char
 underscore = char '_'
@@ -284,7 +284,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
         bracketCloseSym = char ']' $> BracketClose
         semicolonSym = char ';' $> SemiColon
         colonSym = try $ symbol ":" $> Colon
-        commaSym = char ',' $> Comma
+        commaSym = try $ symbol "," $> Comma
         arrowSym = try $ symbol "->" $> Arrow
         pipeSym = try $ symbol "|" $> Pipe
         assignSym = try $ symbol "=" $> Assign
