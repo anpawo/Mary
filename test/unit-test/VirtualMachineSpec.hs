@@ -394,6 +394,13 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmArray "int" []), Push (VmArray "char" []), Push (VmFunc "concat"), Call]
     v <- (Right <$> runProg prog []) `catch` failMsg
     v `shouldBe` Left "Cannot concat two arrays of different type"
+  
+  -- update
+  it "update" $ do
+    let prog = [Push (VmString "age"), Push $ VmInt 0, Update "st", Load "st"]
+    v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "st" [("age", VmInt 1)])])] prog []) `catch` failMsg
+    v `shouldBe` Right (VmStruct "st" [("age", VmInt 0)])
+  
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
