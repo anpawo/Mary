@@ -388,6 +388,12 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmStruct "st" []), Push (VmString "age"), Push $ VmInt 0, Push (VmFunc "set"), Call]
     v <- (Right <$> runProgWithEnv [("st", [Push (VmStruct "" [("old", VmInt 1)])])] prog []) `catch` failMsg
     v `shouldBe` Left "Cannot access field `age` of struct `st`."
+  
+  -- function concat
+  it "concat ko" $ do
+    let prog = [Push (VmArray "int" []), Push (VmArray "char" []), Push (VmFunc "concat"), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left "Cannot concat two arrays of different type"
 
 arithmeticOperatorSpec :: Spec
 arithmeticOperatorSpec = describe "arithmeticOperator" $ do
