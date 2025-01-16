@@ -26,7 +26,7 @@ import Data.Functor (($>), (<&>))
 import Control.Applicative ((<|>), some, empty, optional)
 import Control.Monad (void, liftM2)
 
-import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead), SourcePos (..), getSourcePos)
+import Text.Megaparsec (Parsec, many, manyTill, anySingle, eof, parseTest, manyTill_, (<?>), oneOf, notFollowedBy, try, someTill, MonadParsec (lookAhead, hidden), SourcePos (..), getSourcePos)
 import Text.Megaparsec.Char (char, string, alphaNumChar, asciiChar)
 import Text.Megaparsec.Char.Lexer (decimal, float)
 import Text.Megaparsec.Debug (dbg)
@@ -34,6 +34,7 @@ import Text.Megaparsec.Debug (dbg)
 import Parser.Token
 import Utils.Lib (choicetry, (~>), (&>))
 import Text.Megaparsec.Pos (unPos)
+import Ast.Error (red)
 
 type Parser = Parsec Void String
 
@@ -156,7 +157,7 @@ type Col  = Int
 
 -- TokenType
 tokenize :: Parser ([(Line, Col)], [MyToken])
-tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> tokens) <* spaces) eof))
+tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> (tokens <?> red "a known symbol")) <* spaces) (hidden eof)))
     where
         pos = (\p -> (unPos $ sourceLine p, unPos $ sourceColumn p)) <$> getSourcePos
 
@@ -177,6 +178,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
             ,  assignSubSym
             ,  assignMulSym
             ,  assignDivSym
+            ,  backslashSym
 
             -- Keyword
             , functionKw
@@ -290,6 +292,7 @@ tokenize = comment &> macro &> (unzip <$> (spaces *> manyTill (((,) <$> pos <*> 
         assignSubSym = try $ symbol "-=" $> AssignSub
         assignMulSym = try $ symbol "*=" $> AssignMul
         assignDivSym = try $ symbol "/=" $> AssignDiv
+        backslashSym = char '\\' $> BackSlash
 
         -- Keyword
         functionKw = try $ keyword "function" $> FunctionKw
