@@ -352,7 +352,11 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmInt 0), Push (VmFunc "exit"), Call]
     v <- (Right <$> runProg prog []) `catch` failCode
     v `shouldBe` Left 0
-
+  
+  it "exit 1" $ do
+    let prog = [Push (VmInt 1), Push (VmFunc "exit"), Call]
+    v <- (Right <$> runProg prog []) `catch` failCode
+    v `shouldBe` Left 1
 
 
 arithmeticOperatorSpec :: Spec
