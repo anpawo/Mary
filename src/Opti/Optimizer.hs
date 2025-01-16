@@ -11,20 +11,14 @@ module Opti.Optimizer (optimizeAST) where
 
 import Ast.Ast
 import Parser.Token (Literal(..))
-import System.IO.Unsafe (unsafePerformIO)
 import qualified Data.Set as Set
 
 optimizeAST :: [Ast] -> [Ast]
 optimizeAST asts =
-  unsafePerformIO $ do
-    putStrLn (show asts)
-    putStrLn ""
-    let optimized = map optimizeAst asts
-        optimized' = map optimizeExprInAst optimized
-        pruned = eliminateUnused optimized'
-    putStrLn (show pruned)
-    putStrLn ""
-    return pruned
+  let optimized = map optimizeAst asts
+      optimized' = map optimizeExprInAst optimized
+      pruned = eliminateUnused optimized'
+  in pruned
 
 optimizeAst :: Ast -> Ast
 optimizeAst fun@(Function { fnBody = body }) =
