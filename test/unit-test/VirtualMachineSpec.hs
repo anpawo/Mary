@@ -377,6 +377,11 @@ builtinOperatorSpec = describe "builtinOperator" $ do
     let prog = [Push (VmString "st"), Push (VmString "age"), Push (VmFunc "."), Call]
     v <- runProgWithEnv [("st", [Push (VmStruct "" [("age", VmInt 1)])])] prog []
     v `shouldBe` VmInt 1
+  
+  it "struct: person.name ko 2" $ do
+    let prog = [Push (VmString "st"), Push (VmString "age"), Push (VmFunc "."), Call]
+    v <- (Right <$> runProg prog []) `catch` failMsg
+    v `shouldBe` Left ". expected a structure to access value"
 
 
 arithmeticOperatorSpec :: Spec
