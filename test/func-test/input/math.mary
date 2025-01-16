@@ -1,0 +1,10 @@
+
+import math
+
+function main() -> int {
+    print(3 ** 3);
+    print(factorial(6));
+    print(fibonacci(7));
+    print(pow(3, 4));
+    return 0;
+}
