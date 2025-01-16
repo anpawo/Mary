@@ -83,6 +83,12 @@ callCollectionSpec = describe "collectCalls functions" $ do
       (collectCallsSubExpr cond ++
        concatMap collectCallsExpr thenExprs ++
        concatMap collectCallsExpr elseExprs)
+  it "collects calls in a while expression" $ do
+    let cond = FunctionCall "!=" [VariableCall "x", Lit (IntLit 0)]
+        body = [ SubExpression (FunctionCall "decrement" [VariableCall "x"]) ]
+        expr = While cond body
+    collectCallsExpr expr `shouldBe`
+      (collectCallsSubExpr cond ++ concatMap collectCallsExpr body)
   it "collects calls in a variable expression" $ do
     let expr = Variable (IntType, "y") (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
     collectCallsExpr expr `shouldBe` collectCallsSubExpr (FunctionCall "*" [Lit (IntLit 2), Lit (IntLit 3)])
@@ -121,3 +127,16 @@ optimizeExprPatternsSpec = describe "optimizeExpr patterns" $ do
         thenEs `shouldSatisfy` (not . null)
         elseEs `shouldSatisfy` (not . null)
       _ -> expectationFailure "Expected an IfThenElse expression"
+  it "optimizes a While expression by processing the condition and body" $ do
+    let cond = FunctionCall "-" [Lit (IntLit 10), Lit (IntLit 4)]
+        body = [Variable (IntType, "x") (FunctionCall "*" [Lit (IntLit 3), Lit (IntLit 3)])]
+        expr = While cond body
+        optimizedExpr = optimizeExpr expr
+    case optimizedExpr of
+      While cond' body' -> do
+        cond' `shouldBe` Lit (IntLit 6)
+        body' `shouldSatisfy` (not . null)
+      _ -> expectationFailure "Expected a While expression"
+  it "returns the original expression for non-matching patterns in optimizeAst" $ do
+    let ast = Structure { structName = "MyStruct", structMember = [] }
+    optimizeAST [ast] `shouldBe` [ast]
