@@ -1,0 +1,23 @@
+//
+//
+//
+//
+
+import list
+
+function recursive_list() -> list {
+    return empty {} |: 1 |: 2 |: 3;
+}
+
+function main() -> int {
+    print(5 :| empty {} ++ empty {});
+    a: list = recursive_list();
+    print(a);
+    print(a.next.next.data);
+    a.next = empty {};
+    print(a);
+    print([1, 2, 3, "soleil"]);
+    print(find(\x -> x > 10, 1..20));
+    print(find(\x -> x == -1, 1..20));
+    return 0;
+}
