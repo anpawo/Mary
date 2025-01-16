@@ -71,3 +71,15 @@ operatorSpec = describe "optimizeSubExpr" $ do
   it "optimizes division" $ do
     let expr = FunctionCall "/" [Lit (IntLit 20), Lit (IntLit 4)]
     optimizeSubExpr expr `shouldBe` Lit (IntLit 5)
+
+callCollectionSpec :: Spec
+callCollectionSpec = describe "collectCalls functions" $ do
+  it "collects calls in an if-then-else expression" $ do
+    let cond = FunctionCall "==" [VariableCall "a", Lit (IntLit 5)]
+        thenExprs = [ SubExpression (FunctionCall "print" [VariableCall "b"]) ]
+        elseExprs = [ SubExpression (FunctionCall "log" [VariableCall "c"]) ]
+        expr = IfThenElse cond thenExprs elseExprs
+    collectCallsExpr expr `shouldBe`
+      (collectCallsSubExpr cond ++
+       concatMap collectCallsExpr thenExprs ++
+       concatMap collectCallsExpr elseExprs)
