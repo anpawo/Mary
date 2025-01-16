@@ -62,3 +62,12 @@ operatorSpec = describe "optimizeSubExpr" $ do
   it "optimizes addition" $ do
     let expr = FunctionCall "+" [Lit (IntLit 3), Lit (IntLit 4)]
     optimizeSubExpr expr `shouldBe` Lit (IntLit 7)
+  it "optimizes subtraction" $ do
+    let expr = FunctionCall "-" [Lit (IntLit 10), Lit (IntLit 4)]
+    optimizeSubExpr expr `shouldBe` Lit (IntLit 6)
+  it "optimizes multiplication" $ do
+    let expr = FunctionCall "*" [Lit (IntLit 3), Lit (IntLit 4)]
+    optimizeSubExpr expr `shouldBe` Lit (IntLit 12)
+  it "optimizes division" $ do
+    let expr = FunctionCall "/" [Lit (IntLit 20), Lit (IntLit 4)]
+    optimizeSubExpr expr `shouldBe` Lit (IntLit 5)
