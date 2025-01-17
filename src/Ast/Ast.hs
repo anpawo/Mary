@@ -26,6 +26,7 @@ module Ast.Ast
   , getName
   , isOp
   , isFn
+  , getCtxName
   , getLitType
 ) where
 
