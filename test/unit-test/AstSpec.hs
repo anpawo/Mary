@@ -9,7 +9,7 @@
 
 module AstSpec (spec) where 
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, shouldContain)
 import Test.Hspec.Runner () 
 import Text.RawString.QQ 
 import Text.Megaparsec (parse) 
@@ -32,9 +32,6 @@ import Ast.TokenParser
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
 
--- (==!) :: (Show a, Eq a, Show b, Eq b) => Either a b -> a -> Expectation
--- (==!) got expected = got `shouldBe` Left expected
-
 pAst :: String -> IO (Either (ParseErrorBundle [MyToken] Void) [Ast])
 pAst s = case run tokenize s of
   Left _ -> error "pAst"
@@ -54,6 +51,7 @@ spec = do
   isTypeSpec
   errorSpec
   parserSpec
+  additionalSpec
 
 parserSpec :: SpecWith ()
 parserSpec = describe "parse token function" $ do
@@ -588,3 +586,88 @@ functionSpec = describe "function" $ do
       it "one param" $ do
         ast <- pAst fnParam
         ast ==> [Function {fnName = "suc", fnArgs = [(IntType,"x")], fnRetType = IntType, fnBody = [Return {retValue = FunctionCall {fnCallName = "+", fnCallArgs = [VariableCall {varCallName = "x"},Lit (IntLit 1)]}}]}]
+
+additionalSpec :: Spec
+additionalSpec = describe "Additional tests for 100% coverage" $ do
+
+  describe "Expression constructors" $ do
+    it "shows Variable and StructField expressions correctly" $ do
+      let exprVar = Variable (IntType, "x") (Lit (IntLit 10))
+          exprField = StructField "x" "field" (Lit (StringLit "value"))
+      show exprVar `shouldContain` "Variable"
+      show exprField `shouldContain` "StructField"
+
+  describe "getType function" $ do
+    it "retrieves type from a VariableCall from local variables" $ do
+      let localVars = [(IntType, "x")]
+          subExpr = VariableCall "x"
+          parserResult = parse (getType [] localVars subExpr) "" []
+      parserResult `shouldBe` Right IntType
+
+    it "retrieves function return type for a FunctionCall from context" $ do
+      let ctx = [Function "f" [] IntType [Return (Lit (IntLit 1))]]
+          localVars = []
+          subExpr = FunctionCall "f" []
+          parserResult = parse (getType ctx localVars subExpr) "" []
+      parserResult `shouldBe` Right IntType
+
+    it "fails to retrieve type for a VariableCall if not bound" $ do
+      let localVars = []
+          subExpr = VariableCall "unknown"
+          parserResult = parse (getType [] localVars subExpr) "" []
+      parserResult `shouldSatisfy` isLeft
+
+    it "retrieves the type for a literal array (ArrLit)" $ do
+      let localVars = []
+          subExpr = Lit (ArrLit IntType [Lit (IntLit 1), Lit (IntLit 2)])
+          parserResult = parse (getType [] localVars subExpr) "" []
+      parserResult `shouldBe` Right IntType
+
+    it "retrieves structure type from literal (StructLit)" $ do
+      let ctx = [Structure "Person" [("name", StrType), ("age", IntType)]]
+          localVars = []
+          structLiteral = Lit (StructLit "Person" [("name", Lit (StringLit "Alice")), ("age", Lit (IntLit 30))])
+          parserResult = parse (getType ctx localVars structLiteral) "" []
+      parserResult `shouldBe` Right (StructType "Person")
+
+  describe "notTaken function" $ do
+    it "succeeds when the name is not taken" $ do
+      let names = ["a", "b"]
+      parse (notTaken names "c") "" [] `shouldBe` Right "c"
+    it "fails when the name is already taken" $ do
+      let names = ["a", "b"]
+      parse (notTaken names "a") "" [] `shouldSatisfy` isLeft
+
+  describe "isType function for LambdaLit" $ do
+    it "returns True when lambda type matches FunctionType" $ do
+      let lambdaExpr = LambdaLit { lambdaArgs = [(IntType, "x")], lambdaRetTy = BoolType, lambdaCapture = [], lambdaBody = Lit (BoolLit True) }
+      isType (FunctionType [IntType] BoolType) lambdaExpr `shouldBe` True
+    it "returns False when lambda type does not match FunctionType" $ do
+      let lambdaExpr = LambdaLit { lambdaArgs = [(IntType, "x")], lambdaRetTy = IntType, lambdaCapture = [], lambdaBody = Lit (IntLit 0) }
+      isType (FunctionType [IntType] BoolType) lambdaExpr `shouldBe` False
+
+  describe "Miscellaneous get functions" $ do
+    it "getName returns the correct name for Constraint AST node" $ do
+      let constraintAst = Constraint "MyConstr" [IntType, BoolType]
+      getName constraintAst `shouldBe` "MyConstr"
+    it "getCtxName filters context nodes based on predicates" $ do
+      let asts = [ Structure "S" [("f", IntType)]
+                 , Function "f" [] VoidType []
+                 , Constraint "C" [IntType]
+                 ]
+          names = getCtxName [isStruct, isFn] asts
+      names `shouldBe` ["S", "f"]
+
+  describe "getLitType for various literals" $ do
+    it "returns the correct type for a StructLitPre" $ do
+      let lit = StructLitPre "MyStruct" [("field", [Literal (IntLit 42)])]
+      getLitType lit `shouldBe` StructType "MyStruct"
+    it "returns the correct type for an ArrLitPre" $ do
+      let lit = ArrLitPre IntType [[Literal (IntLit 1), Literal (IntLit 2)]]
+      getLitType lit `shouldBe` IntType
+    it "returns the correct type for a ClosureLit" $ do
+      let lit = ClosureLit "closure" [IntType, FloatType] BoolType
+      getLitType lit `shouldBe` FunctionType [IntType, FloatType] BoolType
+    it "returns the correct type for LambdaLit" $ do
+      let lit = LambdaLit { lambdaArgs = [(CharType, "c")], lambdaRetTy = StrType, lambdaCapture = [], lambdaBody = Lit (StringLit "") }
+      getLitType lit `shouldBe` FunctionType [CharType] StrType
