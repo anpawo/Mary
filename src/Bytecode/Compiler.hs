@@ -66,12 +66,13 @@ compileExpression (SubExpression subExpr) = compileSubExpression subExpr
 compileExpression (StructField name field value) = [Push $ VmString field] ++ compileSubExpression value ++ [Update name]
 compileExpression (Variable (_, name) value) = compileSubExpression value ++ [Store name]
 compileExpression (Return value) = compileSubExpression value ++ [Ret]
-compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse nbInstructionsTrue] ++ instructionsTrue ++ instructionsFalse
+compileExpression (IfThenElse cond true false) = instructionsCond ++ [JumpIfFalse (nbInstructionsTrue + 2)] ++ instructionsTrue ++ [Push (VmBool False), JumpIfFalse nbInstructionsFalse] ++instructionsFalse
   where
     instructionsTrue = compileExpressions true
     instructionsFalse = compileExpressions false
     instructionsCond = compileSubExpression cond
     nbInstructionsTrue = length instructionsTrue
+    nbInstructionsFalse = length instructionsFalse
 compileExpression (While cond body) = instructionsCond ++ [JumpIfFalse (nbSkipLoop + 2)] ++ instructionsBody ++ instructionsCond ++ [JumpIfFalse 1] ++ [JumpBackward (nbSkipLoop + 1)]
   where
     instructionsCond = compileSubExpression cond
