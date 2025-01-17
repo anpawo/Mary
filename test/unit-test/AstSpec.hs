@@ -74,6 +74,10 @@ parserSpec = describe "parse token function" $ do
         let tokens = [Type (StructType "Person")]
         parse structType "" tokens `shouldBe` Right (StructType "Person")
 
+    it "parses char types" $ do
+        let tokens = [Type CharType]
+        parse charType "" tokens `shouldBe` Right CharType
+
 errorSpec :: SpecWith ()
 errorSpec = describe "error functions" $ do
   describe "Error Messages" $ do
