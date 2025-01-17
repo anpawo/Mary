@@ -95,11 +95,11 @@ eliminateUnusedFuncs asts =
          ) asts
 
 eliminateUnusedVars :: Ast -> Ast
-eliminateUnusedVars f@(Function { fnBody = body }) =
-  let usedVars = concatMap collectCallsExpr body
-      newBody = filter keepVar body
-      keepVar expr = case expr of
-         Variable (_, name) _ -> name `elem` usedVars
-         _ -> True
-  in f { fnBody = newBody }
+eliminateUnusedVars f@(Function { fnBody = body }) = 
+  f { fnBody = filter keepVar body }
+  where
+    usedVars = concatMap collectCallsExpr body
+    keepVar = \case
+      Variable (_, name) _ -> name `elem` usedVars
+      _                    -> True
 eliminateUnusedVars ast = ast
