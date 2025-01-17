@@ -18,7 +18,7 @@ import Control.Exception (catch, IOException)
 import Utils.ArgParser (OutputType(..), defaultArguments) 
 import Test.Hspec.Runner () 
 import Text.RawString.QQ 
-import Text.Megaparsec () 
+import Text.Megaparsec (parse) 
 import Text.Megaparsec.Error (ParseErrorBundle(..)) 
 import Data.Either (isLeft) 
 import Data.Void (Void) 
@@ -34,6 +34,7 @@ import Utils.Lib
 import Utils.ArgParser 
 import Ast.Import
 import Ast.HandleArg
+import Ast.TokenParser
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -59,6 +60,15 @@ spec = do
   isSpec
   isTypeSpec
   errorSpec
+  parserSpec
+
+parserSpec :: SpecWith ()
+parserSpec = describe "parse token function" $ do
+  describe "type parsers" $ do
+
+    it "parses array types" $ do
+        let tokens = [Type (ArrType IntType)]
+        parse arrayType "" tokens `shouldBe` Right (ArrType IntType)
 
 errorSpec :: SpecWith ()
 errorSpec = describe "error functions" $ do
