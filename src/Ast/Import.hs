@@ -5,7 +5,7 @@
 -- Import
 -}
 
-module Ast.Import (resolveImports, errImport) where
+module Ast.Import (resolveImports, errImport, errInputFile) where
 
 import Control.Exception (IOException, catch)
 import System.Exit (exitWith, ExitCode(..))
