@@ -78,6 +78,10 @@ parserSpec = describe "parse token function" $ do
         let tokens = [Type CharType]
         parse charType "" tokens `shouldBe` Right CharType
 
+    it "parses boolean types" $ do
+        let tokens = [Type BoolType]
+        parse boolType "" tokens `shouldBe` Right BoolType
+
 errorSpec :: SpecWith ()
 errorSpec = describe "error functions" $ do
   describe "Error Messages" $ do
