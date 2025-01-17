@@ -1,12 +1,12 @@
-# User Manual for GLaDOS Programming Language
+# User Manual for Mary Programming Language
 
-Welcome to the user manual for the GLaDOS programming language. This document will guide you through installing, running, and using GLaDOS effectively. Whether you're a beginner or an advanced user, this manual covers everything from syntax basics to advanced features.
+Welcome to the user manual for the Mary programming language. This document will guide you through installing, running, and using GLaDOS effectively. Whether you're a beginner or an advanced user, this manual covers everything from syntax basics to advanced features.
 
 ---
 
 ## Table of Contents
 
-- [User Manual for GLaDOS Programming Language](#user-manual-for-glados-programming-language)
+- [User Manual for Mary Programming Language](#user-manual-for-mary-programming-language)
   - [Table of Contents](#table-of-contents)
   - [1. Getting Started](#1-getting-started)
     - [Installation](#installation)
