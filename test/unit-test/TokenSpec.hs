@@ -9,6 +9,7 @@ module TokenSpec (spec) where
 
 import Test.Hspec (Spec, describe, it, shouldBe, Expectation)
 import Test.Hspec.Runner (SpecWith)
+import Text.Printf (printf)
 
 import Parser.Token
 
@@ -24,6 +25,7 @@ spec = do
   tokenSpec
   eqSpec
   ordSpec
+  tokenShowSpec
 
 tokenSpec :: SpecWith ()
 tokenSpec = describe "token" $ do
@@ -240,3 +242,36 @@ ordSpec = describe "additional coverage for MyToken eq/ord" $ do
   it "MyToken ord with mixed constructors" $ do
     (FunctionKw < CurlyOpen) `shouldBe` True
     (ParenClose < ImportKw "abc") `shouldBe` False
+
+tokenShowSpec :: SpecWith ()
+tokenShowSpec = describe "MyToken show instances" $ do
+  it "shows AssignAdd as \"+=\"" $
+    show AssignAdd `shouldBe` "+="
+  it "shows AssignSub as \"-=\"" $
+    show AssignSub `shouldBe` "-="
+  it "shows AssignMul as \"*=\"" $
+    show AssignMul `shouldBe` "*="
+  it "shows AssignDiv as \"/=\"" $
+    show AssignDiv `shouldBe` "/="
+  it "shows BackSlash as \"\\\"" $
+    show BackSlash `shouldBe` "\\"
+  it "shows LambdaLit correctly" $
+    let lambda = LambdaLit { lambdaCapture = ["x", "y"]
+                            , lambdaArgs = [(IntType, "a"), (BoolType, "b")]
+                            , lambdaBody = VariableCall "a"
+                            , lambdaRetTy = IntType
+                            }
+    in show lambda `shouldBe` "[\"x\",\"y\"]([(int,\"a\"),(bool,\"b\")]) -> int"
+  it "shows ListLitPre using printf \"%s\" $ show $ map head a" $ do
+    let listToken = ListLitPre [[Literal (IntLit 1), Literal (IntLit 2)]]
+        expected = printf "%s" (show [Literal (IntLit 1)])
+    show listToken `shouldBe` expected
+
+  it "shows LambdaLit with proper lambdaCapture, lambdaArgs, lambdaBody and lambdaRetTy" $ do
+    let lambda = LambdaLit { lambdaCapture = ["x", "y"]
+                           , lambdaArgs = [(IntType, "a"), (BoolType, "b")]
+                           , lambdaBody = FunctionCall "f" [VariableCall "x"]
+                           , lambdaRetTy = IntType
+                           }
+        expected = printf "%s(%s) -> %s" (show ["x","y"]) (show [(IntType, "a"), (BoolType, "b")]) (show IntType)
+    show lambda `shouldBe` expected
