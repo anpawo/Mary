@@ -143,3 +143,46 @@ optimizeExprPatternsSpec = describe "optimizeExpr patterns" $ do
   it "returns the original expression for non-matching patterns in optimizeAst" $ do
     let ast = Structure { structName = "MyStruct", structMember = [] }
     optimizeAST [ast] `shouldBe` [ast]
+  it "optimizes if with constant condition true and non-empty then branch" $ do
+    let expr = IfThenElse (Lit (BoolLit True))
+                          [SubExpression (FunctionCall "print" [Lit (StringLit "then branch")])]
+                          [SubExpression (FunctionCall "log" [Lit (StringLit "else branch")])]
+        optimized = optimizeExpr expr
+    optimized `shouldBe` SubExpression (FunctionCall "print" [Lit (StringLit "then branch")])
+
+  it "optimizes if with constant condition true and empty then branch" $ do
+    let expr = IfThenElse (Lit (BoolLit True))
+                          []
+                          [SubExpression (FunctionCall "log" [Lit (StringLit "else branch")])]
+        optimized = optimizeExpr expr
+    optimized `shouldBe` SubExpression (Lit (StringLit ""))
+
+  it "optimizes if with constant condition false and non-empty else branch" $ do
+    let expr = IfThenElse (Lit (BoolLit False))
+                          [SubExpression (FunctionCall "print" [Lit (StringLit "then branch")])]
+                          [SubExpression (FunctionCall "log" [Lit (StringLit "else branch")])]
+        optimized = optimizeExpr expr
+    optimized `shouldBe` SubExpression (FunctionCall "log" [Lit (StringLit "else branch")])
+
+  it "optimizes if with constant condition false and empty else branch" $ do
+    let expr = IfThenElse (Lit (BoolLit False))
+                          [SubExpression (FunctionCall "print" [Lit (StringLit "then branch")])]
+                          []
+        optimized = optimizeExpr expr
+    optimized `shouldBe` SubExpression (Lit (StringLit ""))
+
+  it "optimizes while with constant condition false" $ do
+    let expr = While (Lit (BoolLit False))
+                     [SubExpression (FunctionCall "print" [Lit (StringLit "loop body")])]
+        optimized = optimizeExpr expr
+    optimized `shouldBe` SubExpression (Lit (StringLit ""))
+    
+  it "leaves while unchanged when condition is not a constant false" $ do
+    let cond = FunctionCall ">" [Lit (IntLit 5), Lit (IntLit 3)]
+        expr = While cond [SubExpression (FunctionCall "print" [Lit (StringLit "loop body")])]
+        optimized = optimizeExpr expr
+    case optimized of
+      While cond' body' -> do
+         cond' `shouldBe` fixOptSubExpr cond
+         body' `shouldSatisfy` (not . null)
+      _ -> expectationFailure "Expected a While expression"
