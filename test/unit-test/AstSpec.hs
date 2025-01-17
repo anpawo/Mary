@@ -9,25 +9,31 @@
 
 module AstSpec (spec) where 
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
-import Test.Hspec.Runner ()
-import Text.RawString.QQ
-import Text.Megaparsec ()
-import Text.Megaparsec.Error (ParseErrorBundle(..))
-import Data.Either (isLeft)
-import Data.Void (Void)
-import qualified Data.List.NonEmpty()
-
-import Parser.Tokenizer
-import Parser.Token
-import Ast.Ast
-import Ast.Error
-import Ast.TreeBuilder ()
-import Ast.DeclarationParser()
-import Ast.Parser
-import Utils.Lib
-import Utils.ArgParser
-import Ast.Import (resolveImports)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, shouldContain) 
+import System.IO.Silently (capture, capture_) 
+import System.Environment (withArgs) 
+import System.Exit (ExitCode(..)) 
+import System.Directory (removeFile) 
+import Control.Exception (catch, IOException) 
+import Utils.ArgParser (OutputType(..), defaultArguments) 
+import Test.Hspec.Runner () 
+import Text.RawString.QQ 
+import Text.Megaparsec () 
+import Text.Megaparsec.Error (ParseErrorBundle(..)) 
+import Data.Either (isLeft) 
+import Data.Void (Void) 
+import qualified Data.List.NonEmpty()  
+import Parser.Tokenizer 
+import Parser.Token 
+import Ast.Ast 
+import Ast.Error 
+import Ast.TreeBuilder () 
+import Ast.DeclarationParser() 
+import Ast.Parser 
+import Utils.Lib 
+import Utils.ArgParser 
+import Ast.Import
+import Ast.HandleArg
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -53,6 +59,140 @@ spec = do
   isSpec
   isTypeSpec
   errorSpec
+  mainSpec
+
+mainSpec :: Spec
+mainSpec = do
+  describe "glados" $ do
+    it "displays helper message with --help flag" $ do
+      output <- capture_ $ withArgs ["--help"] handleArgs
+      output `shouldContain` helper
+    
+    it "fails with invalid input file" $ do
+      (output, result) <- capture $ withArgs ["invalid_file.mary"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "Invalid input file."
+    
+    it "successfully tokenizes input file" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--token"] handleArgs
+      output `shouldContain` "function main"
+      removeTestFile "test.mary"
+    
+    it "successfully parses AST from input file" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--ast"] handleArgs
+      output `shouldContain` "Function"
+      removeTestFile "test.mary"
+    
+    it "successfully compiles to bytecode" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--bytecode"] handleArgs
+      output `shouldContain` "bytecode"
+      removeTestFile "test.mary"
+    
+    it "executes input file without errors" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      result <- withArgs ["test.mary"] handleArgs
+      result `shouldBe` ExitSuccess
+      removeTestFile "test.mary"
+    
+    it "fails with syntax error in input file" $ do
+      createTestFile "test.mary" "function main() -> int { return }"
+      (output, result) <- capture $ withArgs ["test.mary"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "syntax error"
+      removeTestFile "test.mary"
+    
+    it "optimizes AST when --optimize flag is set" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--optimize", "--ast"] handleArgs
+      output `shouldContain` "optimized AST"
+      removeTestFile "test.mary"
+    
+    it "loads imports correctly" $ do
+      createTestFile "lib.mary" "function add(a: int, b: int) -> int { return a + b; }"
+      createTestFile "test.mary" "import \"lib.mary\" function main() -> int { return add(1, 2); }"
+      output <- capture_ $ withArgs ["test.mary", "--ast"] handleArgs
+      output `shouldContain` "Function main"
+      removeTestFiles ["lib.mary", "test.mary"]
+
+    it "displays tokens with --token flag" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--token"] handleArgs
+      output `shouldContain` "function"
+      output `shouldContain` "main"
+      removeTestFile "test.mary"
+
+    it "displays AST with --ast flag" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--ast"] handleArgs
+      output `shouldContain` "Function"
+      output `shouldContain` "main"
+      removeTestFile "test.mary"
+
+    it "displays bytecode with --bytecode flag" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--bytecode"] handleArgs
+      output `shouldContain` "bytecode"
+      removeTestFile "test.mary"
+
+    it "executes file without errors" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      result <- withArgs ["test.mary"] handleArgs
+      result `shouldBe` ExitSuccess
+      removeTestFile "test.mary"
+
+    it "handles invalid import paths" $ do
+      createTestFile "test.mary" "import \"invalid_lib.mary\" function main() -> int { return 0; }"
+      (output, result) <- capture $ withArgs ["test.mary"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "Invalid import path"
+      removeTestFile "test.mary"
+
+    it "fails gracefully on runtime errors" $ do
+      createTestFile "test.mary" "function main() -> int { int x = 1 / 0; return x; }"
+      (output, result) <- capture $ withArgs ["test.mary"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "runtime error"
+      removeTestFile "test.mary"
+
+    it "handles missing input files" $ do
+      (output, result) <- capture $ withArgs [] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "mandatory: an input file."
+
+    it "handles missing argument values" $ do
+      (output, result) <- capture $ withArgs ["--import"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "missing value for --import"
+
+    it "outputs error message for invalid arguments" $ do
+      (output, result) <- capture $ withArgs ["--invalid"] handleArgs `catch` (\e -> return (ExitFailure 1))
+      result `shouldBe` ExitFailure 1
+      output `shouldContain` "Invalid argument"
+
+    it "supports colorblind mode with --colorblind flag" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--colorblind", "--token"] handleArgs
+      output `shouldContain` "function main"
+      removeTestFile "test.mary"
+
+    it "displays optimized AST with --optimize and --ast flags" $ do
+      createTestFile "test.mary" "function main() -> int { return 0; }"
+      output <- capture_ $ withArgs ["test.mary", "--optimize", "--ast"] handleArgs
+      output `shouldContain` "optimized AST"
+      removeTestFile "test.mary"
+
+createTestFile :: FilePath -> String -> IO ()
+createTestFile path content = writeFile path content
+
+removeTestFile :: FilePath -> IO ()
+removeTestFile path = removeFile path
+
+removeTestFiles :: [FilePath] -> IO ()
+removeTestFiles = mapM_ removeTestFile
+
 --   treeBuilderSpec
 
 -- treeBuilderSpec :: SpecWith ()
