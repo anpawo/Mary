@@ -8,104 +8,88 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Opti.Optimizer 
-  (
-    optimizeAST, 
-    reachableFunctions, 
-    collectCallsAst, 
-    collectCallsExpr, 
-    eliminateUnused, 
-    optimizeExpr, 
-    fixOptSubExpr, 
-    optimizeSubExpr, 
-    collectCallsSubExpr
-  )
-  where
+  ( optimizeAST
+  , reachableFunctions
+  , collectCallsAst
+  , collectCallsExpr
+  , eliminateUnused
+  , optimizeExpr
+  , fixOptSubExpr
+  , optimizeSubExpr
+  , collectCallsSubExpr
+  ) where
 
 import Ast.Ast
 import Parser.Token (Literal(..))
 import qualified Data.Set as Set
+import Data.Function ()
 
 optimizeAST :: [Ast] -> [Ast]
-optimizeAST asts =
-  let optimized = map optimizeAst asts
-      optimized' = map optimizeExprInAst optimized
-      pruned = eliminateUnused optimized'
-  in pruned
+optimizeAST = eliminateUnused . map optimizeExprInAst . map optimizeAst
 
 optimizeAst :: Ast -> Ast
-optimizeAst fun@(Function { fnBody = body }) =
-  fun { fnBody = map optimizeExpr body }
-optimizeAst other = other
+optimizeAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
+optimizeAst other                     = other
 
 optimizeExpr :: Expression -> Expression
 optimizeExpr = \case
-  SubExpression sub -> SubExpression (fixOptSubExpr sub)
-  IfThenElse cond thenEx elseEx ->
-    IfThenElse (fixOptSubExpr cond) (map optimizeExpr thenEx) (map optimizeExpr elseEx)
-  While cond body ->
-    While (fixOptSubExpr cond) (map optimizeExpr body)
-  Variable meta val -> Variable meta (fixOptSubExpr val)
-  other -> other
+  SubExpression sub    -> SubExpression (fixOptSubExpr sub)
+  IfThenElse cond t e  -> IfThenElse (fixOptSubExpr cond) (map optimizeExpr t) (map optimizeExpr e)
+  While cond body      -> While (fixOptSubExpr cond) (map optimizeExpr body)
+  Variable meta val    -> Variable meta (fixOptSubExpr val)
+  other                -> other
 
 fixOptSubExpr :: SubExpression -> SubExpression
-fixOptSubExpr sub =
-  let sub' = optimizeSubExpr sub
-  in if sub' == sub then sub' else fixOptSubExpr sub'
+fixOptSubExpr = until (\sub -> optimizeSubExpr sub == sub) optimizeSubExpr
 
 optimizeSubExpr :: SubExpression -> SubExpression
 optimizeSubExpr fc@(FunctionCall { fnCallName = op, fnCallArgs = args }) =
-  let newArgs = map fixOptSubExpr args
-      newNode = fc { fnCallArgs = newArgs }
-  in case (op, newArgs) of
-       ("+", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x + y))
-       ("-", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x - y))
-       ("*", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x * y))
-       ("/", [Lit (IntLit x), Lit (IntLit y)]) ->
-         if y == 0 then newNode else Lit (IntLit (x `div` y))
-       _ -> newNode
+  case (op, newArgs) of
+    ("+", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x + y))
+    ("-", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x - y))
+    ("*", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x * y))
+    ("/", [Lit (IntLit x), Lit (IntLit y)]) -> if y == 0 then fc { fnCallArgs = newArgs } else Lit (IntLit (x `div` y))
+    (_, as) -> fc { fnCallArgs = as }
+  where
+    newArgs = map fixOptSubExpr args
 optimizeSubExpr other = other
 
 optimizeExprInAst :: Ast -> Ast
-optimizeExprInAst fun@(Function { fnBody = body }) =
-  fun { fnBody = map optimizeExpr body }
-optimizeExprInAst other = other
+optimizeExprInAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
+optimizeExprInAst other                     = other
 
 collectCallsExpr :: Expression -> [String]
-collectCallsExpr (SubExpression sub) = collectCallsSubExpr sub
-collectCallsExpr (IfThenElse cond thenEx elseEx) =
-  collectCallsSubExpr cond ++ concatMap collectCallsExpr thenEx ++ concatMap collectCallsExpr elseEx
-collectCallsExpr (While cond body) =
-  collectCallsSubExpr cond ++ concatMap collectCallsExpr body
-collectCallsExpr (Variable _ val) = collectCallsSubExpr val
-collectCallsExpr _ = []
+collectCallsExpr (SubExpression sub)   = collectCallsSubExpr sub
+collectCallsExpr (IfThenElse cond t e) = collectCallsSubExpr cond ++ concatMap collectCallsExpr t ++ concatMap collectCallsExpr e
+collectCallsExpr (While cond body)     = collectCallsSubExpr cond ++ concatMap collectCallsExpr body
+collectCallsExpr (Variable _ val)      = collectCallsSubExpr val
+collectCallsExpr _                     = []
 
 collectCallsSubExpr :: SubExpression -> [String]
 collectCallsSubExpr (FunctionCall { fnCallName = name, fnCallArgs = args }) =
   name : concatMap collectCallsSubExpr args
-collectCallsSubExpr (Lit _) = []
-collectCallsSubExpr (VariableCall name) = [name]
-  
+collectCallsSubExpr (Lit _)            = []
+collectCallsSubExpr (VariableCall name)= [name]
+
 collectCallsAst :: Ast -> [String]
 collectCallsAst (Function { fnBody = body }) = concatMap collectCallsExpr body
-collectCallsAst _ = []
+collectCallsAst _                            = []
 
 reachableFunctions :: [Ast] -> Set.Set String
 reachableFunctions asts =
-  let _ = [ fnName f | f@(Function {}) <- asts ]
-      go :: Set.Set String -> Set.Set String
-      go acc =
-        let new = Set.fromList [ name
-                               | ast <- asts
-                               , let cs = collectCallsAst ast
-                               , name <- cs
-                               , not (Set.member name acc)
-                               ]
-        in if Set.null new then acc else go (Set.union acc new)
-  in go (Set.singleton "main")
+  until (\acc -> Set.null (new acc))
+        (\acc -> Set.union acc (new acc))
+        (Set.singleton "main")
+  where
+    new acc = Set.fromList [ name
+                           | ast  <- asts
+                           , name <- collectCallsAst ast
+                           , not (Set.member name acc)
+                           ]
 
 eliminateUnused :: [Ast] -> [Ast]
 eliminateUnused asts =
-  let reachable = reachableFunctions asts
-  in filter (\ast -> case ast of
-                       Function { fnName = name } -> Set.member name reachable
-                       _ -> True) asts
+  filter (\ast -> case ast of
+                    Function { fnName = name } -> Set.member name (reachableFunctions asts)
+                    _ -> True
+         ) asts
