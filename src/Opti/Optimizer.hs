@@ -33,9 +33,17 @@ optimizeAst other                     = other
 
 optimizeExpr :: Expression -> Expression
 optimizeExpr = \case
+  IfThenElse cond thenEx elseEx ->
+    case fixOptSubExpr cond of
+      Lit (BoolLit True)  ->
+                             if null thenEx then SubExpression (Lit (StringLit "")) else head thenEx
+      Lit (BoolLit False) -> if null elseEx then SubExpression (Lit (StringLit "")) else head elseEx
+      c -> IfThenElse c (map optimizeExpr thenEx) (map optimizeExpr elseEx)
+  While cond body ->
+    case fixOptSubExpr cond of
+      Lit (BoolLit False) -> SubExpression (Lit (StringLit ""))
+      c -> While c (map optimizeExpr body)
   SubExpression sub    -> SubExpression (fixOptSubExpr sub)
-  IfThenElse cond t e  -> IfThenElse (fixOptSubExpr cond) (map optimizeExpr t) (map optimizeExpr e)
-  While cond body      -> While (fixOptSubExpr cond) (map optimizeExpr body)
   Variable meta val    -> Variable meta (fixOptSubExpr val)
   other                -> other
 
@@ -50,8 +58,7 @@ optimizeSubExpr fc@(FunctionCall { fnCallName = op, fnCallArgs = args }) =
     ("*", [Lit (IntLit x), Lit (IntLit y)]) -> Lit (IntLit (x * y))
     ("/", [Lit (IntLit x), Lit (IntLit y)]) -> if y == 0 then fc { fnCallArgs = newArgs } else Lit (IntLit (x `div` y))
     (_, as) -> fc { fnCallArgs = as }
-  where
-    newArgs = map fixOptSubExpr args
+  where newArgs = map fixOptSubExpr args
 optimizeSubExpr other = other
 
 optimizeExprInAst :: Ast -> Ast
@@ -95,7 +102,7 @@ eliminateUnusedFuncs asts =
          ) asts
 
 eliminateUnusedVars :: Ast -> Ast
-eliminateUnusedVars f@(Function { fnBody = body }) = 
+eliminateUnusedVars f@(Function { fnBody = body }) =
   f { fnBody = filter keepVar body }
   where
     usedVars = concatMap collectCallsExpr body
