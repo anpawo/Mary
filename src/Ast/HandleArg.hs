@@ -7,9 +7,7 @@
 
 module Ast.HandleArg (handleArgs, helper, glados) where
 
-import System.IO (readFile)
 import Control.Monad (void)
-import System.Environment (getArgs)
 import System.Exit (exitWith, ExitCode(..), exitSuccess)
 import Control.Exception (IOException, catch)
 import Data.List (intercalate)
@@ -17,7 +15,7 @@ import Data.Maybe (isNothing, fromJust)
 import Text.Megaparsec (errorBundlePretty)
 
 import Utils.Lib (run)
-import Utils.ArgParser (parseArguments, Arguments (..), OutputType (..))
+import Utils.ArgParser (Arguments (..), OutputType (..))
 import Parser.Tokenizer (tokenize)
 import Ast.Parser (tokenToAst)
 import Ast.Error (prettyPrintError, bgBlack, colorblindMode)
