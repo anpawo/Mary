@@ -12,7 +12,7 @@ module Opti.Optimizer
   , reachableFunctions
   , collectCallsAst
   , collectCallsExpr
-  , eliminateUnused
+  , eliminateUnusedFuncs
   , optimizeExpr
   , fixOptSubExpr
   , optimizeSubExpr
@@ -25,7 +25,7 @@ import qualified Data.Set as Set
 import Data.Function ()
 
 optimizeAST :: [Ast] -> [Ast]
-optimizeAST = eliminateUnused . map optimizeExprInAst . map optimizeAst
+optimizeAST = eliminateUnusedFuncs . map (eliminateUnusedVars . optimizeExprInAst . optimizeAst)
 
 optimizeAst :: Ast -> Ast
 optimizeAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
@@ -87,9 +87,19 @@ reachableFunctions asts =
                            , not (Set.member name acc)
                            ]
 
-eliminateUnused :: [Ast] -> [Ast]
-eliminateUnused asts =
+eliminateUnusedFuncs :: [Ast] -> [Ast]
+eliminateUnusedFuncs asts =
   filter (\ast -> case ast of
                     Function { fnName = name } -> Set.member name (reachableFunctions asts)
                     _ -> True
          ) asts
+
+eliminateUnusedVars :: Ast -> Ast
+eliminateUnusedVars f@(Function { fnBody = body }) =
+  let usedVars = concatMap collectCallsExpr body
+      newBody = filter keepVar body
+      keepVar expr = case expr of
+         Variable (_, name) _ -> name `elem` usedVars
+         _ -> True
+  in f { fnBody = newBody }
+eliminateUnusedVars ast = ast
