@@ -9,13 +9,7 @@
 
 module AstSpec (spec) where 
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, shouldContain) 
-import System.IO.Silently (capture, capture_) 
-import System.Environment (withArgs) 
-import System.Exit (ExitCode(..)) 
-import System.Directory (removeFile) 
-import Control.Exception (catch, IOException) 
-import Utils.ArgParser (OutputType(..), defaultArguments) 
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith)
 import Test.Hspec.Runner () 
 import Text.RawString.QQ 
 import Text.Megaparsec (parse) 
@@ -33,7 +27,6 @@ import Ast.Parser
 import Utils.Lib 
 import Utils.ArgParser 
 import Ast.Import
-import Ast.HandleArg
 import Ast.TokenParser
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
