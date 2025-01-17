@@ -70,6 +70,10 @@ parserSpec = describe "parse token function" $ do
         let tokens = [Type (ArrType IntType)]
         parse arrayType "" tokens `shouldBe` Right (ArrType IntType)
 
+    it "parses struct types" $ do
+        let tokens = [Type (StructType "Person")]
+        parse structType "" tokens `shouldBe` Right (StructType "Person")
+
 errorSpec :: SpecWith ()
 errorSpec = describe "error functions" $ do
   describe "Error Messages" $ do
