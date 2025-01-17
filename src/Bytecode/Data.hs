@@ -88,6 +88,7 @@ instance Show Value where
   show (VmStruct structName fields)    = printf "%s{%s}" structName $ intercalate ", " $ map (show . snd) fields
   show VmVoid                          = "VmVoid"
   show (VmLambda {})                   = "lambda"
+  show (VmPreLambda {})                = "lambda"
 
 type EnvVar = (String, [Instruction])
 

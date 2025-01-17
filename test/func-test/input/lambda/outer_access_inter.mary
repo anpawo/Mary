@@ -1,0 +1,10 @@
+// 
+// 
+// 
+// 
+
+function main() -> void {
+    f: (int) -> (int) -> int = \x -> \y -> x + y;
+    f2: (int) -> int = f(1);
+    print(f2(2));
+}

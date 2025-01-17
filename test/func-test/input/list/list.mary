@@ -17,5 +17,7 @@ function main() -> int {
     a.next = empty {};
     print(a);
     print([1, 2, 3, "soleil"]);
+    print(find(\x -> x > 10, 1..20));
+    print(find(\x -> x == -1, 1..20));
     return 0;
 }

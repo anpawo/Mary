@@ -1,5 +1,5 @@
 [test.all_builtins]
-cmd = "echo \"getline\" | ../../glados --import ../../stdlib input/main/builtins.mary"
+cmd = "echo \"getline\" | ../../glados --import ../../stdlib input/builtins.mary"
 stdout = """
 5
 1
@@ -43,3 +43,10 @@ null
 stderr = """stderr
 """
 exit_status = 1
+
+[test.io]
+cmd = "echo \"42\" | ../../glados --import ../../stdlib input/io.mary"
+stdout = """
+42
+"""
+exit_status = 42

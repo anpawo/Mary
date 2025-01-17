@@ -1,0 +1,14 @@
+// 
+// 
+// 
+// 
+
+import std
+
+function main() -> void {
+    fg: (any, any) -> any = (not) <>> (<);
+    print(fg(1, 2));
+    fg: (any) -> any = (not) <> (\x -> x is "int");
+    print(fg(4));
+    print(fg("lol"));
+}

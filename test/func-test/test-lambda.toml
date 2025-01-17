@@ -11,3 +11,17 @@ cmd = "../../glados --import ../../stdlib input/lambda/lambda_inside_lambda.mary
 stdout = """
 ok
 """
+
+[test.function_composition]
+cmd = "../../glados --import ../../stdlib input/lambda/function_composition.mary"
+stdout = """
+false
+false
+true
+"""
+
+[test.outer_access_inter]
+cmd = "../../glados --import ../../stdlib input/lambda/outer_access_inter.mary"
+stdout = """
+3
+"""

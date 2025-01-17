@@ -1,0 +1,6 @@
+[test.tuple]
+cmd = "../../glados --import ../../stdlib input/tuple.mary"
+stdout = """
+tuple{1, 2}
+tuple{2, 1}
+"""

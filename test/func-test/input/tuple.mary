@@ -1,0 +1,12 @@
+// 
+// 
+// 
+// 
+
+import tuple
+import std
+
+function main() -> void {
+    print(1,,2);
+    print((swap) $ 1,,2);
+}

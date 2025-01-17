@@ -78,7 +78,7 @@ parseLambdaArgs ctx names = (,) <$> (textIdentifier >>= notTaken names) <*> pars
   where parseArgType = tok Colon *> types ctx False True <|> pure AnyType
 
 parseLambdaBody :: Ctx -> LocalVariable -> Parser SubExpression
-parseLambdaBody ctx vars = some (getGroup ctx vars) >>= mountGroup ctx >>= \m -> validateMount ctx vars m *> toSubexpr ctx m
+parseLambdaBody ctx vars = some (getGroup ctx vars) >>= fixOp >>= mountGroup ctx >>= \m -> validateMount ctx vars m *> toSubexpr ctx m
 
 getCapturedVariable :: LocalVariable -> SubExpression -> [String]
 getCapturedVariable vars (VariableCall n)
