@@ -5,7 +5,7 @@
 -- Import
 -}
 
-module Ast.Import (resolveImports) where
+module Ast.Import (resolveImports, errImport) where
 
 import Control.Exception (IOException, catch)
 import System.Exit (exitWith, ExitCode(..))
@@ -26,7 +26,7 @@ import Ast.Error (prettyPrintError, blue, colorblindMode)
 errImport :: [String] -> String -> IO a
 errImport pathTried file = do
     cwd <- getCurrentDirectory
-    putStrLn (printf "couldn't import the file '%s'. tried: " file (intercalate ", " $ map ((cwd ++ "/") ++) pathTried)) >> exitWith (ExitFailure 1)
+    putStrLn (printf "couldn't import the file '%s'. tried: %s" file (intercalate ", " $ map ((cwd ++ "/") ++) pathTried)) >> exitWith (ExitFailure 1)
 
 errInputFile :: String -> String -> IO a
 errInputFile file err = putStrLn (printf "the import '%s' contains errors:\n%s\n" (blue file) err) >> exitWith (ExitFailure 1)
