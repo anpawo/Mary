@@ -7,7 +7,7 @@
 
 module TokenizerSpec (spec) where
 
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation, SpecWith)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, Expectation, SpecWith, expectationFailure)
 import Test.Hspec.Runner()
 
 import Data.Either (isLeft)
@@ -20,6 +20,8 @@ import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
 import Utils.Lib
+import qualified Data.List as List
+import Text.Megaparsec (errorBundlePretty)
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a (pos, b) -> b -> Expectation
 (==>) got expected = (snd <$> got) `shouldBe` Right expected
@@ -42,6 +44,7 @@ spec = do
   tokenizerAdvancedSpec
   tokenizerEmptyCasesSpec
   tokenizerPos
+  tokenizerAdditionalSpec
 
 tokenizerIdentifierSpec :: SpecWith ()
 tokenizerIdentifierSpec = describe "tokenize identifiers" $ do
@@ -191,13 +194,7 @@ tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
         , ("other",[ParenOpen, ParenOpen, Literal (IntLit 2), ParenClose, ParenClose])
         ]
       ]
-  -- it "int [[1, 2], [3]]" $
-  --   run tokenize "int [[1, 2], [3]]" ==>
-  --     [Literal $ ArrLitPre IntType
-  --       [ [BracketOpen, Literal (IntLit 1), Comma, Literal (IntLit 2), BracketClose]
-  --       , [BracketOpen, Literal (IntLit 3), BracketClose]
-  --       ]
-  --     ]
+
   it "person { nested = { foo = 1 }, x = 2 }" $
     run tokenize "person { nested = { foo = 1 }, x = 2 }" ==>
       [Literal $ StructLitPre "person"
@@ -209,22 +206,7 @@ tokenizerAdvancedSpec = describe "tokenize advanced / nested" $ do
         , ("x",[Literal (IntLit 2)])
         ]
       ]
-  -- it "mixed { field = [ (1), (2), { sub = 3 } ] }" $
-  --   run tokenize "mixed { field = [ (1), (2), { sub = 3 } ] }" ==>
-  --     [Literal $ StructLitPre "mixed"
-  --       [("field",
-  --         [ BracketOpen
-  --         , ParenOpen, Literal (IntLit 1), ParenClose
-  --         , Comma
-  --         , ParenOpen, Literal (IntLit 2), ParenClose
-  --         , Comma
-  --         , CurlyOpen
-  --         , Identifier (TextId "sub"), Assign, Literal (IntLit 3)
-  --         , CurlyClose
-  --         , BracketClose
-  --         ])
-  --       ]
-  --     ]
+
   it "int [(1)] -> triggers ParenOpen, ParenClose in array" $
     run tokenize "int [(1)]" ==> 
       [ Literal $ ArrLitPre IntType
@@ -251,3 +233,32 @@ tokenizerPos = describe "tokenize positions" $ do
       let input = "int"
           positions = fst <$> parse tokenize "" input
       positions `shouldBe` Right [(1, 1)]
+
+tokenizerAdditionalSpec :: SpecWith ()
+tokenizerAdditionalSpec = describe "tokenize additional patterns" $ do
+  it "tokenizes assignment addition (+=)" $
+    run tokenize "+=" ==> [AssignAdd]
+  it "tokenizes assignment subtraction (-=)" $
+    run tokenize "-=" ==> [AssignSub]
+  it "tokenizes assignment multiplication (*=)" $
+    run tokenize "*=" ==> [AssignMul]
+  it "tokenizes assignment division (/=)" $
+    run tokenize "/=" ==> [AssignDiv]
+  it "tokenizes backslash (\\)" $
+    run tokenize "\\" ==> [BackSlash]
+  it "tokenizes a known symbol (for example ':' expected in tokens)" $
+    run tokenize ":" ==> [Colon]
+  it "parses an empty array using ListLitPre (when no type is given)" $
+    run tokenize "[]" ==> [Literal $ ListLitPre []]
+  it "parses an array with elements triggering the pattern 'return $ ListLitPre args'" $
+    run tokenize "[1, 2, 3]" ==> [Literal $ ListLitPre [[Literal (IntLit 1)], [Literal (IntLit 2)], [Literal (IntLit 3)]]]
+  it "triggers the generic pattern: (:) <$> oneTok <*> oneArg inFunction inArray inStruct" $
+    run tokenize "[ (42) ]" ==> [Literal $ ListLitPre [[ParenOpen, Literal (IntLit 42), ParenClose]]]
+  it "triggers the pattern for increasing the inArray counter: (:) <$> oneTok <*> oneArg inFunction (inArray + 1) inStruct" $
+    run tokenize "[ 42 ]" ==> [Literal $ ListLitPre [[Literal (IntLit 42)]]]
+  it "triggers the pattern for decreasing the inArray counter: (:) <$> oneTok <*> oneArg inFunction (inArray - 1) inStruct" $
+    run tokenize "[ 42 ]" ==> [Literal $ ListLitPre [[Literal (IntLit 42)]]]
+  it "returns a parse error with message indicating 'a known symbol' for an unknown token" $ 
+    case parse tokenize "" "?" of
+      Left err -> errorBundlePretty err `shouldSatisfy` (\msg -> List.isInfixOf "a known symbol" msg)
+      Right _  -> expectationFailure "Expected a parse error but got a successful parse"
