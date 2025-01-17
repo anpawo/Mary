@@ -90,6 +90,10 @@ parserSpec = describe "parse token function" $ do
         let tokens = [Type VoidType]
         parse voidType "" tokens `shouldBe` Right VoidType
 
+    it "parses integer types" $ do
+        let tokens = [Type IntType]
+        parse intType "" tokens `shouldBe` Right IntType
+
 errorSpec :: SpecWith ()
 errorSpec = describe "error functions" $ do
   describe "Error Messages" $ do
