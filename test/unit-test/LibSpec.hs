@@ -104,8 +104,7 @@ operatorSpec = do
     it "updates parser input" $ do
       let p1 = do
             _ <- string "old"
-            leftover <- getInput
-            return leftover
+            getInput
       let p2 = string "new"
       run (p1 &> p2) "oldnew" `shouldBe` Right "new"
       (run (p1 &> p2) "oldx" :: Either (ParseErrorBundle String Void) String)

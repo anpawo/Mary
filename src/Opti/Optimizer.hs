@@ -84,7 +84,7 @@ collectCallsAst _                            = []
 
 reachableFunctions :: [Ast] -> Set.Set String
 reachableFunctions asts =
-  until (\acc -> Set.null (new acc))
+  until (Set.null . new)
         (\acc -> Set.union acc (new acc))
         (Set.singleton "main")
   where
@@ -96,9 +96,9 @@ reachableFunctions asts =
 
 eliminateUnusedFuncs :: [Ast] -> [Ast]
 eliminateUnusedFuncs asts =
-  filter (\ast -> case ast of
-                    Function { fnName = name } -> Set.member name (reachableFunctions asts)
-                    _ -> True
+  filter (\case
+            Function { fnName = name } -> Set.member name (reachableFunctions asts)
+            _ -> True
          ) asts
 
 eliminateUnusedVars :: Ast -> Ast
