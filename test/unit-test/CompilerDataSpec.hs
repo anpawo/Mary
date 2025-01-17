@@ -17,6 +17,7 @@ spec = do
   instructionSpec
   valueSpec
   typeSpec
+  lambdaSpec
 
 instructionSpec :: SpecWith ()
 instructionSpec = describe "data Value" $ do
@@ -90,3 +91,37 @@ typeSpec = describe "typeCheck for Value" $ do
       testIt = typeCheck
   it "uses TypeCheck in a polymorphic context" $
       testIt (VmInt 42) "int" `shouldBe` True
+
+lambdaSpec :: SpecWith ()
+lambdaSpec = describe "Value Show instance - Lambda and Void cases" $ do
+  it "shows VmVoid correctly" $ 
+    show VmVoid `shouldBe` "VmVoid"
+  it "shows VmLambda correctly" $ do
+    let lambda = VmLambda { lbEnv = [("x", [Push (VmInt 42)])]
+                          , lbBody = [Call, Ret]
+                          }
+    show lambda `shouldBe` "lambda"
+  it "checks lbVarCaptured and lbBody for VmPreLambda" $ do
+    let preLambda = VmPreLambda { lbVarCaptured = ["var1", "var2"]
+                                , lbBody = [Push (VmInt 42)]
+                                }
+    lbVarCaptured preLambda `shouldBe` ["var1", "var2"]
+    lbBody preLambda `shouldBe` [Push (VmInt 42)]
+  it "checks lbEnv and lbBody for VmLambda" $ do
+    let lambda = VmLambda { lbEnv = [("envVar", [Store "x"])]
+                          , lbBody = [Push (VmInt 100)]
+                          }
+    lbEnv lambda `shouldBe` [("envVar", [Store "x"])]
+    lbBody lambda `shouldBe` [Push (VmInt 100)]
+
+  it "shows VmPreLambda correctly with empty captured vars" $ do
+      let preLambda = VmPreLambda { lbVarCaptured = []
+                                  , lbBody = [Call, Ret]
+                                  }
+      show preLambda `shouldBe` "lambda"
+
+  it "shows VmPreLambda correctly with captured vars and body" $ do
+      let preLambda = VmPreLambda { lbVarCaptured = ["y", "z"]
+                                  , lbBody = [Call, Push (VmInt 1), Ret]
+                                  }
+      show preLambda `shouldBe` "lambda"
