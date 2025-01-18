@@ -259,8 +259,8 @@ Built-in functions include in Mary:
 
 - **Comparison Operators**
 
-  - is: Checks if the first value is a string and matches the second string. Returns true or false.
-  Example: 5 is "number" → false.
+  - is: Checks if the first value matches the type specified in the second parameter.
+  Example: 5 is "int" → true.
 
   - (==) (Equality): Compares two values for equality. Works with any data type.
   Example: 3 == 3 → true.
@@ -284,11 +284,10 @@ Built-in functions include in Mary:
 
 - **Struct Manipulation**
 
-  - (.) (Member Access): Accesses a member of a struct, object, or similar data type.
-  Example: user.name retrieves the name property from the user object.
-  
-  - set: Sets a property on a struct or object to a given value.
-  Example: set(user, "age", 25) → Assigns 25 to the age property of user.
+  - (.) (Member Access): Accesses a member of a struct.
+  Example: user.name retrieves the name property from the user struct.
+
+  - set: Sets a property on a struct.
 
 - **Array and String Operations**
 
@@ -451,16 +450,13 @@ In Mary, structures are defined using the struct keyword, where each structure c
 <structure> ::= "struct" <struct_name> "{" <fields> "}"
 ```
 ```c
-struct date {
-    d: int,
-    m: int,
-    y: int
-}
 
 struct person {
     name: str,
-    age: date
+    age: int
 }
+
+personStruct : struct person = { name = "john", age = 30 };
 ```
 To access a field of a structure, the `.` operator is used:
 
