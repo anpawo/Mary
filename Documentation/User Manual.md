@@ -330,141 +330,7 @@ Built-in functions include in Mary:
 
 ---
 
-## 6. Condition
-
-### Using if
-
-The `if` construct evaluates a condition and executes the corresponding block of code.
-
-**Syntax:**
-
-```BNF
-<if> ::= "if" <boolean expression> "then" "{" <body> "}" "else" "{" <body> "}"
-```
-
-Example:
-```c
-if x < 5 then {
-    print("Less than 5");
-} else {
-    print("Greater or equal to 5");
-}
-```
-
-Explanation:
-
-  if x < 5: Checks if the variable x is less than 5.
-
-  then: Introduces the block to execute if the condition is true.
-
-  else: Executes an alternative block if the condition is false.
-
----
-
-## 7. Loops and Recursion
-
-### Using Loops
-
-A loop repeatedly executes a block of code as long as the condition evaluates to true.
-
-**Syntax:**
-
-```BNF
-<while_loop> ::= "while" <boolean_expression> "then" "{" <body> "}"
-```
-
-Example:
-```c
-function my_add(a: int, b: int) -> int {
-    i: int = 0;
-
-    while i < b then {
-        a = a + 1;
-        i = i + 1;
-    }
-    return a;
-}
-
-print(my_add(2, 5)); // Outputs 7
-```
-
-Explanation:
-
-  The while loop increments a by 1 until i equals b.
-
-  The function returns the final value of a.
-
-### Using Recursion
-
-Recursion occurs when a function calls itself to solve a problem.
-
-Example:
-```c
-function factorial(n: int) -> int {
-    if n == 0 then {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-
-print(factorial(5)); // Outputs 120
-```
-
-Explanation:
-
-  The base case checks if n is 0 and returns 1.
-  For other values, the function recursively calls itself with n - 1, multiplying the results.
-
----
-
-## 8. Import
-
-In Mary, we can import file or lib using `import` keyword:
-
-```f#
-import math
-
-function main() -> int {
-    print(3 ** 3);
-    print(factorial(6));
-    print(fibonacci(7));
-    print(pow(3, 4));
-    return 0;
-}
-
-```
-
----
-
-## 9. Custom Data Structures
-
-In Mary, structures are defined using the struct keyword, where each structure contains fields.
-
-**Syntax:**
-
-```BNF
-<structure> ::= "struct" <struct_name> "{" <fields> "}"
-```
-```c
-
-struct person {
-    name: str,
-    age: int
-}
-
-personStruct : struct person = { name = "john", age = 30 };
-```
-To access a field of a structure, the `.` operator is used:
-
-```f#
-function getname(p: struct person) -> str {
-    return p.name;
-}
-```
-
----
-
-## 10. Custom Operators
+## 6. Custom Operators
 
 In Mary, we can define custom operators using `operator` keyword, where precedence refers to the priority order of the operator:
 
@@ -488,26 +354,10 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
     }
 }
 ```
----
-
-## 11. Constraint type
-
-In Mary, we can create our own custom types.
-
-**Syntax:**
-
-```BNF
-<constraint> ::= "type" <name> ":" <type> "|" <type> ";"
-```
-
-Example: 
-```
-type number2: float | int;
-```
 
 ---
 
-## 12. Pass Functions as argument
+## 7. Pass Functions as argument
 
 Functions can be passed as arguments:
 
@@ -527,7 +377,7 @@ print(apply((add_two), 10)); // Outputs 12
 
 ---
 
-## 13. Lambda Functions
+## 8. Lambda Functions
 
 Lambda functions can be defined using `\` and then defining the function.
 
@@ -584,4 +434,155 @@ function main () -> void {
     print(double(5));                           // Output: 10 (5 * 2)
     print(triple(5));                           // Output: 15 (5 * 3)
 }
+```
+
+---
+
+## 9. Condition
+
+### Using if
+
+The `if` construct evaluates a condition and executes the corresponding block of code.
+
+**Syntax:**
+
+```BNF
+<if> ::= "if" <boolean expression> "then" "{" <body> "}" "else" "{" <body> "}"
+```
+
+Example:
+```c
+if x < 5 then {
+    print("Less than 5");
+} else {
+    print("Greater or equal to 5");
+}
+```
+
+Explanation:
+
+  if x < 5: Checks if the variable x is less than 5.
+
+  then: Introduces the block to execute if the condition is true.
+
+  else: Executes an alternative block if the condition is false.
+
+---
+
+## 10. Loops and Recursion
+
+### Using Loops
+
+A loop repeatedly executes a block of code as long as the condition evaluates to true.
+
+**Syntax:**
+
+```BNF
+<while_loop> ::= "while" <boolean_expression> "then" "{" <body> "}"
+```
+
+Example:
+```c
+function my_add(a: int, b: int) -> int {
+    i: int = 0;
+
+    while i < b then {
+        a = a + 1;
+        i = i + 1;
+    }
+    return a;
+}
+
+print(my_add(2, 5)); // Outputs 7
+```
+
+Explanation:
+
+  The while loop increments a by 1 until i equals b.
+
+  The function returns the final value of a.
+
+### Using Recursion
+
+Recursion occurs when a function calls itself to solve a problem.
+
+Example:
+```c
+function factorial(n: int) -> int {
+    if n == 0 then {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print(factorial(5)); // Outputs 120
+```
+
+Explanation:
+
+  The base case checks if n is 0 and returns 1.
+  For other values, the function recursively calls itself with n - 1, multiplying the results.
+
+---
+
+## 11. Import
+
+In Mary, we can import file or lib using `import` keyword:
+
+```f#
+import math
+
+function main() -> int {
+    print(3 ** 3);
+    print(factorial(6));
+    print(fibonacci(7));
+    print(pow(3, 4));
+    return 0;
+}
+
+```
+
+---
+
+## 12. Custom Data Structures
+
+In Mary, structures are defined using the struct keyword, where each structure contains fields.
+
+**Syntax:**
+
+```BNF
+<structure> ::= "struct" <struct_name> "{" <fields> "}"
+```
+```c
+
+struct person {
+    name: str,
+    age: int
+}
+
+personStruct : struct person = { name = "john", age = 30 };
+```
+To access a field of a structure, the `.` operator is used:
+
+```f#
+function getname(p: struct person) -> str {
+    return p.name;
+}
+```
+
+---
+
+## 13. Constraint type
+
+In Mary, we can create our own custom types.
+
+**Syntax:**
+
+```BNF
+<constraint> ::= "type" <name> ":" <type> "|" <type> ";"
+```
+
+Example: 
+```
+type number2: float | int;
 ```
