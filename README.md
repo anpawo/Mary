@@ -31,18 +31,18 @@ Welcome to the user manual for the Mary programming language. This document will
   - [5. Function](#5-function)
     - [Writing Functions](#writing-functions)
     - [Built-in Functions](#built-in-functions)
-  - [6. Condition](#6-condition)
+  - [6. Custom Operators](#6-custom-operators)
+  - [7. Pass Functions as argument](#7-pass-functions-as-argument)
+  - [8. Lambda Functions](#8-lambda-functions)
+    - [Lambdas are closures](#lambdas-are-closures)
+  - [9. Condition](#9-condition)
     - [Using if](#using-if)
-  - [7. Loops and Recursion](#7-loops-and-recursion)
+  - [10. Loops and Recursion](#10-loops-and-recursion)
     - [Using Loops](#using-loops)
     - [Using Recursion](#using-recursion)
-  - [8. Import](#8-import)
-  - [9. Custom Data Structures](#9-custom-data-structures)
-  - [10. Custom Operators](#10-custom-operators)
-  - [11. Constraint type](#11-constraint-type)
-  - [12. Pass Functions as argument](#12-pass-functions-as-argument)
-  - [13. Lambda Functions](#13-lambda-functions)
-    - [Lambdas are closures](#lambdas-are-closures)
+  - [11. Import](#11-import)
+  - [12. Custom Data Structures](#12-custom-data-structures)
+  - [13. Constraint type](#13-constraint-type)
 
 ---
 
@@ -246,231 +246,130 @@ Built-in functions include in Mary:
 - **Arithmetic Operators**
 
   - (+) (Addition): Adds two numbers and returns the result.
-  Example: 2 + 3 → 5.
+
+    `Example: 2 + 3 → 5.`
 
   - (-) (Subtraction): Subtracts the second number from the first and returns the result.
-  Example: 5 - 3 → 2.
+
+    `Example: 5 - 3 → 2.`
 
   - (*) (Multiplication): Multiplies two numbers and returns the product.
-  Example: 4 * 3 → 12.
+  
+    `Example: 4 * 3 → 12.`
 
   - (/) (Division): Divides the first number by the second and returns the quotient.
-  Example: 10 / 2 → 5.
+  
+    `Example: 10 / 2 → 5.`
 
 - **Comparison Operators**
 
   - is: Checks if the first value matches the type specified in the second parameter.
-  Example: 5 is "int" → true.
+  
+    `Example: 5 is "int" → true.`
 
   - (==) (Equality): Compares two values for equality. Works with any data type.
-  Example: 3 == 3 → true.
+  
+    `Example: 3 == 3 → true.`
 
   - (<) (Less Than): Checks if the first number is less than the second.
-  Example: 2 < 5 → true.
+  
+    `Example: 2 < 5 → true.`
 
 - **Input/Output Functions**
 
   - print: Outputs a value to the standard output (e.g., console or terminal).
-  Example: print("Hello, world!") → Displays Hello, world!.
+  
+    `Example: print("Hello, world!") → Displays Hello, world!.`
 
   - eprint: Outputs a value to the standard error (useful for debugging or error messages).
-  Example: eprint("Error occurred!").
+  
+    `Example: eprint("Error occurred!").`
 
   - getline: Reads a line of input from the user and returns it as a string.
-  Example: name = getline() → Waits for user input and stores it in name.
+  
+    `Example: name = getline() → Waits for user input and stores it in name.`
 
   - exit: Stops the program and exits with the specified status code.
-  Example: exit(0) → Terminates the program successfully.
+  
+    `Example: exit(0) → Terminates the program successfully.`
 
 - **Struct Manipulation**
 
   - (.) (Member Access): Accesses a member of a struct.
-  Example: user.name retrieves the name property from the user struct.
-
+  
+    `Example: user.name retrieves the name property from the user struct.`
+  
   - set: Sets a property on a struct.
+    
+    `Example: set(user, "age", 25) → Assigns 25 to the age property of user.`
 
 - **Array and String Operations**
 
   - length: Returns the number of elements in an array or the number of characters in a string.
-  Example: length([1, 2, 3]) → 3.
-  Example: length("hello") → 5.
+  
+    `Example: length([1, 2, 3]) → 3.`
+
+    `Example: length("hello") → 5.`
 
   - insert: Inserts an element into an array or string at the specified position.
-  Example: insert([1, 2, 3], 1, 99) → [1, 99, 2, 3].
-  Example: insert("hello", 1, 'x') → "hxello".
+
+    `Example: insert([1, 2, 3], 1, 99) → [1, 99, 2, 3].`
+
+    `Example: insert("hello", 1, 'x') → "hxello".`
 
   - append: Adds an element to the end of an array or string.
-  Example: append([1, 2], 3) → [1, 2, 3].
-  Example: append("hi", 'a') → "hia".
+
+    `Example: append([1, 2], 3) → [1, 2, 3].`
+
+    `Example: append("hi", 'a') → "hia".`
 
   - at: Retrieves the element at the specified index in an array or string.
-  Example: at([1, 2, 3], 1) → 2.
-  Example: at("hello", 4) → 'o'.
+
+    `Example: at([1, 2, 3], 1) → 2.`
+
+    `Example: at("hello", 4) → 'o'.`
 
   - concat: Combines two arrays or strings into one.
-  Example: concat([1, 2], [3, 4]) → [1, 2, 3, 4].
-  Example: concat("hi", " there") → "hi there".
+
+    `Example: concat([1, 2], [3, 4]) → [1, 2, 3, 4].`
+  
+    `Example: concat("hi", " there") → "hi there".`
   
   - pop: Removes and returns the element at the specified index in an array or string.
-  Example: pop([1, 2, 3], 1) → 2 (leaves [1, 3]).
-  Example: pop("hello", 0) → 'h' (leaves "ello").
+
+    `Example: pop([1, 2, 3], 1) → 2 (leaves [1, 3]).`
+
+    `Example: pop("hello", 0) → 'h' (leaves "ello").`
 
   - del: Deletes the element at the specified index in an array.
-  Example: del([1, 2, 3], 1) → [1, 3].
+
+    `Example: del([1, 2, 3], 1) → [1, 3].`
 
 - **Type Conversion Functions**
 
   - toInt: Converts a value to an integer if possible.
-  Example: toInt("42") → 42.
+  
+    `Example: toInt("42") → 42.`
 
   - toFloat: Converts a value to a floating-point number if possible.
-  Example: toFloat("3.14") → 3.14.
+  
+    `Example: toFloat("3.14") → 3.14.`
 
   - toChar: Converts a value to a character if possible.
-  Example: toChar(65) → 'A' (ASCII value).
+  
+    `Example: toChar(65) → 'A' (ASCII value).`
 
   - toString: Converts any value to a string representation.
-  Example: toString(42) → "42".
+  
+    `Example: toString(42) → "42".`
 
 ---
 
-## 6. Condition
-
-### Using if
-
-The `if` construct evaluates a condition and executes the corresponding block of code.
-
-**Syntax:**
-
-```BNF
-<if> ::= "if" <boolean expression> "then" "{" <body> "}" "else" "{" <body> "}"
-```
-
-Example:
-```c
-if x < 5 then {
-    print("Less than 5");
-} else {
-    print("Greater or equal to 5");
-}
-```
-
-Explanation:
-
-  if x < 5: Checks if the variable x is less than 5.
-
-  then: Introduces the block to execute if the condition is true.
-
-  else: Executes an alternative block if the condition is false.
-
----
-
-## 7. Loops and Recursion
-
-### Using Loops
-
-A loop repeatedly executes a block of code as long as the condition evaluates to true.
-
-**Syntax:**
-
-```BNF
-<while_loop> ::= "while" <boolean_expression> "then" "{" <body> "}"
-```
-
-Example:
-```c
-function my_add(a: int, b: int) -> int {
-    i: int = 0;
-
-    while i < b then {
-        a = a + 1;
-        i = i + 1;
-    }
-    return a;
-}
-
-print(my_add(2, 5)); // Outputs 7
-```
-
-Explanation:
-
-  The while loop increments a by 1 until i equals b.
-
-  The function returns the final value of a.
-
-### Using Recursion
-
-Recursion occurs when a function calls itself to solve a problem.
-
-Example:
-```c
-function factorial(n: int) -> int {
-    if n == 0 then {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-
-print(factorial(5)); // Outputs 120
-```
-
-Explanation:
-
-  The base case checks if n is 0 and returns 1.
-  For other values, the function recursively calls itself with n - 1, multiplying the results.
-
----
-
-## 8. Import
-
-In Mary, we can import file or lib using `import` keyword:
-
-```f#
-import math
-
-function main() -> int {
-    print(3 ** 3);
-    print(factorial(6));
-    print(fibonacci(7));
-    print(pow(3, 4));
-    return 0;
-}
-
-```
-
----
-
-## 9. Custom Data Structures
-
-In Mary, structures are defined using the struct keyword, where each structure contains fields.
-
-**Syntax:**
-
-```BNF
-<structure> ::= "struct" <struct_name> "{" <fields> "}"
-```
-```c
-
-struct person {
-    name: str,
-    age: int
-}
-
-personStruct : struct person = { name = "john", age = 30 };
-```
-To access a field of a structure, the `.` operator is used:
-
-```f#
-function getname(p: struct person) -> str {
-    return p.name;
-}
-```
-
----
-
-## 10. Custom Operators
+## 6. Custom Operators
 
 In Mary, we can define custom operators using `operator` keyword, where precedence refers to the priority order of the operator:
+
+For example, in `Mary` the `+` operator has a precedence of 6 and the `*` operator has a precedence of 7. This means that the operation `1 + 2 * 3` is equivalent to ` 1 + (2 * 3)` because `*` will be executed before `+` as 7 is greater than 6.
 
 **Syntax:**
 
@@ -492,26 +391,10 @@ operator !! precedence 10 (l: list, index: int) -> null | any {
     }
 }
 ```
----
-
-## 11. Constraint type
-
-In Mary, we can create our own custom types.
-
-**Syntax:**
-
-```BNF
-<constraint> ::= "type" <name> ":" <type> "|" <type> ";"
-```
-
-Example: 
-```
-type number2: float | int;
-```
 
 ---
 
-## 12. Pass Functions as argument
+## 7. Pass Functions as argument
 
 Functions can be passed as arguments:
 
@@ -531,7 +414,7 @@ print(apply((add_two), 10)); // Outputs 12
 
 ---
 
-## 13. Lambda Functions
+## 8. Lambda Functions
 
 Lambda functions can be defined using `\` and then defining the function.
 
@@ -588,4 +471,159 @@ function main () -> void {
     print(double(5));                           // Output: 10 (5 * 2)
     print(triple(5));                           // Output: 15 (5 * 3)
 }
+```
+
+---
+
+## 9. Condition
+
+### Using if
+
+The `if` construct evaluates a condition and executes the corresponding block of code.
+
+**Syntax:**
+
+```BNF
+<if> ::= "if" <boolean expression> "then" "{" <body> "}" "else" "{" <body> "}"
+```
+
+Example:
+```c
+if x < 5 then {
+    print("Less than 5");
+} else {
+    print("Greater or equal to 5");
+}
+```
+
+Explanation:
+
+  if x < 5: Checks if the variable x is less than 5.
+
+  then: Introduces the block to execute if the condition is true.
+
+  else: Executes an alternative block if the condition is false.
+
+---
+
+## 10. Loops and Recursion
+
+### Using Loops
+
+A loop repeatedly executes a block of code as long as the condition evaluates to true.
+
+**Syntax:**
+
+```BNF
+<while_loop> ::= "while" <boolean_expression> "then" "{" <body> "}"
+```
+
+Example:
+```c
+function my_add(a: int, b: int) -> int {
+    i: int = 0;
+
+    while i < b then {
+        a = a + 1;
+        i = i + 1;
+    }
+    return a;
+}
+
+print(my_add(2, 5)); // Outputs 7
+```
+
+Explanation:
+
+  The while loop increments a by 1 until i equals b.
+
+  The function returns the final value of a.
+
+### Using Recursion
+
+Recursion occurs when a function calls itself to solve a problem.
+
+Example:
+```c
+function factorial(n: int) -> int {
+    if n == 0 then {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print(factorial(5)); // Outputs 120
+```
+
+Explanation:
+
+  The base case checks if n is 0 and returns 1.
+  For other values, the function recursively calls itself with n - 1, multiplying the results.
+
+---
+
+## 11. Import
+
+In Mary, we can import file or lib using `import` keyword:
+
+```f#
+import math
+
+function main() -> int {
+    print(3 ** 3);
+    print(factorial(6));
+    print(fibonacci(7));
+    print(pow(3, 4));
+    return 0;
+}
+
+```
+
+---
+
+## 12. Custom Data Structures
+
+In Mary, structures are defined using the struct keyword, where each structure possibly contains fields.
+
+It is also possible to define a structure with no fields by using 
+```
+atom empty
+```
+
+**Syntax:**
+
+```BNF
+<structure> ::= "struct" <struct_name> "{" <fields> "}"
+```
+```c
+struct person {
+    name: str,
+    age: int
+}
+
+personStruct : struct person = { name = "john", age = 30 };
+```
+To access a field of a structure, the `.` operator is used:
+
+```f#
+function getname(p: struct person) -> str {
+    return p.name;
+}
+```
+
+---
+
+## 13. Constraint type
+
+In Mary, we can create our own custom types.
+
+**Syntax:**
+
+```BNF
+<constraint> ::= "type" <name> ":" <type> "|" <type> ";"
+```
+
+Example: 
+```
+type number2: float | int;
 ```
