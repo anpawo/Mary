@@ -241,92 +241,122 @@ Built-in functions include in Mary:
 - **Arithmetic Operators**
 
   - (+) (Addition): Adds two numbers and returns the result.
-  Example: 2 + 3 → 5.
+
+    `Example: 2 + 3 → 5.`
 
   - (-) (Subtraction): Subtracts the second number from the first and returns the result.
-  Example: 5 - 3 → 2.
+
+    `Example: 5 - 3 → 2.`
 
   - (*) (Multiplication): Multiplies two numbers and returns the product.
-  Example: 4 * 3 → 12.
+  
+    `Example: 4 * 3 → 12.`
 
   - (/) (Division): Divides the first number by the second and returns the quotient.
-  Example: 10 / 2 → 5.
+  
+    `Example: 10 / 2 → 5.`
 
 - **Comparison Operators**
 
   - is: Checks if the first value matches the type specified in the second parameter.
-  Example: 5 is "int" → true.
+  
+    `Example: 5 is "int" → true.`
 
   - (==) (Equality): Compares two values for equality. Works with any data type.
-  Example: 3 == 3 → true.
+  
+    `Example: 3 == 3 → true.`
 
   - (<) (Less Than): Checks if the first number is less than the second.
-  Example: 2 < 5 → true.
+  
+    `Example: 2 < 5 → true.`
 
 - **Input/Output Functions**
 
   - print: Outputs a value to the standard output (e.g., console or terminal).
-  Example: print("Hello, world!") → Displays Hello, world!.
+  
+    `Example: print("Hello, world!") → Displays Hello, world!.`
 
   - eprint: Outputs a value to the standard error (useful for debugging or error messages).
-  Example: eprint("Error occurred!").
+  
+    `Example: eprint("Error occurred!").`
 
   - getline: Reads a line of input from the user and returns it as a string.
-  Example: name = getline() → Waits for user input and stores it in name.
+  
+    `Example: name = getline() → Waits for user input and stores it in name.`
 
   - exit: Stops the program and exits with the specified status code.
-  Example: exit(0) → Terminates the program successfully.
+  
+    `Example: exit(0) → Terminates the program successfully.`
 
 - **Struct Manipulation**
 
   - (.) (Member Access): Accesses a member of a struct.
-  Example: user.name retrieves the name property from the user struct.
+  
+    `Example: user.name retrieves the name property from the user struct.`
   
   - set: Sets a property on a struct.
-  Example: set(user, "age", 25) → Assigns 25 to the age property of user.
+    
+    `Example: set(user, "age", 25) → Assigns 25 to the age property of user.`
 
 - **Array and String Operations**
 
   - length: Returns the number of elements in an array or the number of characters in a string.
-  Example: length([1, 2, 3]) → 3.
-  Example: length("hello") → 5.
+  
+    `Example: length([1, 2, 3]) → 3.`
+
+    `Example: length("hello") → 5.`
 
   - insert: Inserts an element into an array or string at the specified position.
-  Example: insert([1, 2, 3], 1, 99) → [1, 99, 2, 3].
-  Example: insert("hello", 1, 'x') → "hxello".
+
+    `Example: insert([1, 2, 3], 1, 99) → [1, 99, 2, 3].`
+
+    `Example: insert("hello", 1, 'x') → "hxello".`
 
   - append: Adds an element to the end of an array or string.
-  Example: append([1, 2], 3) → [1, 2, 3].
-  Example: append("hi", 'a') → "hia".
+
+    `Example: append([1, 2], 3) → [1, 2, 3].`
+
+    `Example: append("hi", 'a') → "hia".`
 
   - at: Retrieves the element at the specified index in an array or string.
-  Example: at([1, 2, 3], 1) → 2.
-  Example: at("hello", 4) → 'o'.
+
+    `Example: at([1, 2, 3], 1) → 2.`
+
+    `Example: at("hello", 4) → 'o'.`
 
   - concat: Combines two arrays or strings into one.
-  Example: concat([1, 2], [3, 4]) → [1, 2, 3, 4].
-  Example: concat("hi", " there") → "hi there".
+
+    `Example: concat([1, 2], [3, 4]) → [1, 2, 3, 4].`
+  
+    `Example: concat("hi", " there") → "hi there".`
   
   - pop: Removes and returns the element at the specified index in an array or string.
-  Example: pop([1, 2, 3], 1) → 2 (leaves [1, 3]).
-  Example: pop("hello", 0) → 'h' (leaves "ello").
+
+    `Example: pop([1, 2, 3], 1) → 2 (leaves [1, 3]).`
+
+    `Example: pop("hello", 0) → 'h' (leaves "ello").`
 
   - del: Deletes the element at the specified index in an array.
-  Example: del([1, 2, 3], 1) → [1, 3].
+
+    `Example: del([1, 2, 3], 1) → [1, 3].`
 
 - **Type Conversion Functions**
 
   - toInt: Converts a value to an integer if possible.
-  Example: toInt("42") → 42.
+  
+    `Example: toInt("42") → 42.`
 
   - toFloat: Converts a value to a floating-point number if possible.
-  Example: toFloat("3.14") → 3.14.
+  
+    `Example: toFloat("3.14") → 3.14.`
 
   - toChar: Converts a value to a character if possible.
-  Example: toChar(65) → 'A' (ASCII value).
+  
+    `Example: toChar(65) → 'A' (ASCII value).`
 
   - toString: Converts any value to a string representation.
-  Example: toString(42) → "42".
+  
+    `Example: toString(42) → "42".`
 
 ---
 
