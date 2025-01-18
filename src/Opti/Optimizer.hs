@@ -6,8 +6,9 @@
 -}
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
-module Opti.Optimizer 
+module Opti.Optimizer
   ( optimizeAST
   , reachableFunctions
   , collectCallsAst
@@ -70,13 +71,17 @@ collectCallsExpr (SubExpression sub)   = collectCallsSubExpr sub
 collectCallsExpr (IfThenElse cond t e) = collectCallsSubExpr cond ++ concatMap collectCallsExpr t ++ concatMap collectCallsExpr e
 collectCallsExpr (While cond body)     = collectCallsSubExpr cond ++ concatMap collectCallsExpr body
 collectCallsExpr (Variable _ val)      = collectCallsSubExpr val
-collectCallsExpr _                     = []
+collectCallsExpr (Return sub)          = collectCallsSubExpr sub
+collectCallsExpr (StructField {..})    = collectCallsSubExpr fieldValue
 
 collectCallsSubExpr :: SubExpression -> [String]
-collectCallsSubExpr (FunctionCall { fnCallName = name, fnCallArgs = args }) =
-  name : concatMap collectCallsSubExpr args
-collectCallsSubExpr (Lit _)            = []
-collectCallsSubExpr (VariableCall name)= [name]
+collectCallsSubExpr (FunctionCall { fnCallName = name, fnCallArgs = args }) = name : concatMap collectCallsSubExpr args
+collectCallsSubExpr (VariableCall name) = [name]
+collectCallsSubExpr (Lit (LambdaLit {..}))     = collectCallsSubExpr lambdaBody
+collectCallsSubExpr (Lit (ClosureLit n _ _))   = [n]
+collectCallsSubExpr (Lit (StructLit _ fields)) = concatMap (collectCallsSubExpr . snd) fields
+collectCallsSubExpr (Lit (ArrLit _ values))    = concatMap collectCallsSubExpr values
+collectCallsSubExpr (Lit _) = []
 
 collectCallsAst :: Ast -> [String]
 collectCallsAst (Function { fnBody = body }) = concatMap collectCallsExpr body
