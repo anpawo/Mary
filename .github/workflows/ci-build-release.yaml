@@ -18,7 +18,7 @@ jobs:
         run: make
 
       - name: Create Release
-        uses: marvinpinto/action-automatic-releases@v1
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           tag: v1.0.${{ github.run_number }}
           files: "./glados"
