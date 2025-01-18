@@ -15,13 +15,12 @@ import Data.Either (isLeft)
 import Parser.Tokenizer
 import Parser.Token (MyToken (..), Type (..), Literal(..), Identifier(..))
 import Control.Applicative ()
-import Text.Megaparsec (parse)
+import Text.Megaparsec (parse, errorBundlePretty)
 import Text.Megaparsec.Char ()
 import Data.Void ()
 import Control.Monad ()
 import Utils.Lib
 import qualified Data.List as List
-import Text.Megaparsec (errorBundlePretty)
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a (pos, b) -> b -> Expectation
 (==>) got expected = (snd <$> got) `shouldBe` Right expected
@@ -260,5 +259,5 @@ tokenizerAdditionalSpec = describe "tokenize additional patterns" $ do
     run tokenize "[ 42 ]" ==> [Literal $ ListLitPre [[Literal (IntLit 42)]]]
   it "returns a parse error with message indicating 'a known symbol' for an unknown token" $ 
     case parse tokenize "" "?" of
-      Left err -> errorBundlePretty err `shouldSatisfy` (\msg -> List.isInfixOf "a known symbol" msg)
+      Left err -> errorBundlePretty err `shouldSatisfy` ("a known symbol" `List.isInfixOf`)
       Right _  -> expectationFailure "Expected a parse error but got a successful parse"

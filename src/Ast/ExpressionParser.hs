@@ -7,7 +7,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Ast.ExpressionParser (expression) where
+module Ast.ExpressionParser (expression, getBlock, exprIf, exprWhile, exprReturn, exprVariable, variableCreation, variableAssignation, modifyStructField, exprSubexpr) where
 
 import Ast.Ast
 import Parser.Token
