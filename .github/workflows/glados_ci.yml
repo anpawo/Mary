@@ -48,7 +48,7 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           automatic_release_tag: v1.0.${{ github.run_number }}
-          files: ${{ env.EXECUTABLES }}
+          files: ${{ env.BINARY_PATH }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: true
