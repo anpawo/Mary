@@ -5,7 +5,7 @@
 -- HandleArg
 -}
 
-module Ast.HandleArg (handleArgs, helper, glados) where
+module Utils.HandleArg (handleArgs, helper, glados) where
 
 import Control.Monad (void)
 import System.Exit (exitWith, ExitCode(..), exitSuccess)
