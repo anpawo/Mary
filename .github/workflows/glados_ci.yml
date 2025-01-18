@@ -47,6 +47,9 @@ jobs:
       - name: Create Release
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          tag: v1.0.${{ github.run_number }}
-          files: ${{ env.BINARY_PATH }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: v1.0.${{ github.run_number }}
+          files: ${{ env.EXECUTABLES }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          prerelease: true
+
