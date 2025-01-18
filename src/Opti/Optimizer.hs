@@ -65,6 +65,7 @@ optimizeSubExpr other = other
 
 optimizeExprInAst :: Ast -> Ast
 optimizeExprInAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
+optimizeExprInAst o@Operator { opBody = body } = o { opBody = map optimizeExpr body }
 optimizeExprInAst other                     = other
 
 collectCallsExpr :: Expression -> [String]
@@ -86,6 +87,7 @@ collectCallsSubExpr (Lit _) = []
 
 collectCallsAst :: Ast -> [String]
 collectCallsAst (Function { fnBody = body }) = concatMap collectCallsExpr body
+collectCallsAst (Operator { opBody = body }) = concatMap collectCallsExpr body
 collectCallsAst _                            = []
 
 reachableFunctions :: [Ast] -> Set.Set String
@@ -104,12 +106,20 @@ eliminateUnusedFuncs :: [Ast] -> [Ast]
 eliminateUnusedFuncs asts =
   filter (\case
             Function { fnName = name } -> Set.member name (reachableFunctions asts)
+            Operator { opName = name } -> Set.member name (reachableFunctions asts)
             _ -> True
          ) asts
 
 eliminateUnusedVars :: Ast -> Ast
 eliminateUnusedVars f@(Function { fnBody = body }) =
   f { fnBody = filter keepVar body }
+  where
+    usedVars = concatMap collectCallsExpr body
+    keepVar = \case
+      Variable (_, name) _ -> name `elem` usedVars
+      _                    -> True
+eliminateUnusedVars o@(Operator { opBody = body }) =
+  o { opBody = filter keepVar body }
   where
     usedVars = concatMap collectCallsExpr body
     keepVar = \case
