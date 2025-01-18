@@ -21,6 +21,7 @@ operator builtin < precedence 5 (a: number, b: number) -> bool
 
 // io
 function builtin print(a: any) -> void
+function builtin put(a: any) -> void
 function builtin eprint(a: any) -> void
 function builtin getline() -> str
 function builtin exit(a: int) -> void
