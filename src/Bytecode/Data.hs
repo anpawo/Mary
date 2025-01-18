@@ -32,6 +32,7 @@ import Data.List (intercalate)
 data Instruction
   = Push Value
   | Call
+  | TailCall
   | Ret
   | Store String
   | Update String
@@ -43,6 +44,7 @@ data Instruction
 instance Show Instruction where
   show (Push value)      = "Push " ++ show value
   show Call              = "Call"
+  show TailCall          = "TailCall"
   show Ret               = "Ret"
   show (Store name)      = "Store " ++ show name
   show (Load name)       = "Load " ++ show name
