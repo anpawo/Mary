@@ -30,6 +30,7 @@ optimizeAST = eliminateUnusedFuncs . map (eliminateUnusedVars . optimizeExprInAs
 
 optimizeAst :: Ast -> Ast
 optimizeAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
+optimizeAst o@Operator { opBody = body } = o { opBody = map optimizeExpr body }
 optimizeAst other                     = other
 
 optimizeExpr :: Expression -> Expression
