@@ -29,6 +29,8 @@ jobs:
         run : |
           export STACK_ROOT=/tmp/.stack
           stack build --stack-root=$STACK_ROOT --allow-different-user
+          ls
+          ls ./.stack-work -R
         timeout-minutes: 2
       - name: Check if binary was built
         run: find . -type f -executable | grep ${{ env.EXECUTABLES }}
