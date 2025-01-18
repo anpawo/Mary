@@ -92,6 +92,7 @@ doCurrentInstr (Just (Load name)) ind env is stack = case lookup name env of
   Just body -> exec 0 env body stack >>= \res -> exec (ind + 1) env is (res : drop (countParamFunc body 0) stack)
   Nothing -> fail (printf "'%s' is not bound" name)
 doCurrentInstr (Just Call) ind env is (VmFunc name: stack) = callInstr name ind env is stack
+doCurrentInstr (Just TailCall) ind env is (VmFunc name: stack) = callInstr name ind env (is ++ [Ret]) stack
 doCurrentInstr (Just (JumpIfFalse n)) ind env is stack = jumpIfFalseInstr (JumpIfFalse n) ind env is stack
 doCurrentInstr (Just (JumpBackward n)) ind env is stack = exec (ind - n) env is stack
 doCurrentInstr Nothing ind _ is (x : _) = pure x
