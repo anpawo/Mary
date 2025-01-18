@@ -31,7 +31,7 @@ import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import Data.List (find)
-import System.IO (stderr, hPrint)
+import System.IO (stderr, hPrint, stdout, hFlush)
 import Data.Char (ord, chr)
 import Data.Maybe (fromJust)
 import System.Random (randomRIO)
@@ -108,6 +108,7 @@ exec idx env insts = doCurrentInstr (getcurrentInstr idx insts) idx env insts
 builtinOperator :: String -> Int -> Env -> Insts -> Stack -> IO Value
 -- io
 builtinOperator "random" ind env is (VmInt upper: VmInt lower : stack) = randomRIO(lower, upper) >>= \x -> exec (ind + 1) env is (VmInt x:stack)
+builtinOperator "put" ind env is (v : stack) = putStr (show v) >> hFlush stdout >> exec (ind + 1) env is stack
 builtinOperator "print" ind env is (v : stack) = print v >> exec (ind + 1) env is stack
 builtinOperator "eprint" ind env is (v : stack) = hPrint stderr v >> exec (ind + 1) env is stack
 builtinOperator "getline" ind env is stack = getLine >>= \line -> exec (ind + 1) env is (VmString line:stack)
