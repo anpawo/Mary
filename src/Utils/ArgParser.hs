@@ -28,6 +28,7 @@ data Arguments = Arguments
     { argOutputType :: OutputType
     , argImportPath :: [String]
     , argOptimize :: Bool
+    , argOptimize2 :: Bool
     , argInputFile :: Maybe String
     , argShowHelper :: Bool
     , argColorblind :: Bool
@@ -45,6 +46,7 @@ defaultArguments = Arguments
         }
     , argImportPath = ["stdlib"]
     , argOptimize = False
+    , argOptimize2 = False
     , argShowHelper = False
     , argColorblind = False
     , argImportBuiltins = True
@@ -67,6 +69,9 @@ pImportPath args = flag "--import" *> ((\i -> args { argImportPath = i : argImpo
 pOptimize :: Arguments -> Parser Arguments
 pOptimize args = flag "--optimize" $> args {argOptimize = True}
 
+pOptimize2 :: Arguments -> Parser Arguments
+pOptimize2 args = flag "--optimize2" $> args {argOptimize2 = True}
+
 pHelper :: Arguments -> Parser Arguments
 pHelper args = flag "--help" $> args {argShowHelper = True}
 
@@ -85,6 +90,7 @@ pArguments args = eof $> args <|> (pOneArgument >>= pArguments)
             [ pOutputType
             , pImportPath
             , pOptimize
+            , pOptimize2
             , pHelper
             , pColorblind
             , pImportBuiltins
