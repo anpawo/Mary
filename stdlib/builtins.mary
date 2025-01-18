@@ -24,6 +24,7 @@ function builtin print(a: any) -> void
 function builtin eprint(a: any) -> void
 function builtin getline() -> str
 function builtin exit(a: int) -> void
+function builtin random(lowerBound: int, upperBound: int) -> int
 
 // struct
 operator builtin . precedence 10 (a: any, b: any) -> any
