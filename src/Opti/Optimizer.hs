@@ -26,19 +26,18 @@ import qualified Data.Set as Set
 import Data.Function ()
 
 optimizeAST :: [Ast] -> [Ast]
-optimizeAST = eliminateUnusedFuncs . map (eliminateUnusedVars . optimizeExprInAst . optimizeAst)
+optimizeAST ast = (\ast' -> if ast == ast' then ast' else optimizeAST ast') $ eliminateUnusedFuncs . map (eliminateUnusedVars . optimizeExprInAst . optimizeAst) $ ast
 
 optimizeAst :: Ast -> Ast
 optimizeAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
 optimizeAst o@Operator { opBody = body } = o { opBody = map optimizeExpr body }
-optimizeAst other                     = other
+optimizeAst other                        = other
 
 optimizeExpr :: Expression -> Expression
 optimizeExpr = \case
   IfThenElse cond thenEx elseEx ->
     case fixOptSubExpr cond of
-      Lit (BoolLit True)  ->
-                             if null thenEx then SubExpression (Lit (StringLit "")) else head thenEx
+      Lit (BoolLit True)  -> if null thenEx then SubExpression (Lit (StringLit "")) else head thenEx
       Lit (BoolLit False) -> if null elseEx then SubExpression (Lit (StringLit "")) else head elseEx
       c -> IfThenElse c (map optimizeExpr thenEx) (map optimizeExpr elseEx)
   While cond body ->
