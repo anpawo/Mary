@@ -2,8 +2,6 @@ name: Build Release
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 jobs:
   build-release:
@@ -20,8 +18,8 @@ jobs:
         run: make
 
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        uses: marvinpinto/action-automatic-releases@v1
         with:
-          artifacts: "./glados"
           tag: v1.0.${{ github.run_number }}
+          files: "./glados"
           token: ${{ secrets.GITHUB_TOKEN }}
