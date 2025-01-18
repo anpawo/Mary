@@ -36,9 +36,6 @@ function builtin append(a: arr[any] | str, b: any | char) -> arr[any] | str
 function builtin at(a: arr[any] | str, b: int) -> any | char
 function builtin concat(a: arr[any] | str, b: arr[any] | str) -> arr[any] | str
 
-// function builtin pop(arr[any] | str a, int i) -> any | char
-// function builtin del(arr[any]  a, int i) -> void
-
 // conversion
 type __convertibleToInt__   = int | float | bool | str | char
 type __convertibleToFloat__ = int | float | bool | str
