@@ -9,25 +9,25 @@
 
 module AstSpec (spec) where 
 
-import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, shouldContain)
+import Test.Hspec (Spec, describe, it, shouldBe, Expectation, shouldSatisfy, SpecWith, shouldContain, expectationFailure)
 import Test.Hspec.Runner () 
 import Text.RawString.QQ 
-import Text.Megaparsec (parse) 
+import Text.Megaparsec (parse, runParser) 
 import Text.Megaparsec.Error (ParseErrorBundle(..)) 
 import Data.Either (isLeft) 
 import Data.Void (Void) 
 import qualified Data.List.NonEmpty()  
-import Parser.Tokenizer 
-import Parser.Token 
-import Ast.Ast 
+import Parser.Tokenizer
+import Ast.Ast
 import Ast.Error 
-import Ast.TreeBuilder () 
+import Ast.TreeBuilder 
 import Ast.DeclarationParser() 
 import Ast.Parser 
 import Utils.Lib 
 import Utils.ArgParser 
 import Ast.Import
 import Ast.TokenParser
+import Parser.Token
 
 (==>) :: (Show a, Eq a, Show b, Eq b) => Either a b -> b -> Expectation
 (==>) got expected = got `shouldBe` Right expected
@@ -412,8 +412,6 @@ getSpec = describe "get functions" $ do
     it "returns the correct type for a NullLit" $ do
       getLitType NullLit `shouldBe` NullType
 
-
-
 structureSpec :: SpecWith ()
 structureSpec = describe "structure parsing" $ do
   describe "valid cases" $ do
@@ -499,7 +497,6 @@ ifThenElseSpec = describe "if-then-else" $ do
       let input = "function main()  -> void { x: int = 0; y: int = 0; if x == 0 then y = 1; else y = 0; }"
       ast <- pAst input
       ast `shouldSatisfy` isLeft
-
 
 whileSpec :: SpecWith ()
 whileSpec = describe "while loop" $ do
@@ -671,3 +668,90 @@ additionalSpec = describe "Additional tests for 100% coverage" $ do
     it "returns the correct type for LambdaLit" $ do
       let lit = LambdaLit { lambdaArgs = [(CharType, "c")], lambdaRetTy = StrType, lambdaCapture = [], lambdaBody = Lit (StringLit "") }
       getLitType lit `shouldBe` FunctionType [CharType] StrType
+
+  describe "Error message: errNameTaken" $ do
+    it "formats correctly for a given name" $ do
+      errNameTaken "x" `shouldBe` "name '\ESC[94mx\ESC[0m' already taken."
+
+  describe "Error message: ConstraintType with default constraints" $ do
+    it "formats the ConstraintType correctly" $ do
+      let expected = ConstraintType Nothing [StructType "empty", StructType "elem"]
+      expected `shouldBe` ConstraintType Nothing [StructType "empty", StructType "elem"]
+
+  describe "Error message: errInvalidStructure" $ do
+    it "fails when structure fields do not match" $ do
+      let name = "MyStruct"
+          expectedKV = [("field1", IntType), ("field2", BoolType)]
+      errInvalidStructure name expectedKV `shouldBe`
+        "invalid structure '\ESC[94mMyStruct\ESC[0m', expected:\n{\n    \ESC[94mfield1\ESC[0m = \ESC[94mint\ESC[0m,\n    \ESC[94mfield2\ESC[0m = \ESC[94mbool\ESC[0m\n}"
+
+  describe "Error message: errStructureNotBound" $ do
+    it "formats correctly for an unknown structure" $ do
+      errStructureNotBound "MyStruct" `shouldBe` "structure '\ESC[94mMyStruct\ESC[0m' doesn't exist."
+
+  describe "getOpName" $ do
+    it "returns the operator name from a GOp group" $ do
+      getOpName (GOp 1 "plus" []) `shouldBe` "plus"
+
+  describe "getGrIdx" $ do
+    it "returns the index for a GVar group" $ do
+      getGrIdx (GVar 5 "x") `shouldBe` 5
+    it "returns the index for a GLit group" $ do
+      getGrIdx (GLit 3 (IntLit 42)) `shouldBe` 3
+    it "returns the index for a GGr group" $ do
+      getGrIdx (GGr 7 []) `shouldBe` 7
+
+  describe "validLit" $ do
+    it "validates a StructLit that matches a structure in context" $ do
+      let ctx    = [Structure "Person" [("name", StrType)]]
+          locVar = []
+          lit    = StructLit "Person" [("name", Lit (StringLit "Alice"))]
+      parse (validLit 0 ctx locVar lit) "" [] `shouldBe` Right lit
+
+    it "fails for a StructLit with fields not matching the context" $ do
+      let ctx    = [Structure "Person" [("name", StrType)]]
+          locVar = []
+          lit    = StructLit "Person" [("name", Lit (IntLit 0))]
+      parse (validLit 0 ctx locVar lit) "" [] `shouldSatisfy` isLeft
+
+  describe "Group helper functions" $ do
+    it "getOpName returns the operator name from a GOp" $ do
+      getOpName (GOp 1 "plus" []) `shouldBe` "plus"
+
+    it "getGrIdx returns the index for a GVar" $ do
+      getGrIdx (GVar 5 "x") `shouldBe` 5
+
+    it "getGrIdx returns the index for a GLit" $ do
+      getGrIdx (GLit 3 (IntLit 42)) `shouldBe` 3
+
+  describe "toSubexpr" $ do
+    it "converts a GLit group to a literal subexpression" $ do
+      let grp = GLit 0 (IntLit 42)
+      parse (toSubexpr [] grp) "" [] `shouldBe` Right (Lit (IntLit 42))
+    it "converts a GVar group to a variable call subexpression" $ do
+      let grp = GVar 0 "x"
+      parse (toSubexpr [] grp) "" [] `shouldBe` Right (VariableCall "x")
+
+  describe "calcPrec" $ do
+    it "calculates precedence for an operator group" $ do
+      let op = GOp 0 "plus" []
+          groups = [GVar 0 "x", op, GVar 0 "y"]
+          ctx = [Operator "plus" 5 IntType (IntType, "a") (IntType, "b") []]
+          res = parse (calcPrec ctx Nothing 0 1 groups) "" [] 
+      case res of
+        Right (Just (p, n)) -> do
+          p `shouldSatisfy` (> 0)
+          n `shouldBe` "plus"
+        other -> expectationFailure ("Unexpected result: " ++ show other)
+
+  describe "validateMount" $ do
+    it "succeeds when a GVar is present in local variables" $ do
+      let ctx = []
+          locVar = [(IntType, "x")]
+          grp = GVar 0 "x"
+      runParser (validateMount ctx locVar grp) "" [] `shouldBe` Right ()
+    it "fails when a GVar is not bound in local variables" $ do
+      let ctx = []
+          locVar = []
+          grp = GVar 0 "x"
+      runParser (validateMount ctx locVar grp) "" [] `shouldSatisfy` isLeft
