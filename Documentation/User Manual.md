@@ -334,6 +334,8 @@ Built-in functions include in Mary:
 
 In Mary, we can define custom operators using `operator` keyword, where precedence refers to the priority order of the operator:
 
+For example, in `Mary` the `+` operator has a precedence of 6 and the `*` operator has a precedence of 7. This means that the operation `1 + 2 * 3` is equivalent to ` 1 + (2 * 3)` because `*` will be executed before `+` as 7 is greater than 6.
+
 **Syntax:**
 
 ```BNF
