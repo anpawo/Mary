@@ -548,7 +548,12 @@ function main() -> int {
 
 ## 12. Custom Data Structures
 
-In Mary, structures are defined using the struct keyword, where each structure contains fields.
+In Mary, structures are defined using the struct keyword, where each structure possibly contains fields.
+
+It is also possible to define a structure with no fields by using 
+```
+atom empty
+```
 
 **Syntax:**
 
@@ -556,7 +561,6 @@ In Mary, structures are defined using the struct keyword, where each structure c
 <structure> ::= "struct" <struct_name> "{" <fields> "}"
 ```
 ```c
-
 struct person {
     name: str,
     age: int
