@@ -64,7 +64,8 @@ helper =
     "--ast              => display the ast.\n" ++
     "--bytecode         => display the bytecode.\n" ++
     "--import <path>    => import path for the libraries.\n" ++
-    "--optimize         => optimize the code before running it.\n" ++
+    "--optimize         => optimize the ast.\n" ++
+    "--optimize2        => optimize the bytecode.\n" ++
     "--colorblind       => display colors according to most colorblinds.\n" ++
     "--no-builtins      => doesn't load the builtins.\n"
 
