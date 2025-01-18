@@ -25,6 +25,7 @@ import VM.VirtualMachine (exec)
 import Ast.Import (resolveImports)
 import System.Directory (makeAbsolute)
 import Opti.Optimizer (optimizeAST)
+import Opti.Optimizer2 (optimizeBytecode)
 
 glados :: Arguments -> String ->  IO ()
 glados args = toToken
@@ -45,7 +46,7 @@ glados args = toToken
                         then print ast'
                         else toBytecode ast'
 
-        toBytecode ast = case compiler ast of
+        toBytecode ast = case (\(i, e) -> if argOptimize2 args then (i, optimizeBytecode e) else (i, e)) <$> compiler ast of
             Left err -> print err >> exitWith (ExitFailure 1)
             Right (instr, env)
                 | bytecodeTy $ argOutputType args -> displayBytecode instr env
