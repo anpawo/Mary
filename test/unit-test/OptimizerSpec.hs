@@ -114,7 +114,7 @@ defaultAstSpec = describe "collectCallsAst and optimizeAST default behavior" $ d
     collectCallsAst ast `shouldBe` []
   it "leaves non-function AST nodes unchanged when optimizing" $ do
     let ast = Structure { structName = "Dummy", structMember = [] }
-    optimizeAST [ast] `shouldBe` [ast]
+    optimizeAST [ast] `shouldBe` []
 
 optimizeExprPatternsSpec :: Spec
 optimizeExprPatternsSpec = describe "optimizeExpr patterns" $ do
@@ -142,7 +142,7 @@ optimizeExprPatternsSpec = describe "optimizeExpr patterns" $ do
       _ -> expectationFailure "Expected a While expression"
   it "returns the original expression for non-matching patterns in optimizeAst" $ do
     let ast = Structure { structName = "MyStruct", structMember = [] }
-    optimizeAST [ast] `shouldBe` [ast]
+    optimizeAST [ast] `shouldBe` []
   it "optimizes if with constant condition true and non-empty then branch" $ do
     let expr = IfThenElse (Lit (BoolLit True))
                           [SubExpression (FunctionCall "print" [Lit (StringLit "then branch")])]

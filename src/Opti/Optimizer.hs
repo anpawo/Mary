@@ -21,12 +21,13 @@ module Opti.Optimizer
   ) where
 
 import Ast.Ast
-import Parser.Token (Literal(..))
+import Parser.Token (Literal(..), Type (..))
 import qualified Data.Set as Set
 import Data.Function ()
+import Data.List (nub, singleton)
 
 optimizeAST :: [Ast] -> [Ast]
-optimizeAST ast = (\ast' -> if ast == ast' then ast' else optimizeAST ast') $ eliminateUnusedFuncs . map (eliminateUnusedVars . optimizeExprInAst . optimizeAst) $ ast
+optimizeAST = deleteUnused . map (eliminateUnusedVars . optimizeExprInAst . optimizeAst)
 
 optimizeAst :: Ast -> Ast
 optimizeAst f@Function { fnBody = body } = f { fnBody = map optimizeExpr body }
@@ -125,3 +126,57 @@ eliminateUnusedVars o@(Operator { opBody = body }) =
       Variable (_, name) _ -> name `elem` usedVars
       _                    -> True
 eliminateUnusedVars ast = ast
+
+-- tree search
+
+getMainFn :: [Ast] -> Maybe Ast
+getMainFn [] = Nothing
+getMainFn (main@(Function { fnName = "main" }):_) = Just main
+getMainFn (_:xs) = getMainFn xs
+
+getUsedAst :: Ast -> [String]
+getUsedAst (Function {..})   = fnName : getUsedCustomType fnRetType ++ concatMap (getUsedCustomType . fst) fnArgs ++ concatMap getUsedAstFromExpr fnBody
+getUsedAst (Operator {..})   = opName : getUsedCustomType opRetType ++ getUsedCustomType (fst opArgLeft) ++ getUsedCustomType (fst opArgRight) ++ concatMap getUsedAstFromExpr opBody
+getUsedAst (Structure {..})  = structName : concatMap (getUsedCustomType . snd) structMember
+getUsedAst (Constraint {..}) = constrName : concatMap getUsedCustomType constrType
+
+getUsedCustomType :: Type -> [String]
+getUsedCustomType (StructType {..}) = [stTyName]
+getUsedCustomType (ConstraintType {..}) = maybe [] singleton crTyName ++ concatMap getUsedCustomType crTyTypes
+getUsedCustomType (FunctionType {..}) = getUsedCustomType fnTyRet ++ concatMap getUsedCustomType fnTyArgs
+getUsedCustomType (ArrType t) = getUsedCustomType t
+getUsedCustomType _ = []
+
+getUsedAstFromExpr :: Expression -> [String]
+getUsedAstFromExpr (While {..}) = getUsedAstFromSubExpr whileCond ++ concatMap getUsedAstFromExpr whileExpr
+getUsedAstFromExpr (IfThenElse {..}) = getUsedAstFromSubExpr ifCond ++ concatMap getUsedAstFromExpr thenExpr ++ concatMap getUsedAstFromExpr elseExpr
+getUsedAstFromExpr (Return {..}) = getUsedAstFromSubExpr retValue
+getUsedAstFromExpr (StructField {..}) = getUsedAstFromSubExpr fieldValue
+getUsedAstFromExpr (Variable {..}) = getUsedAstFromSubExpr varValue
+getUsedAstFromExpr (SubExpression x) = getUsedAstFromSubExpr x
+
+getUsedAstFromSubExpr :: SubExpression -> [String]
+getUsedAstFromSubExpr (FunctionCall {..}) = fnCallName : concatMap getUsedAstFromSubExpr fnCallArgs
+getUsedAstFromSubExpr (VariableCall _) = []
+getUsedAstFromSubExpr (Lit x) = getUsedAstFromLiteral x
+
+getUsedAstFromLiteral :: Literal -> [String]
+getUsedAstFromLiteral (ArrLit ty elems) = getUsedCustomType ty ++ concatMap getUsedAstFromSubExpr elems
+getUsedAstFromLiteral (StructLit name fields) = name : concatMap (getUsedAstFromSubExpr . snd) fields
+getUsedAstFromLiteral (ClosureLit name args retTy) = name : concatMap getUsedCustomType args ++ getUsedCustomType retTy
+getUsedAstFromLiteral (LambdaLit {..}) = concatMap (getUsedCustomType . fst) lambdaArgs ++ getUsedAstFromSubExpr lambdaBody ++ getUsedCustomType lambdaRetTy
+getUsedAstFromLiteral _ = []
+
+deleteUnusedAst :: [Ast] -> [String] -> [Ast]
+deleteUnusedAst [] _ = []
+deleteUnusedAst (x:xs) used
+  | getName x `elem` used = x : deleteUnusedAst xs used
+  | otherwise             = deleteUnusedAst xs used
+
+deleteUnused :: [Ast] -> [Ast]
+deleteUnused ast = maybe [] (deleteUnusedAst ast . repeatIt ["main"] . getUsedAst) $ getMainFn ast
+  where
+    repeatIt :: [String] -> [String] -> [String]
+    repeatIt tried new = case filter (not . (`elem` tried)) $ nub new of
+      [] -> tried
+      notTried -> repeatIt (tried ++ notTried) $ concatMap getUsedAst $ filter ((`elem` notTried) . getName) ast
