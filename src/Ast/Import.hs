@@ -42,7 +42,7 @@ getContent pathTried (importPath: xs) file = catch (readFile $ printf "%s/%s.mar
 importLib :: Arguments -> Ctx -> Ctx -> [String] -> [String] -> IO ([String], Ctx)
 importLib _ _ ctx importedLib [] = pure (importedLib, ctx)
 importLib args builtins ctx importedLib (libname:xs)
-    | libname `elem` importedLib = pure (importedLib, ctx)
+    | libname `elem` importedLib = importLib args builtins ctx importedLib xs
     | otherwise = do
         content <- getContent [] (argImportPath args) libname
         case run tokenize content of
