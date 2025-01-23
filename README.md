@@ -114,13 +114,14 @@ struct person {
 }
 ```
 
-### lambdas and imports
+### lambdas (which are closure) and imports
 
 ```rust
 import list
 // provides the function map
 // and the operator `..` (range)
 // which are both coded in the mary language.
+// check out the stdlib directory for more.
 
 function main() -> void {
     print(map(\x -> x * 2, 1..10));
