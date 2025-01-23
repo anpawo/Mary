@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- Lib
+-- This module provides utility functions and definitions.
 -}
 
 module Utils.Lib (choicetry, (&>), (~>), run, failN, failP, failI, (!?)) where

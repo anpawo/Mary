@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- ArgParser
+-- This module provides utility functions for argument parsing.
 -}
 
 module Utils.ArgParser (parseArguments, Arguments(..), OutputType(..), defaultArguments) where

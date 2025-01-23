@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- Data bytecode
+-- This module defines data structures for bytecode representation.
 -}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}

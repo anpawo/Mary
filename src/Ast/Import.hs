@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- Import
+-- This module handles the import statements in the AST.
 -}
 
 module Ast.Import (resolveImports, errImport, errInputFile) where

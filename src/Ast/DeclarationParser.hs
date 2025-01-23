@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- TopLevelDeclaration
+-- This module contains the parser for top-level declarations in the AST.
 -}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}

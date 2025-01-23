@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- Compiler bytecode
+-- This module handles the compilation of bytecode.
 -}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}

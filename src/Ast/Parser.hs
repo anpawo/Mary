@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- Parser
+-- This module contains the parser for the abstract syntax tree (AST).
 -}
 
 module Ast.Parser (tokenToAst) where

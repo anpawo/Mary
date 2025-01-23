@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- TokenToAst
+-- This module defines the abstract syntax tree (AST).
 -}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}

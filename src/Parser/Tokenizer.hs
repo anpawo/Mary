@@ -1,6 +1,6 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
 -- Tokenizer
 -}

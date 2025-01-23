@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- TokenParser
+-- This module provides functionality for parsing tokens in the AST.
 -}
 
 module Ast.TokenParser (operatorIdentifier, textIdentifier, constraintType, arrayType, structType, charType, boolType, nullType, intType, floatType, strType, voidType, intLiteral, isLiteral, tok, importKw, isStructLiteral) where 

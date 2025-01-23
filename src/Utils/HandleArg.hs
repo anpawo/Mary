@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- HandleArg
+-- This module provides utility functions for handling command-line arguments.
 -}
 
 module Utils.HandleArg (handleArgs, helper, glados) where

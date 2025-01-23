@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- Spec
+-- This module contains unit tests for the AST (Abstract Syntax Tree) functionality.
 -}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE LambdaCase #-}

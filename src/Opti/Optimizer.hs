@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- Optimizer
+-- This module contains optimization routines.
 -}
 
 {-# LANGUAGE LambdaCase #-}

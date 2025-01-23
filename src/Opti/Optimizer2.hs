@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- Optimizer2
+-- This module contains the implementation of the second version of the optimizer.
 -}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 

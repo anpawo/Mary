@@ -1,8 +1,8 @@
 {-
 -- EPITECH PROJECT, 2025
--- glados
+-- Glados
 -- File description:
--- ImportSpec
+-- This module contains unit tests for the Import functionality.
 -}
 
 module ImportSpec (spec) where

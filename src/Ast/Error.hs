@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- ErrorMessage
+-- This module defines the ErrorMessage type and related functions for handling errors in the AST.
 -}
 
 module Ast.Error (red, blue, errCondNotBool, errAssignType, errNameTaken, errImpossibleCase, prettyPrintError, errExpectedType, errTopLevelDef, errStartBody, errEndBody, errVoidRet, errRetType, errEndSubexpr, errInvalidExprToken, errEmptyParen, errEmptyExpr, errOpNotDefined, errMissingOperand, errInvalidExpr, errVariableNotBound, errFunctionNotBound, errInvalidNumberOfArgument, errOperatorNotBound, errInvalidVarType, errInvalidFnType, errInvalidLitType, errInvalidOpType, errOpArgs, errSemiColon, errStructureNotBound, errInvalidStructure, errInvalidArray, errConstraintNotBound, bgBlack, errStructureFieldNotBound, errMissingRetT, errExpectedField, colorblindMode, errMisingBody, errMisingNameFn, errMisingNameOp, errExpectedArgs, errExpectedArgName, errExpectedColon, errExpectedCommaOrParen, errEndParen, errEndExpr, errMisingPrecOp, errExpectedStartField, errExpectedFieldName, errExpectedCommaOrCurly, errMisingEqual, errMissingRet) where

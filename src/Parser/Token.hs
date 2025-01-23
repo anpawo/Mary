@@ -1,8 +1,8 @@
 {-
--- EPITECH PROJECT, 2024
--- glados
+-- EPITECH PROJECT, 2025
+-- Glados
 -- File description:
--- MyToken
+-- Token
 -}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# LANGUAGE RecordWildCards #-}
